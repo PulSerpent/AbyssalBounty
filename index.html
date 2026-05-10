@@ -6,9 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Abyssal Bounty</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -29,16 +27,16 @@
 </head>
 <body>
     <div id="root">
-        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#020617; color:#22d3ee; font-weight:bold; font-family:sans-serif;">
+        <div id="loading-screen" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#020617; color:#22d3ee; font-weight:bold; font-family:sans-serif;">
             <div style="font-size:32px; margin-bottom:15px;">⚓</div>
             <div>Diving into the Abyss...</div>
         </div>
     </div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- HARDCODED ICONS (Crash-Proof) ---
+        // --- HARDCODED ICONS (Stable for all browsers) ---
         const Icon = ({ name, size = 16, className = "" }) => {
             const icons = {
                 Coins: <path d="M11 15h2M8 15h.01M16 15h.01M3 11a9 9 0 0 1 18 0v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7Z"/>,
@@ -55,20 +53,18 @@
                 Flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
                 Crown: <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>,
                 Sparkles: <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
-                Skull: <><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2 M12.5 17l-.5-1-.5 1h1z M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></>,
-                Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+                Skull: <g><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2 M12.5 17l-.5-1-.5 1h1z M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></g>,
+                Eye: <g><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></g>,
                 Star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
                 Moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>,
                 MousePointer2: <path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/>,
-                Copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
-                Info: <><circle cx="12" cy="12" r="10"/><path d="M12 16v-4 M12 8h.01"/></>,
                 BoxSelect: <path d="M5 3a2 2 0 0 0-2 2 M19 3a2 2 0 0 1 2 2 M21 19a2 2 0 0 1-2 2 M5 21a2 2 0 0 1-2-2 M9 3h1 M9 21h1 M14 3h1 M14 21h1 M3 9v1 M21 9v1 M3 14v1 M21 14v1"/>,
-                Lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
-                Compass: <><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></>,
+                Lock: <g><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g>,
+                Compass: <g><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></g>,
                 Wand2: <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z M14 7l3 3 M5 6v4 M19 14v4 M10 2v2 M7 8H3 M21 16h-4 M11 3H9"/>,
-                Percent: <><line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></>,
-                Calculator: <><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01 M12 10h.01 M8 10h.01 M12 14h.01 M8 14h.01 M12 18h.01 M8 18h.01"/></>,
-                BookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>
+                Percent: <g><line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></g>,
+                Calculator: <g><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01 M12 10h.01 M8 10h.01 M12 14h.01 M8 14h.01 M12 18h.01 M8 18h.01"/></g>,
+                X: <g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -86,7 +82,7 @@
             return (num / 1000000000000).toFixed(2) + 'T';
         };
 
-        // --- MASSIVE EXPANDED CONSTANTS ---
+        // --- GAME CONSTANTS ---
         const RARITIES = [
             { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.05 },
             { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 0.2 },
@@ -101,109 +97,140 @@
         ];
 
         const MUTATION_ORDER = ['none', 'glimmering', 'bioluminescent', 'cursed', 'abyssal', 'void_touched', 'prismatic', 'ethereal'];
-        
         const MUTATIONS = {
-            none: { label: '', mult: 1, color: 'text-slate-900', bg: 'bg-white/90', glow: '' },
-            glimmering: { label: 'Glimmering', mult: 1.5, color: 'text-yellow-500', bg: 'bg-yellow-50/90', glow: 'shadow-[0_0_10px_rgba(234,179,8,0.3)]' },
-            bioluminescent: { label: 'Bioluminescent', mult: 3, color: 'text-lime-500', bg: 'bg-lime-50/90', glow: 'shadow-[0_0_15px_rgba(132,204,22,0.4)]' },
-            cursed: { label: 'Cursed', mult: 7, color: 'text-red-700', bg: 'bg-red-50/90', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.5)]' },
-            abyssal: { label: 'Abyssal', mult: 15, color: 'text-violet-700', bg: 'bg-violet-100/90', glow: 'shadow-[0_0_15px_rgba(109,40,217,0.4)]' },
-            void_touched: { label: 'Void-Touched', mult: 35, color: 'text-slate-800', bg: 'bg-slate-300/90', glow: 'shadow-[0_0_20px_rgba(30,41,59,0.7)]' },
-            prismatic: { label: 'Prismatic', mult: 100, color: 'text-fuchsia-500', bg: 'bg-fuchsia-50/90', glow: 'shadow-[0_0_20px_rgba(217,70,239,0.5)]' },
-            ethereal: { label: 'Ethereal', mult: 500, color: 'text-cyan-200', bg: 'bg-white/95', glow: 'shadow-[0_0_30px_rgba(165,243,252,0.8)]' }
+            none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+            glimmering: { label: 'Glimmering', mult: 1.5, bg: 'bg-yellow-50/90', color: 'text-yellow-600' },
+            bioluminescent: { label: 'Bioluminescent', mult: 3, bg: 'bg-lime-50/90', color: 'text-lime-600' },
+            cursed: { label: 'Cursed', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700' },
+            abyssal: { label: 'Abyssal', mult: 15, bg: 'bg-violet-50/90', color: 'text-violet-700' },
+            void_touched: { label: 'Void-Touched', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100' },
+            prismatic: { label: 'Prismatic', mult: 100, bg: 'bg-fuchsia-50/90', color: 'text-fuchsia-600' },
+            ethereal: { label: 'Ethereal', mult: 500, bg: 'bg-white/95', color: 'text-cyan-400' }
         };
 
+        // --- MASSIVE 100-ITEM DATABASE INCLUDING SEA CREATURES ---
         const MASTER_ITEM_DB = [
-            { name: "Soggy Seaweed", rid: "trash" }, { name: "Empty Can", rid: "trash" }, { name: "Waterlogged Boot", rid: "trash" }, { name: "Rusty Nail", rid: "trash" }, { name: "Muck Pile", rid: "trash" },
-            { name: "Soggy Driftwood", rid: "common" }, { name: "Torn Fishing Net", rid: "common" }, { name: "Dull Sea Glass", rid: "common" }, { name: "Rusty Fishhook", rid: "common" }, { name: "Kelp Frond", rid: "common" },
-            { name: "Shark Tooth", rid: "uncommon" }, { name: "Coral Branch", rid: "uncommon" }, { name: "Iron Anchor Link", rid: "uncommon" }, { name: "Sunken Compass", rid: "uncommon" }, { name: "Sailor's Flask", rid: "uncommon" },
-            { name: "Glowing Urchin", rid: "rare" }, { name: "Anglerfish Lure", rid: "rare" }, { name: "Merfolk Dagger", rid: "rare" }, { name: "Shipwheel Spoke", rid: "rare" }, { name: "Aquamarine Shard", rid: "rare" },
-            { name: "Kraken Tentacle", rid: "epic" }, { name: "Triton's Conch", rid: "epic" }, { name: "Abyssal Lantern", rid: "epic" }, { name: "Whirlpool Core", rid: "epic" }, { name: "Captain's Logbook", rid: "epic" },
-            { name: "Heart of the Ocean", rid: "legendary" }, { name: "Poseidon's Trident", rid: "legendary" }, { name: "Megalodon Fang", rid: "legendary" }, { name: "Siren's Tear", rid: "legendary" }, { name: "Tidal Anchor", rid: "legendary" },
-            { name: "Leviathan Engine", rid: "mythic" }, { name: "Oceanic Singularity", rid: "mythic" }, { name: "Breath of the Sea", rid: "mythic" }, { name: "Abyssal Pulse", rid: "mythic" }, { name: "Trench Behemoth Core", rid: "mythic" },
-            { name: "Stardust Coral", rid: "celestial" }, { name: "Astral Pearl", rid: "celestial" }, { name: "Moon-Tide Amulet", rid: "celestial" }, { name: "Zodiac Compass", rid: "celestial" }, { name: "Solar Flare Relic", rid: "celestial" },
-            { name: "Genesis Drop", rid: "primordial" }, { name: "Sunken Yggdrasil Root", rid: "primordial" }, { name: "The First Tear", rid: "primordial" }, { name: "Core of the Earth", rid: "primordial" }, { name: "Precursor Fragment", rid: "primordial" },
-            { name: "Time-Lost Anchor", rid: "transcendent" }, { name: "Reality Shard", rid: "transcendent" }, { name: "The Infinite Ocean", rid: "transcendent" }, { name: "Whisper of the Cosmos", rid: "transcendent" }, { name: "Eternity Prism", rid: "transcendent" }
+            // Trash (10)
+            { name: "Soggy Seaweed", rarityId: "trash" }, { name: "Empty Can", rarityId: "trash" }, { name: "Waterlogged Boot", rarityId: "trash" },
+            { name: "Rusty Nail", rarityId: "trash" }, { name: "Muck Pile", rarityId: "trash" }, { name: "Plastic Bag", rarityId: "trash" },
+            { name: "Old Tire", rarityId: "trash" }, { name: "Broken Fishing Rod", rarityId: "trash" }, { name: "Driftwood", rarityId: "trash" }, { name: "Torn Net", rarityId: "trash" },
+            // Common (10)
+            { name: "Barnacle Shell", rarityId: "common" }, { name: "Kelp Frond", rarityId: "common" }, { name: "Sea Glass", rarityId: "common" },
+            { name: "Starfish", rarityId: "common" }, { name: "Sea Cucumber", rarityId: "common" }, { name: "Anchovy", rarityId: "common" },
+            { name: "Sardine", rarityId: "common" }, { name: "Rusty Anchor Link", rarityId: "common" }, { name: "Sailor's Flask", rarityId: "common" }, { name: "Coral Branch", rarityId: "common" },
+            // Uncommon (10)
+            { name: "Shark Tooth", rarityId: "uncommon" }, { name: "Pearl Oyster", rarityId: "uncommon" }, { name: "Sunken Compass", rarityId: "uncommon" },
+            { name: "Lanternfish", rarityId: "uncommon" }, { name: "Pufferfish", rarityId: "uncommon" }, { name: "Stingray", rarityId: "uncommon" },
+            { name: "Moray Eel", rarityId: "uncommon" }, { name: "Pirate Medallion", rarityId: "uncommon" }, { name: "Iron Harpoon", rarityId: "uncommon" }, { name: "Message in a Bottle", rarityId: "uncommon" },
+            // Rare (10)
+            { name: "Glowing Urchin", rarityId: "rare" }, { name: "Angler Lure", rarityId: "rare" }, { name: "Swordfish", rarityId: "rare" },
+            { name: "Hammerhead Shark", rarityId: "rare" }, { name: "Merfolk Dagger", rarityId: "rare" }, { name: "Aquamarine Shard", rarityId: "rare" },
+            { name: "Shipwheel Spoke", rarityId: "rare" }, { name: "Octopus", rarityId: "rare" }, { name: "Sea Turtle", rarityId: "rare" }, { name: "Bio-Jellyfish", rarityId: "rare" },
+            // Epic (10)
+            { name: "Kraken Tentacle", rarityId: "epic" }, { name: "Triton Conch", rarityId: "epic" }, { name: "Whirlpool Core", rarityId: "epic" },
+            { name: "Great White Shark", rarityId: "epic" }, { name: "Giant Squid", rarityId: "epic" }, { name: "Oarfish", rarityId: "epic" },
+            { name: "Captain's Logbook", rarityId: "epic" }, { name: "Siren Feather", rarityId: "epic" }, { name: "Abyssal Lantern", rarityId: "epic" }, { name: "Manta Ray", rarityId: "epic" },
+            // Legendary (10)
+            { name: "Heart of Ocean", rarityId: "legendary" }, { name: "Poseidon Trident", rarityId: "legendary" }, { name: "Megalodon Fang", rarityId: "legendary" },
+            { name: "Siren's Tear", rarityId: "legendary" }, { name: "Tidal Anchor", rarityId: "legendary" }, { name: "Sea Dragon Scale", rarityId: "legendary" },
+            { name: "Orca", rarityId: "legendary" }, { name: "Whale Shark", rarityId: "legendary" }, { name: "Coelacanth", rarityId: "legendary" }, { name: "Deep Sea Behemoth", rarityId: "legendary" },
+            // Mythic (10)
+            { name: "Leviathan Engine", rarityId: "mythic" }, { name: "Ocean Singularity", rarityId: "mythic" }, { name: "Breath of Sea", rarityId: "mythic" },
+            { name: "Abyssal Pulse", rarityId: "mythic" }, { name: "Trench Core", rarityId: "mythic" }, { name: "Blue Whale", rarityId: "mythic" },
+            { name: "Giant Isopod", rarityId: "mythic" }, { name: "Kraken Eye", rarityId: "mythic" }, { name: "Abyssal Worm", rarityId: "mythic" }, { name: "Sunken Crown", rarityId: "mythic" },
+            // Celestial (10)
+            { name: "Stardust Coral", rarityId: "celestial" }, { name: "Astral Pearl", rarityId: "celestial" }, { name: "Moon-Tide Amulet", rarityId: "celestial" },
+            { name: "Zodiac Compass", rarityId: "celestial" }, { name: "Solar Relic", rarityId: "celestial" }, { name: "Celestial Ray", rarityId: "celestial" },
+            { name: "Star-Eater Shark", rarityId: "celestial" }, { name: "Nebula Jelly", rarityId: "celestial" }, { name: "Lunar Whale", rarityId: "celestial" }, { name: "Comet Fragment", rarityId: "celestial" },
+            // Primordial (10)
+            { name: "Genesis Drop", rarityId: "primordial" }, { name: "Yggdrasil Root", rarityId: "primordial" }, { name: "The First Tear", rarityId: "primordial" },
+            { name: "Earth Core", rarityId: "primordial" }, { name: "Precursor Shard", rarityId: "primordial" }, { name: "Primordial Leviathan", rarityId: "primordial" },
+            { name: "Ancestral Kraken", rarityId: "primordial" }, { name: "Ocean Droplet", rarityId: "primordial" }, { name: "Earth-Shaker Crab", rarityId: "primordial" }, { name: "Time-Lost Fossil", rarityId: "primordial" },
+            // Transcendent (10)
+            { name: "Time Anchor", rarityId: "transcendent" }, { name: "Reality Shard", rarityId: "transcendent" }, { name: "Infinite Ocean", rarityId: "transcendent" },
+            { name: "Cosmos Whisper", rarityId: "transcendent" }, { name: "Eternity Prism", rarityId: "transcendent" }, { name: "Cosmic Whale", rarityId: "transcendent" },
+            { name: "Astral Serpent", rarityId: "transcendent" }, { name: "Void-Swimmer", rarityId: "transcendent" }, { name: "Dimension Rift", rarityId: "transcendent" }, { name: "Creator's Pearl", rarityId: "transcendent" }
         ];
 
+        // --- EXCITING RATES ---
         const STANDARD_PACKS = [
-            { id: 'flotsam', name: 'Flotsam Crate', cost: 0, currency: 'dubloon', icon: 'Waves', weights: { trash: 70, common: 29.5, uncommon: 0.5 }, pearlChance: 0.0001 },
-            { id: 'driftwood', name: 'Driftwood Box', cost: 500, currency: 'dubloon', icon: 'Box', weights: { trash: 20, common: 60, uncommon: 18, rare: 2 }, pearlChance: 0.001 },
-            { id: 'sunken', name: 'Sunken Chest', cost: 5000, currency: 'dubloon', icon: 'Anchor', weights: { common: 30, uncommon: 50, rare: 18, epic: 2 }, pearlChance: 0.005 },
-            { id: 'coral', name: 'Coral Strongbox', cost: 75000, currency: 'dubloon', icon: 'Gem', weights: { uncommon: 40, rare: 45, epic: 14, legendary: 1 }, pearlChance: 0.02 },
-            { id: 'trench', name: 'Trench Cache', cost: 1500000, currency: 'dubloon', icon: 'Fish', weights: { rare: 50, epic: 40, legendary: 9, mythic: 1 }, pearlChance: 0.05 },
-            { id: 'galleon', name: 'Galleon Vault', cost: 40000000, currency: 'dubloon', icon: 'Ship', weights: { epic: 60, legendary: 30, mythic: 9, celestial: 1 }, pearlChance: 0.15 },
-            { id: 'leviathan', name: 'Leviathan Hoard', cost: 1500000000, currency: 'dubloon', icon: 'Shield', weights: { legendary: 60, mythic: 30, celestial: 9, primordial: 1 }, pearlChance: 0.4 },
-            { id: 'abyssal_reliquary', name: 'Abyssal Reliquary', cost: 85000000000, currency: 'dubloon', icon: 'Flame', weights: { mythic: 60, celestial: 30, primordial: 9.9, transcendent: 0.1 }, pearlChance: 0.8 },
-            { id: 'atlantis', name: 'Atlantis Core', cost: 5000000000000, currency: 'dubloon', icon: 'Crown', weights: { celestial: 50, primordial: 45, transcendent: 5 }, pearlChance: 1.0 },
+            { id: 'flotsam', name: 'Flotsam Crate', cost: 0, currency: 'dubloon', icon: 'Waves', 
+              weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+            { id: 'driftwood', name: 'Driftwood Box', cost: 500, currency: 'dubloon', icon: 'Box', 
+              weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+            { id: 'sunken', name: 'Sunken Chest', cost: 5000, currency: 'dubloon', icon: 'Anchor', 
+              weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+            { id: 'coral', name: 'Coral Strongbox', cost: 75000, currency: 'dubloon', icon: 'Compass', 
+              weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+            { id: 'trench', name: 'Trench Cache', cost: 1500000, currency: 'dubloon', icon: 'Fish', 
+              weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+            { id: 'galleon', name: 'Galleon Vault', cost: 40000000, currency: 'dubloon', icon: 'Ship', 
+              weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+            { id: 'leviathan', name: 'Leviathan Hoard', cost: 1500000000, currency: 'dubloon', icon: 'Skull', 
+              weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+            { id: 'reliquary', name: 'Abyssal Reliquary', cost: 85000000000, currency: 'dubloon', icon: 'Zap', 
+              weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+            { id: 'atlantis', name: 'Atlantis Core', cost: 5000000000000, currency: 'dubloon', icon: 'Crown', 
+              weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
         ];
 
         const MUTATION_PACKS = [
-            { id: 'glimmer_pack', name: 'Glimmering Shard', cost: 100, currency: 'pearl', icon: 'Sparkles', mutation: 'glimmering', desc: 'Mutate an artifact (1.5x).' },
-            { id: 'bio_pack', name: 'Bioluminescence', cost: 500, currency: 'pearl', icon: 'Zap', mutation: 'bioluminescent', desc: 'Mutate an artifact (3x).' },
-            { id: 'curse_pack', name: 'Dark Curse', cost: 2500, currency: 'pearl', icon: 'Skull', mutation: 'cursed', desc: 'Mutate an artifact (7x).' },
-            { id: 'abyssal_pack', name: 'Abyssal Depths', cost: 15000, currency: 'pearl', icon: 'Droplet', mutation: 'abyssal', desc: 'Mutate an artifact (15x).' },
-            { id: 'void_pack', name: 'Void Touch', cost: 100000, currency: 'pearl', icon: 'Eye', mutation: 'void_touched', desc: 'Mutate an artifact (35x).' },
-            { id: 'prism_pack', name: 'Prismatic Tide', cost: 1000000, currency: 'pearl', icon: 'Star', mutation: 'prismatic', desc: 'Mutate an artifact (100x).' },
-            { id: 'ethereal_pack', name: 'Ethereal Ascension', cost: 25000000, currency: 'pearl', icon: 'Moon', mutation: 'ethereal', desc: 'Mutate an artifact (500x).' },
+            { id: 'glimmer_pack', name: 'Glimmer Shard', cost: 100, mutation: 'glimmering', desc: 'Mutate (1.5x).', icon: 'Sparkles' },
+            { id: 'bio_pack', name: 'Bioluminescence', cost: 500, mutation: 'bioluminescent', desc: 'Mutate (3x).', icon: 'Zap' },
+            { id: 'abyssal_pack', name: 'Abyssal Depths', cost: 15000, mutation: 'abyssal', desc: 'Mutate (15x).', icon: 'Anchor' },
+            { id: 'prism_pack', name: 'Prismatic Tide', cost: 1000000, mutation: 'prismatic', desc: 'Mutate (100x).', icon: 'Sparkles' },
+            { id: 'ethereal_pack', name: 'Ethereal Ascension', cost: 25000000, mutation: 'ethereal', desc: 'Mutate (500x).', icon: 'Waves' },
         ];
-
-        // --- COMPONENTS ---
-        const OceanBackground = () => (
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-b from-cyan-900 via-blue-950 to-slate-950">
-                {[...Array(15)].map((_, i) => (
-                    <div key={i} className="bubble" style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 15 + 5}px`, height: `${Math.random() * 15 + 5}px`, animationDuration: `${Math.random() * 5 + 5}s`, animationDelay: `${Math.random() * 5}s` }} />
-                ))}
-            </div>
-        );
 
         const App = () => {
             const [dubloons, setDubloons] = useState(100);
             const [pearls, setPearls] = useState(0);
             const [inventory, setInventory] = useState([]);
-            const [discoveredNames, setDiscoveredNames] = useState([]);
-            const [lastPull, setLastPull] = useState(null);
             const [view, setView] = useState('shop');
             const [upgrades, setUpgrades] = useState({ luck: 0, discount: 0, multiplier: 1 });
-            
             const [isOpening, setIsOpening] = useState(false);
             const [isSealed, setIsSealed] = useState(false);
             const [isRipping, setIsRipping] = useState(false);
             const [activePack, setActivePack] = useState(null);
             const [pendingLoot, setPendingLoot] = useState(null);
+            const [lastPull, setLastPull] = useState(null);
+            
+            const [inspectedPack, setInspectedPack] = useState(null);
+            const holdTimer = useRef(null);
+            const isHolding = useRef(false);
+            const touchStartY = useRef(0);
 
-            // Safe Load
             useEffect(() => {
-                try {
-                    const saved = localStorage.getItem('abyssal_v4_expanded');
-                    if (saved) {
+                const saved = localStorage.getItem('abyssal_v9_aquarium');
+                if (saved) {
+                    try {
                         const d = JSON.parse(saved);
-                        if(d.dubloons !== undefined) setDubloons(d.dubloons);
-                        if(d.pearls !== undefined) setPearls(d.pearls);
-                        if(d.inventory) setInventory(d.inventory);
-                        if(d.discoveredNames) setDiscoveredNames(d.discoveredNames);
-                        if(d.upgrades) setUpgrades(d.upgrades);
-                    }
-                } catch(e) { console.error("Save Load Error", e); }
+                        if(typeof d.dubloons === 'number') setDubloons(d.dubloons);
+                        if(typeof d.pearls === 'number') setPearls(d.pearls);
+                        if(Array.isArray(d.inventory)) setInventory(d.inventory);
+                        if(d.upgrades) setUpgrades(prev => ({...prev, ...d.upgrades}));
+                    } catch(e) {}
+                }
             }, []);
 
-            // Safe Save
             useEffect(() => {
-                localStorage.setItem('abyssal_v4_expanded', JSON.stringify({ dubloons, pearls, inventory, discoveredNames, upgrades }));
-            }, [dubloons, pearls, inventory, discoveredNames, upgrades]);
+                localStorage.setItem('abyssal_v9_aquarium', JSON.stringify({ dubloons, pearls, inventory, upgrades }));
+            }, [dubloons, pearls, inventory, upgrades]);
 
-            // Passive Income Calculation
             const incomeFlow = useMemo(() => {
                 const bestItems = {};
                 inventory.forEach(item => {
-                    const currentBest = bestItems[item.name];
-                    if (!currentBest || MUTATION_ORDER.indexOf(item.mutation || 'none') > MUTATION_ORDER.indexOf(currentBest.mutation || 'none')) {
-                        bestItems[item.name] = item;
+                    const itemName = item.name;
+                    const currentBest = bestItems[itemName];
+                    const itemMut = item.mutation || item.mut || 'none';
+                    if (!currentBest || MUTATION_ORDER.indexOf(itemMut) > MUTATION_ORDER.indexOf(currentBest.mutation || currentBest.mut || 'none')) {
+                        bestItems[itemName] = item;
                     }
                 });
                 return Object.values(bestItems).reduce((acc, item) => {
-                    const mult = MUTATIONS[item.mutation || 'none'].mult;
-                    const val = item.cps * mult;
+                    const itemMut = item.mutation || item.mut || 'none';
+                    const mult = MUTATIONS[itemMut]?.mult || 1;
+                    const val = (item.cps || 0) * mult;
                     if (item.currency === 'pearl') acc.pearls += val;
                     else acc.dubloons += val;
                     return acc;
@@ -218,40 +245,74 @@
                 return () => clearInterval(timer);
             }, [incomeFlow, upgrades.multiplier]);
 
+            const getDynamicWeights = (pack, luckLvl) => {
+                if(!pack.weights) return {};
+                const weights = { ...pack.weights };
+                if (luckLvl > 0) {
+                    const boost = 1 + (luckLvl * 0.2);
+                    ['rare', 'epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'].forEach(r => {
+                        if(weights[r]) weights[r] *= boost;
+                    });
+                }
+                return weights;
+            };
+
             const getPackCost = (p) => p.currency === 'dubloon' ? Math.floor(p.cost * (1 - (upgrades.discount * 0.05))) : p.cost;
+
+            const handlePressStart = (e, pack) => {
+                if (e.touches && e.touches.length > 0) touchStartY.current = e.touches[0].clientY;
+                isHolding.current = false;
+                holdTimer.current = setTimeout(() => {
+                    isHolding.current = true;
+                    setInspectedPack(pack);
+                    if(navigator.vibrate) navigator.vibrate(50);
+                }, 500);
+            };
+
+            const handlePressEnd = () => {
+                if (holdTimer.current) {
+                    clearTimeout(holdTimer.current);
+                    holdTimer.current = null;
+                }
+            };
+
+            const handlePressMove = (e) => {
+                if (e.touches && e.touches.length > 0) {
+                    if (Math.abs(e.touches[0].clientY - touchStartY.current) > 10) handlePressEnd();
+                } else {
+                    handlePressEnd();
+                }
+            };
+
+            const handlePackClick = (e, pack) => {
+                e.preventDefault();
+                if (isHolding.current) {
+                    isHolding.current = false;
+                    return; 
+                }
+                openPack(pack);
+            };
 
             const openPack = (pack) => {
                 const cost = getPackCost(pack);
-                if ((pack.currency === 'dubloon' ? dubloons : pearls) < cost) return;
+                const balance = pack.currency === 'dubloon' ? dubloons : pearls;
+                if (balance < cost) return;
 
-                setIsOpening(true);
-                setIsSealed(false);
-                setLastPull(null);
-                setActivePack(pack);
-
+                setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(pack);
                 if (pack.currency === 'dubloon') setDubloons(d => d - cost);
                 else setPearls(p => p - cost);
 
                 setTimeout(() => {
                     let rarity, mutation = pack.mutation || 'none';
                     if (pack.mutation) {
-                        const pool = discoveredNames.length ? discoveredNames : MASTER_ITEM_DB.map(i => i.name);
+                        const ownedNames = [...new Set(inventory.map(i => i.name))];
+                        const pool = ownedNames.length ? ownedNames : MASTER_ITEM_DB.map(i => i.name);
                         const name = pool[Math.floor(Math.random() * pool.length)];
-                        rarity = RARITIES.find(r => r.id === MASTER_ITEM_DB.find(i => i.name === name).rid);
+                        const dbMatch = MASTER_ITEM_DB.find(i => i.name === name) || MASTER_ITEM_DB[0];
+                        rarity = RARITIES.find(r => r.id === (dbMatch.rarityId || dbMatch.rid)) || RARITIES[0];
                         setPendingLoot(createItem(name, rarity, mutation, pack));
                     } else {
-                        const weights = { ...pack.weights };
-                        if (upgrades.luck > 0) {
-                            const shift = upgrades.luck * 2;
-                            if (weights.trash > 0) weights.trash = Math.max(0, weights.trash - shift);
-                            if (weights.common > 0) weights.common = Math.max(0, weights.common - shift * 0.5);
-                            const keys = Object.keys(weights);
-                            const top = keys[keys.length - 1];
-                            const second = keys.length > 1 ? keys[keys.length - 2] : null;
-                            if (second) weights[second] += shift * 0.5;
-                            if (top) weights[top] += shift * 0.2;
-                        }
-                        
+                        const weights = getDynamicWeights(pack, upgrades.luck);
                         const total = Object.values(weights).reduce((a, b) => a + b, 0);
                         let rand = Math.random() * total;
                         rarity = RARITIES[0];
@@ -260,32 +321,20 @@
                             if (w > 0 && rand < w) { rarity = r; break; }
                             rand -= w;
                         }
-                        const items = MASTER_ITEM_DB.filter(i => i.rid === rarity.id);
-                        const item = items[Math.floor(Math.random() * items.length)];
+                        const items = MASTER_ITEM_DB.filter(i => (i.rarityId || i.rid) === rarity.id);
+                        const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
                         setPendingLoot(createItem(item.name, rarity, 'none', pack));
                     }
-                    setIsOpening(false);
-                    setIsSealed(true);
+                    setIsOpening(false); setIsSealed(true);
                 }, 600);
             };
 
             const createItem = (name, rarity, mutation, pack) => {
-                const highTier = ['celestial', 'primordial', 'transcendent'].includes(rarity.id);
-                let currency = highTier ? 'pearl' : 'dubloon';
-                if (currency === 'dubloon' && !pack.mutation && Math.random() < (pack.pearlChance || 0)) currency = 'pearl';
-
-                const tierMult = STANDARD_PACKS.findIndex(p => p.id === pack.id) + 1 || 10;
-                const cpsBase = rarity.incomeBase * (0.8 + Math.random() * 0.4) * (tierMult * 0.2 + 0.8);
-                const cps = currency === 'pearl' ? parseFloat((cpsBase / 50).toFixed(3)) : parseFloat(cpsBase.toFixed(2));
-                const isDup = inventory.some(i => i.name === name && i.mutation === mutation && i.currency === currency);
-                
-                return {
-                    id: Date.now() + Math.random(),
-                    name, rarity, mutation, currency, cps,
-                    value: Math.floor(cps * 50),
-                    isDup,
-                    isInfused: currency === 'pearl' && !highTier
-                };
+                const isPearl = ['celestial', 'primordial', 'transcendent'].includes(rarity.id);
+                const currency = isPearl ? 'pearl' : 'dubloon';
+                const tierIdx = STANDARD_PACKS.findIndex(p => p.id === pack.id);
+                const cpsBase = rarity.incomeBase * (tierIdx === -1 ? 5 : (tierIdx * 0.3 + 1));
+                return { id: Date.now() + Math.random(), name, rarity, mutation, currency, cps: cpsBase, value: Math.floor(cpsBase * 50) };
             };
 
             const ripTape = () => {
@@ -293,23 +342,35 @@
                 setIsRipping(true);
                 setTimeout(() => {
                     setInventory(prev => [pendingLoot, ...prev]);
-                    if (!discoveredNames.includes(pendingLoot.name)) {
-                        setDiscoveredNames(prev => [...prev, pendingLoot.name]);
-                    }
-                    setLastPull(pendingLoot);
-                    setPendingLoot(null);
-                    setIsSealed(false);
-                    setIsRipping(false);
+                    setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false);
                 }, 350);
             };
 
             const sellItem = (item) => {
-                const mult = MUTATIONS[item.mutation || 'none'].mult;
-                const total = item.value * mult;
+                const itemMut = item.mutation || item.mut || 'none';
+                const total = item.value * (MUTATIONS[itemMut]?.mult || 1);
                 if (item.currency === 'pearl') setPearls(p => p + total);
                 else setDubloons(d => d + total);
                 setInventory(inv => inv.filter(i => i.id !== item.id));
                 if (lastPull?.id === item.id) setLastPull(null);
+            };
+
+            const sellAllDuplicates = () => {
+                let dIn = 0, pIn = 0;
+                const newInv = [];
+                const groups = {};
+                inventory.forEach(i => { if(!groups[i.name]) groups[i.name] = []; groups[i.name].push(i); });
+                Object.values(groups).forEach(g => {
+                    g.sort((a,b) => MUTATION_ORDER.indexOf(b.mutation || b.mut || 'none') - MUTATION_ORDER.indexOf(a.mutation || a.mut || 'none'));
+                    newInv.push(g[0]);
+                    for(let i=1; i<g.length; i++){
+                        const dup = g[i];
+                        const itemMut = dup.mutation || dup.mut || 'none';
+                        const v = dup.value * (MUTATIONS[itemMut]?.mult || 1);
+                        if(dup.currency === 'pearl') pIn += v; else dIn += v;
+                    }
+                });
+                setDubloons(d => d + dIn); setPearls(p => p + pIn); setInventory(newInv);
             };
 
             const buyUpgrade = (type) => {
@@ -321,178 +382,112 @@
                 setUpgrades(u => ({ ...u, [type]: type === 'multiplier' ? u.multiplier + 0.5 : u[type] + 1 }));
             };
 
-            const getPackStyles = (packId) => {
-                if(packId === 'driftwood') return { bg: 'bg-gradient-to-b from-orange-800 to-amber-950', seal: 'bg-amber-950', text: 'text-amber-200' };
-                if(packId === 'sunken') return { bg: 'bg-gradient-to-b from-slate-600 to-slate-800', seal: 'bg-slate-900', text: 'text-slate-300' };
-                if(packId === 'coral') return { bg: 'bg-gradient-to-b from-rose-500 to-pink-800', seal: 'bg-rose-950', text: 'text-rose-200' };
-                if(packId === 'trench') return { bg: 'bg-gradient-to-b from-blue-700 to-indigo-900', seal: 'bg-indigo-950', text: 'text-blue-200' };
-                if(packId === 'galleon') return { bg: 'bg-gradient-to-b from-amber-500 to-yellow-700', seal: 'bg-amber-900', text: 'text-amber-100' };
-                if(packId === 'leviathan') return { bg: 'bg-gradient-to-b from-teal-600 to-cyan-900', seal: 'bg-cyan-950', text: 'text-teal-200' };
-                if(packId === 'abyssal_reliquary') return { bg: 'bg-gradient-to-br from-violet-900 to-black', seal: 'bg-black', text: 'text-violet-400' };
-                if(packId === 'atlantis') return { bg: 'bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-700', seal: 'bg-amber-950', text: 'text-yellow-100' };
-                return { bg: 'bg-slate-700', seal: 'bg-slate-900', text: 'text-white' };
+            const getPackStyles = (id) => {
+                if(id === 'driftwood') return { bg: 'bg-amber-900', seal: 'bg-amber-950' };
+                if(id === 'atlantis') return { bg: 'bg-blue-900', seal: 'bg-blue-950' };
+                return { bg: 'bg-slate-700', seal: 'bg-slate-900' };
             };
-
-            const sellAllDuplicates = () => {
-                let newDubloons = dubloons;
-                let newPearls = pearls;
-                const newInventory = [];
-                const grouped = {};
-                
-                inventory.forEach(item => {
-                    if (!grouped[item.name]) grouped[item.name] = [];
-                    grouped[item.name].push(item);
-                });
-                
-                Object.values(grouped).forEach(group => {
-                    group.sort((a,b) => MUTATION_ORDER.indexOf(b.mutation || 'none') - MUTATION_ORDER.indexOf(a.mutation || 'none'));
-                    newInventory.push(group[0]); 
-                    
-                    for (let i = 1; i < group.length; i++) {
-                        const dup = group[i];
-                        const val = dup.value * MUTATIONS[dup.mutation || 'none'].mult;
-                        if(dup.currency === 'pearl') newPearls += val;
-                        else newDubloons += val;
-                    }
-                });
-                
-                setDubloons(newDubloons);
-                setPearls(newPearls);
-                setInventory(newInventory);
-            };
-
-            const actStyles = activePack ? getPackStyles(activePack.id) : getPackStyles('flotsam');
 
             return (
-                <div className="h-screen flex flex-col overflow-hidden bg-slate-950 relative">
-                    <OceanBackground />
-                    
+                <div className="h-screen flex flex-col bg-slate-950 relative overflow-hidden">
+                    {/* Fixed Background Included Directly in App to prevent React Scope issues */}
+                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-b from-cyan-900 via-blue-950 to-slate-950">
+                        {[...Array(15)].map((_, i) => (
+                            <div key={i} className="bubble" style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 15 + 5}px`, height: `${Math.random() * 15 + 5}px`, animationDuration: `${Math.random() * 5 + 5}s`, animationDelay: `${Math.random() * 5}s` }} />
+                        ))}
+                    </div>
+
                     <nav className="p-4 bg-white/10 backdrop-blur-xl border-b border-white/10 safe-pt flex justify-between items-center z-20">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded-full border border-white/5 w-36">
-                                <Icon name="Coins" size={14} className="text-amber-400 shrink-0" />
-                                <span className="text-xs font-black truncate">{formatNum(dubloons)}</span>
-                                <span className="text-[8px] text-teal-400 font-bold shrink-0">+{formatNum(incomeFlow.dubloons)}/s</span>
+                                <Icon name="Coins" size={14} className="text-amber-400 shrink-0" /><span className="text-xs font-black truncate">{formatNum(dubloons)}</span>
                             </div>
                             <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded-full border border-white/5 w-36">
-                                <Icon name="Droplet" size={14} className="text-cyan-400 shrink-0" />
-                                <span className="text-xs font-black truncate">{formatNum(pearls)}</span>
-                                <span className="text-[8px] text-cyan-400 font-bold shrink-0">+{formatNum(incomeFlow.pearls)}/s</span>
+                                <Icon name="Droplet" size={14} className="text-cyan-400 shrink-0" /><span className="text-xs font-black truncate">{formatNum(pearls)}</span>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <div className="text-[10px] font-black uppercase opacity-40">Abyssal Bounty</div>
-                            <div className="text-[9px] font-black text-teal-400 flex items-center justify-end gap-1"><Icon name="Zap" size={10}/> x{upgrades.multiplier.toFixed(1)} POWER</div>
-                        </div>
+                        <div className="text-right"><div className="text-[10px] font-black uppercase opacity-40">Abyssal Bounty</div><div className="text-[9px] font-black text-teal-400">x{upgrades.multiplier.toFixed(1)} POWER</div></div>
                     </nav>
 
                     <main className="flex-1 overflow-y-auto max-w-md mx-auto w-full p-4 flex flex-col no-scrollbar z-10">
                         <div className="flex gap-2 mb-4 shrink-0">
-                            {['shop', 'shrine', 'inventory'].map(v => (
-                                <button key={v} onClick={() => setView(v)} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[10px] border transition-all flex items-center justify-center gap-1.5 ${view === v ? 'bg-white text-black border-white shadow-xl scale-105' : 'bg-white/5 border-white/10 opacity-60 text-white'}`}>
-                                    {v === 'shop' && <Icon name="Anchor" size={12}/>}
-                                    {v === 'shrine' && <Icon name="Compass" size={12}/>}
-                                    {v === 'inventory' && <Icon name="Log" size={12}/>}
-                                    {v}
+                            {[{id:'shop',i:'Anchor'},{id:'shrine',i:'Zap'},{id:'inventory',i:'Log'}].map(t => (
+                                <button key={t.id} onClick={()=>setView(t.id)} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[10px] border transition-all flex items-center justify-center gap-2 ${view === t.id ? 'bg-white text-black' : 'bg-white/5 opacity-60'}`}>
+                                    <Icon name={t.i} size={12}/>{t.id}
                                 </button>
                             ))}
                         </div>
 
                         {view === 'shop' && (
-                            <div className="flex-1 flex flex-col overflow-hidden">
+                            <div className="flex-1 flex flex-col">
+                                <div className="text-[9px] font-black text-center text-white/40 uppercase mb-2">Hold down on a crate to view drop rates</div>
                                 <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 shrink-0 snap-x">
                                     {STANDARD_PACKS.map(p => (
-                                        <button key={p.id} disabled={isOpening || isSealed || (p.currency === 'dubloon' ? dubloons : pearls) < getPackCost(p)} onClick={() => openPack(p)} className="shrink-0 w-28 snap-start bg-white/5 border border-white/10 p-3 rounded-2xl flex flex-col items-center disabled:opacity-30">
-                                            <Icon name={p.icon} size={20} className="mb-2 text-cyan-400" />
-                                            <span className="text-[8px] font-black uppercase opacity-50 mb-1 text-white truncate w-full text-center">{p.name}</span>
-                                            <span className="text-xs font-black text-white">{p.cost === 0 ? 'FREE' : formatNum(getPackCost(p))}</span>
+                                        <button 
+                                            key={p.id} 
+                                            disabled={isOpening||isSealed||(p.currency==='dubloon'?dubloons:pearls)<getPackCost(p)} 
+                                            onTouchStart={(e) => handlePressStart(e, p)}
+                                            onTouchEnd={handlePressEnd}
+                                            onTouchMove={handlePressMove}
+                                            onMouseDown={(e) => handlePressStart(e, p)}
+                                            onMouseUp={handlePressEnd}
+                                            onMouseLeave={handlePressEnd}
+                                            onClick={(e) => handlePackClick(e, p)}
+                                            className="shrink-0 w-28 snap-start bg-white/5 border border-white/10 p-3 rounded-2xl flex flex-col items-center disabled:opacity-30 select-none cursor-pointer"
+                                            style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+                                        >
+                                            <Icon name={p.icon || 'Box'} size={20} className="mb-2 text-cyan-400 pointer-events-none" />
+                                            <span className="text-[8px] font-black uppercase opacity-50 truncate w-full text-center pointer-events-none">{p.name}</span>
+                                            <span className="text-xs font-black pointer-events-none">{p.cost === 0 ? 'FREE' : formatNum(getPackCost(p))}</span>
                                         </button>
                                     ))}
                                 </div>
-
-                                <div className={`flex-1 flex items-center justify-center rounded-[3rem] border-2 border-white/10 bg-white/5 backdrop-blur-sm relative overflow-hidden mb-4 ${lastPull ? MUTATIONS[lastPull.mutation || 'none'].glow : ''}`}>
-                                    {isOpening ? (
-                                        <div className="animate-pulse flex flex-col items-center">
-                                            <Icon name="Anchor" size={40} className="text-cyan-400 mb-4 animate-bounce" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Dredging...</span>
-                                        </div>
-                                    ) : isSealed ? (
-                                        <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer" onClick={ripTape}>
-                                            <div className={`w-40 h-56 rounded-2xl border-4 border-white/20 shadow-2xl flex flex-col items-center justify-center relative transition-all duration-300 ${isRipping ? 'scale-110 opacity-0' : 'animate-bounce'} ${actStyles.bg}`}>
-                                                <div className={`absolute top-0 left-0 right-0 h-10 bg-slate-950 flex items-center justify-center transition-all duration-300 origin-bottom-left ${isRipping ? 'translate-x-full rotate-12' : ''} ${actStyles.seal}`}>
-                                                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80 text-white">Tear Seal</span>
+                                <div className={`flex-1 flex items-center justify-center rounded-[3rem] border-2 border-white/10 bg-white/5 backdrop-blur-sm relative overflow-hidden mb-4 ${lastPull ? (MUTATIONS[lastPull.mutation || lastPull.mut || 'none']?.glow || '') : ''}`}>
+                                    {isOpening ? <div className="animate-pulse flex flex-col items-center"><Icon name="Anchor" size={40} className="text-cyan-400 animate-bounce" /></div> :
+                                     isSealed ? <div className="w-full h-full flex flex-col items-center justify-center cursor-pointer" onClick={ripTape}>
+                                            <div className={`w-40 h-56 rounded-2xl border-4 border-white/20 shadow-2xl relative transition-all duration-300 ${isRipping?'scale-110 opacity-0':'animate-bounce'} ${activePack ? getPackStyles(activePack.id).bg : 'bg-slate-700'}`}>
+                                                <div className="absolute top-0 left-0 right-0 h-10 bg-slate-950 flex items-center justify-center transition-all duration-300 origin-bottom-left ${isRipping ? 'translate-x-full rotate-12' : ''} bg-slate-950">
+                                                    <span className="text-[8px] font-black uppercase opacity-80">Tear Seal</span>
                                                 </div>
-                                                <Icon name={activePack.icon} size={48} className="text-white/40" />
                                             </div>
-                                            <div className="absolute bottom-10 flex items-center gap-2 bg-cyan-500 text-white px-6 py-3 rounded-full font-black text-xs uppercase animate-pulse shadow-lg">
-                                                <Icon name="MousePointer2" size={14} /> Tap to Open
-                                            </div>
-                                        </div>
-                                    ) : lastPull ? (
-                                        <div className={`w-full h-full p-8 flex flex-col items-center justify-center text-center ${lastPull.rarity.bg}`}>
+                                            <div className="absolute bottom-10 bg-cyan-500 px-6 py-3 rounded-full font-black text-xs uppercase animate-pulse shadow-lg text-white">Tap to Open</div>
+                                        </div> :
+                                     lastPull ? <div className={`w-full h-full p-8 flex flex-col items-center justify-center text-center ${lastPull.rarity.bg}`}>
                                             <div className="flex gap-2 mb-4 relative z-10">
-                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border border-current bg-white/90 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>
-                                                {lastPull.mutation !== 'none' && <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border border-current bg-white/90 ${MUTATIONS[lastPull.mutation].color}`}>{MUTATIONS[lastPull.mutation].label}</span>}
+                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border bg-white/90 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>
+                                                {(lastPull.mutation || lastPull.mut || 'none') !== 'none' && <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border bg-white/90 ${MUTATIONS[lastPull.mutation || lastPull.mut].color}`}>{MUTATIONS[lastPull.mutation || lastPull.mut].label}</span>}
                                             </div>
-                                            <h2 className={`text-3xl font-black leading-tight mb-6 relative z-10 ${MUTATIONS[lastPull.mutation || 'none'].color}`}>{lastPull.name}</h2>
-                                            
-                                            <div className="grid grid-cols-2 gap-4 w-full mb-6 relative z-10">
-                                                <div className="bg-slate-950/50 p-4 rounded-3xl border border-white/5">
-                                                    <span className="text-[8px] font-black uppercase opacity-50 block mb-1 text-white">Income</span>
-                                                    <div className="flex items-center justify-center gap-1 text-teal-400 font-black"><Icon name={lastPull.currency==='pearl'?'Droplet':'Coins'} size={12}/> {formatNum(lastPull.cps * MUTATIONS[lastPull.mutation].mult)}/s</div>
-                                                </div>
-                                                <div className="bg-slate-950/50 p-4 rounded-3xl border border-white/5">
-                                                    <span className="text-[8px] font-black uppercase opacity-50 block mb-1 text-white">Value</span>
-                                                    <div className="flex items-center justify-center gap-1 text-amber-400 font-black"><Icon name={lastPull.currency==='pearl'?'Droplet':'Coins'} size={12}/> {formatNum(lastPull.value * MUTATIONS[lastPull.mutation].mult)}</div>
-                                                </div>
-                                            </div>
-
-                                            <div className="w-full space-y-2 relative z-10">
-                                                <button onClick={() => sellItem(lastPull)} className="w-full bg-white text-slate-950 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Trade to Merchant</button>
-                                                <button onClick={() => setLastPull(null)} className="w-full bg-slate-950/50 text-white border border-white/10 py-3 rounded-2xl font-black text-[10px] uppercase active:scale-95 transition-all">Stow in Log</button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="opacity-20 flex flex-col items-center text-white">
-                                            <Icon name="Ship" size={60} />
-                                            <span className="text-xs font-black uppercase mt-4">Awaiting Cargo</span>
-                                        </div>
-                                    )}
+                                            <h2 className={`text-4xl font-black mb-6 tracking-tighter ${MUTATIONS[lastPull.mutation || lastPull.mut || 'none'].color}`}>{lastPull.name}</h2>
+                                            <button onClick={()=>sellItem(lastPull)} className="w-full bg-white text-slate-950 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Sell for {formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || lastPull.mut || 'none']?.mult || 1))}</button>
+                                            <button onClick={()=>setLastPull(null)} className="w-full mt-2 py-3 rounded-2xl font-black text-[10px] uppercase opacity-50">Stow in Log</button>
+                                        </div> : <div className="opacity-10 text-center text-6xl">⚓</div>}
                                 </div>
                             </div>
                         )}
 
                         {view === 'shrine' && (
-                            <div className="flex-1 overflow-y-auto pb-20 no-scrollbar space-y-6">
+                            <div className="space-y-6 overflow-y-auto no-scrollbar pb-20">
                                 <section>
-                                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2">
-                                        <Icon name="Droplet" size={12} /> Mutations
-                                    </h3>
+                                    <h3 className="text-[10px] font-black uppercase opacity-40 mb-3 flex items-center gap-2"><Icon name="Droplet" size={12}/> Mutations</h3>
                                     <div className="space-y-2">
                                         {MUTATION_PACKS.map(p => (
-                                            <button key={p.id} disabled={pearls < p.cost || isOpening || isSealed} onClick={() => openPack(p)} className="w-full bg-white/5 border border-white/10 p-4 rounded-3xl flex items-center justify-between active:scale-95 disabled:opacity-30">
+                                            <button key={p.id} disabled={pearls<p.cost} onClick={()=>openPack(p)} className="w-full bg-white/5 border border-white/10 p-4 rounded-3xl flex items-center justify-between active:scale-95 disabled:opacity-30">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${MUTATIONS[p.mutation].bg}`}>
-                                                        <Icon name={p.icon} size={24} className={MUTATIONS[p.mutation].color} />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <h4 className="font-black text-sm text-white">{p.name}</h4>
-                                                        <p className="text-[10px] opacity-50 text-white">{p.desc}</p>
-                                                    </div>
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${MUTATIONS[p.mutation].bg}`}><Icon name={p.icon || 'Sparkles'} size={24} className={MUTATIONS[p.mutation].color} /></div>
+                                                    <div className="text-left"><h4 className="font-black text-sm">{p.name}</h4><p className="text-[10px] opacity-50">{p.desc}</p></div>
                                                 </div>
-                                                <span className="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1"><Icon name="Droplet" size={10}/> {formatNum(p.cost)}</span>
+                                                <span className="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-black">{formatNum(p.cost)} P</span>
                                             </button>
                                         ))}
                                     </div>
                                 </section>
-
                                 <section>
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-white opacity-40 mb-3 flex items-center gap-2">
                                         <Icon name="Compass" size={12} /> Fleet Upgrades
                                     </h3>
                                     <div className="space-y-2">
                                         {[
-                                            { id: 'luck', name: "Siren's Blessing", icon: 'Wand2', desc: "Improves Rare+ odds.", cost: (upgrades.luck + 1) * 500, lvl: upgrades.luck },
+                                            { id: 'luck', name: "Siren's Blessing", icon: 'Wand2', desc: "+20% chance for Rare+ items.", cost: (upgrades.luck + 1) * 500, lvl: upgrades.luck },
                                             { id: 'discount', name: "Pirate's Barter", icon: 'Percent', desc: "5% Crate discount.", cost: (upgrades.discount + 1) * 1000, lvl: upgrades.discount },
                                             { id: 'multiplier', name: "Tidal Force", icon: 'Calculator', desc: "Global x0.5 multiplier.", cost: upgrades.multiplier * 2500, lvl: (upgrades.multiplier * 2 - 1) }
                                         ].map(u => (
@@ -515,72 +510,44 @@
                         )}
 
                         {view === 'inventory' && (
-                            <div className="flex-1 overflow-y-auto px-4 pb-20 no-scrollbar">
-                                <div className="bg-white/5 border border-white/10 p-5 rounded-[2rem] mb-6 flex flex-col gap-4 shadow-sm">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="text-xl font-black uppercase tracking-tighter">Captain's Log</h3>
-                                            <p className="text-[10px] font-black uppercase opacity-40">{inventory.length} Cargo Items</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={sellAllDuplicates} className="bg-amber-500/20 text-amber-400 px-3 py-2 rounded-xl text-[9px] font-black uppercase border border-amber-500/20 active:scale-95 transition-all">Sell Dups</button>
-                                            <button onClick={() => { if(window.confirm("Jettison all cargo?")) { setInventory([]); }}} className="bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-[9px] font-black uppercase border border-red-500/20 active:scale-95 transition-all">Jettison</button>
-                                        </div>
-                                    </div>
+                            <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
+                                <div className="bg-white/5 border border-white/10 p-5 rounded-[2rem] mb-6 flex justify-between items-center shrink-0 shadow-lg">
+                                    <div><h3 className="text-xl font-black uppercase tracking-tighter">Captain's Log</h3><p className="text-[10px] font-black uppercase opacity-40">{inventory.length} Cargo Items</p></div>
+                                    <button onClick={sellAllDuplicates} className="bg-amber-500/20 text-amber-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-amber-500/20 active:scale-95">Sell Dups</button>
                                 </div>
-
-                                {inventory.length === 0 && <div className="text-center py-20 opacity-20 font-black uppercase text-xs">No artifacts found.</div>}
-                                
                                 {RARITIES.map(r => {
-                                    const items = MASTER_ITEM_DB.filter(m => m.rid === r.id);
-                                    let renderedAny = false;
-                                    
-                                    const rows = items.map(m => {
-                                        const owned = inventory.filter(i => i.name === m.name);
-                                        if (owned.length === 0) return null;
-                                        
-                                        renderedAny = true;
-                                        owned.sort((a,b) => MUTATION_ORDER.indexOf(b.mutation || 'none') - MUTATION_ORDER.indexOf(a.mutation || 'none'));
-                                        
-                                        const bestItem = owned[0];
-                                        const worstItem = owned[owned.length - 1];
-                                        const count = owned.length;
-                                        const mult = MUTATIONS[bestItem.mutation || 'none'].mult;
-                                        const worstMult = MUTATIONS[worstItem.mutation || 'none'].mult;
-
-                                        return (
-                                            <div key={bestItem.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[bestItem.mutation || 'none'].bg} border-white/10 ${MUTATIONS[bestItem.mutation || 'none'].glow}`}>
-                                                <div className="flex items-center gap-4 overflow-hidden pr-2">
-                                                    <div className="shrink-0"><Icon name="BoxSelect" size={20} className={MUTATIONS[bestItem.mutation || 'none'].color} /></div>
-                                                    <div className="text-left truncate">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <h5 className="font-black text-xs truncate text-slate-900">{bestItem.name}</h5>
-                                                            {count > 1 && <span className="bg-slate-900 text-white px-1.5 py-0.5 rounded text-[8px] font-black">x{count}</span>}
-                                                            {bestItem.mutation && bestItem.mutation !== 'none' && <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border border-current ${MUTATIONS[bestItem.mutation].color} bg-white shrink-0`}>{MUTATIONS[bestItem.mutation].label}</span>}
-                                                        </div>
-                                                        <span className="text-[10px] font-black text-teal-600 flex items-center gap-1"><Icon name="Coins" size={10}/>+{formatNum(bestItem.cps * mult)}/s</span>
-                                                    </div>
-                                                </div>
-                                                <button onClick={() => sellItem(worstItem)} className="shrink-0 w-16 h-12 rounded-2xl bg-slate-950 flex flex-col items-center justify-center active:scale-90 transition-all border border-white/5">
-                                                    <span className="text-[8px] font-black text-white/50 uppercase">{count > 1 ? 'Sell Dup' : 'Sell'}</span>
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-[9px] font-black text-amber-400 truncate text-center">{formatNum(worstItem.value * worstMult)}</span>
-                                                        <Icon name={worstItem.currency === 'pearl' ? 'Droplet' : 'Coins'} size={8} className={worstItem.currency === 'pearl' ? 'text-cyan-400' : 'text-amber-400'} />
-                                                    </div>
-                                                </button>
-                                            </div>
-                                        );
-                                    });
-
-                                    if (!renderedAny) return null;
-
+                                    const items = MASTER_ITEM_DB.filter(m => (m.rarityId || m.rid) === r.id);
+                                    if (items.length === 0) return null;
                                     return (
-                                        <div key={r.id} className="pt-2">
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white opacity-40 mb-3 flex items-center gap-2">
-                                                <div className={`w-1.5 h-4 rounded-full ${r.bg.split('/')[0]}`} /> {r.label}
-                                            </h4>
+                                        <div key={r.id} className="mb-8">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white opacity-40 mb-3 flex items-center gap-2"><div className={`w-1.5 h-4 rounded-full ${r.bg.split(' ')[0]}`} /> {r.label}</h4>
                                             <div className="space-y-2">
-                                                {rows}
+                                                {items.map(m => {
+                                                    const owned = inventory.filter(i => i.name === m.name);
+                                                    if (!owned.length) return <div key={m.name} className="p-4 rounded-3xl border-2 border-dashed border-white/5 opacity-20 flex items-center gap-4"><Icon name="Lock" size={16} /><span className="text-[10px] font-black uppercase">{m.name}</span></div>;
+                                                    
+                                                    owned.sort((a,b) => MUTATION_ORDER.indexOf(b.mutation || b.mut || 'none') - MUTATION_ORDER.indexOf(a.mutation || a.mut || 'none'));
+                                                    const best = owned[0]; 
+                                                    const worst = owned[owned.length-1];
+                                                    const bestMut = best.mutation || best.mut || 'none';
+                                                    const worstMut = worst.mutation || worst.mut || 'none';
+                                                    
+                                                    return (
+                                                        <div key={best.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[bestMut]?.bg || 'bg-white/90'} border-white/10 ${MUTATIONS[bestMut]?.glow || ''}`}>
+                                                            <div className="flex items-center gap-4 truncate">
+                                                                <Icon name="Box" size={20} className={MUTATIONS[bestMut]?.color || 'text-slate-900'} />
+                                                                <div className="text-left truncate">
+                                                                    <div className="flex items-center gap-2"><h5 className="font-black text-xs truncate text-slate-900">{best.name}</h5>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 py-0.5 rounded text-[8px] font-black">x{owned.length}</span>}</div>
+                                                                    <span className="text-[10px] font-black text-teal-600">+{formatNum(best.cps * (MUTATIONS[bestMut]?.mult || 1))}/s</span>
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={()=>sellItem(worst)} className="shrink-0 w-14 h-12 rounded-2xl bg-slate-950 flex flex-col items-center justify-center active:scale-90 border border-white/5">
+                                                                <span className="text-[8px] font-black text-white/50 uppercase">{owned.length>1?'Dup':'Sell'}</span>
+                                                                <span className="text-[9px] font-black text-amber-400">{formatNum(worst.value * (MUTATIONS[worstMut]?.mult || 1))}</span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     );
@@ -589,15 +556,59 @@
                         )}
                     </main>
 
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-[9px] font-black text-white/50 uppercase pointer-events-none">
-                        Auto-Saving...
-                    </div>
+                    {/* DROP RATES MODAL */}
+                    {inspectedPack && (
+                        <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" onClick={() => setInspectedPack(null)}>
+                            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setInspectedPack(null)} className="absolute top-4 right-4 text-slate-500 p-2">
+                                    <Icon name="X" size={20} />
+                                </button>
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700">
+                                        <Icon name={inspectedPack.icon || 'Box'} size={24} className="text-cyan-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-white">{inspectedPack.name}</h3>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-widest">Drop Rates</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-2 max-h-[50vh] overflow-y-auto no-scrollbar pb-2">
+                                    {RARITIES.map(r => {
+                                        const dynamicWeights = getDynamicWeights(inspectedPack, upgrades.luck);
+                                        const total = Object.values(dynamicWeights).reduce((a, b) => a + b, 0);
+                                        const w = dynamicWeights[r.id] || 0;
+                                        const pct = (w / total) * 100;
+                                        if (pct === 0) return null;
+                                        
+                                        let displayPct;
+                                        if (pct >= 10) displayPct = pct.toFixed(1) + '%';
+                                        else if (pct >= 1) displayPct = pct.toFixed(2) + '%';
+                                        else if (pct >= 0.001) displayPct = pct.toFixed(4) + '%';
+                                        else if (pct >= 0.00001) displayPct = pct.toFixed(6) + '%';
+                                        else displayPct = pct.toFixed(9) + '%';
+
+                                        return (
+                                            <div key={r.id} className="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                                                <span className={`text-[11px] font-black uppercase tracking-wider ${r.color}`}>{r.label}</span>
+                                                <span className="text-[11px] font-mono font-bold text-white/80">{displayPct}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<App />);
+        
+        // Remove loading screen once React is mounted
+        document.getElementById('loading-screen').style.display = 'none';
     </script>
 </body>
 </html>
