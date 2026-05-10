@@ -27,6 +27,7 @@
         .animate-float { animation: gentle-float 3s ease-in-out infinite; }
         @keyframes pack-shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
         .animate-shake-slow { animation: pack-shake 0.35s ease-in-out infinite; }
+        @keyframes drift { 0% { transform: translate(0, 0); } 33% { transform: translate(15px, -15px); } 66% { transform: translate(-15px, 10px); } 100% { transform: translate(0, 0); } }
     </style>
 </head>
 <body>
@@ -40,7 +41,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- HARDCODED ICONS (Stable for all browsers) ---
+        // --- HARDCODED ICONS ---
         const Icon = ({ name, size = 16, className = "" }) => {
             const icons = {
                 Coins: <path d="M11 15h2M8 15h.01M16 15h.01M3 11a9 9 0 0 1 18 0v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7Z"/>,
@@ -89,75 +90,63 @@
 
         // --- GAME CONSTANTS ---
         const RARITIES = [
-            { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.05, pearlChance: 0.05, setPrize: { amt: 5000, curr: 'dubloon' } },
-            { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 0.2, pearlChance: 0.10, setPrize: { amt: 50000, curr: 'dubloon' } },
-            { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 1.0, pearlChance: 0.15, setPrize: { amt: 500000, curr: 'dubloon' } },
-            { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 4.5, pearlChance: 0.20, setPrize: { amt: 5000000, curr: 'dubloon' } },
-            { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 18.0, pearlChance: 0.30, setPrize: { amt: 150000000, curr: 'dubloon' } },
-            { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 80.0, pearlChance: 0.50, setPrize: { amt: 5000000000, curr: 'dubloon' } },
-            { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 350.0, pearlChance: 0.75, setPrize: { amt: 250000000000, curr: 'dubloon' } },
-            { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 2000.0, pearlChance: 1.0, setPrize: { amt: 1000000, curr: 'pearl' } },
-            { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 15000.0, pearlChance: 1.0, setPrize: { amt: 50000000, curr: 'pearl' } },
-            { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 100000.0, pearlChance: 1.0, setPrize: { amt: 5000000000, curr: 'pearl' } },
+            { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.05, pearlChance: 0.05, setPrize: { amt: 5000, curr: 'dubloon' }, transferCost: { amt: 2500, curr: 'dubloon' } },
+            { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 0.2, pearlChance: 0.10, setPrize: { amt: 50000, curr: 'dubloon' }, transferCost: { amt: 25000, curr: 'dubloon' } },
+            { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 1.0, pearlChance: 0.15, setPrize: { amt: 500000, curr: 'dubloon' }, transferCost: { amt: 250000, curr: 'dubloon' } },
+            { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 4.5, pearlChance: 0.20, setPrize: { amt: 5000000, curr: 'dubloon' }, transferCost: { amt: 2500000, curr: 'dubloon' } },
+            { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 18.0, pearlChance: 0.30, setPrize: { amt: 150000000, curr: 'dubloon' }, transferCost: { amt: 50000000, curr: 'dubloon' } },
+            { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 80.0, pearlChance: 0.50, setPrize: { amt: 5000000000, curr: 'dubloon' }, transferCost: { amt: 1500000000, curr: 'dubloon' } },
+            { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 350.0, pearlChance: 0.75, setPrize: { amt: 250000000000, curr: 'dubloon' }, transferCost: { amt: 75000000000, curr: 'dubloon' } },
+            { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 2000.0, pearlChance: 1.0, setPrize: { amt: 1000000, curr: 'pearl' }, transferCost: { amt: 250000, curr: 'pearl' } },
+            { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 15000.0, pearlChance: 1.0, setPrize: { amt: 50000000, curr: 'pearl' }, transferCost: { amt: 15000000, curr: 'pearl' } },
+            { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 100000.0, pearlChance: 1.0, setPrize: { amt: 5000000000, curr: 'pearl' }, transferCost: { amt: 1000000000, curr: 'pearl' } },
         ];
 
         const MUTATION_ORDER = ['none', 'glimmering', 'bioluminescent', 'cursed', 'abyssal', 'void_touched', 'prismatic', 'ethereal'];
         const MUTATIONS = {
             none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
-            glimmering: { label: 'Glimmering', mult: 1.5, bg: 'bg-yellow-50/90', color: 'text-yellow-600' },
-            bioluminescent: { label: 'Bioluminescent', mult: 3, bg: 'bg-lime-50/90', color: 'text-lime-600' },
-            cursed: { label: 'Cursed', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700' },
-            abyssal: { label: 'Abyssal', mult: 15, bg: 'bg-violet-50/90', color: 'text-violet-700' },
-            void_touched: { label: 'Void-Touched', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100' },
-            prismatic: { label: 'Prismatic', mult: 100, bg: 'bg-fuchsia-50/90', color: 'text-fuchsia-600' },
-            ethereal: { label: 'Ethereal', mult: 500, bg: 'bg-white/95', color: 'text-cyan-400' }
+            glimmering: { label: 'Glimmering', mult: 1.5, bg: 'bg-yellow-50/90', color: 'text-yellow-600', glow: 'shadow-[0_0_15px_rgba(202,138,4,0.6)]' },
+            bioluminescent: { label: 'Bioluminescent', mult: 3, bg: 'bg-lime-50/90', color: 'text-lime-600', glow: 'shadow-[0_0_15px_rgba(101,163,13,0.6)]' },
+            cursed: { label: 'Cursed', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.6)]' },
+            abyssal: { label: 'Abyssal', mult: 15, bg: 'bg-violet-50/90', color: 'text-violet-700', glow: 'shadow-[0_0_15px_rgba(109,40,217,0.6)]' },
+            void_touched: { label: 'Void-Touched', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100', glow: 'shadow-[0_0_15px_rgba(241,245,249,0.4)]' },
+            prismatic: { label: 'Prismatic', mult: 100, bg: 'bg-fuchsia-50/90', color: 'text-fuchsia-600', glow: 'shadow-[0_0_15px_rgba(192,38,211,0.6)]' },
+            ethereal: { label: 'Ethereal', mult: 500, bg: 'bg-white/95', color: 'text-cyan-400', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.8)]' }
         };
 
-        // --- MASSIVE 100-ITEM DATABASE INCLUDING SEA CREATURES ---
         const MASTER_ITEM_DB = [
-            // Trash (10)
-            { name: "Soggy Seaweed", rarityId: "trash" }, { name: "Empty Can", rarityId: "trash" }, { name: "Waterlogged Boot", rarityId: "trash" },
-            { name: "Rusty Nail", rarityId: "trash" }, { name: "Muck Pile", rarityId: "trash" }, { name: "Plastic Bag", rarityId: "trash" },
-            { name: "Old Tire", rarityId: "trash" }, { name: "Broken Fishing Rod", rarityId: "trash" }, { name: "Driftwood", rarityId: "trash" }, { name: "Torn Net", rarityId: "trash" },
-            // Common (10)
-            { name: "Barnacle Shell", rarityId: "common" }, { name: "Kelp Frond", rarityId: "common" }, { name: "Sea Glass", rarityId: "common" },
-            { name: "Starfish", rarityId: "common" }, { name: "Sea Cucumber", rarityId: "common" }, { name: "Anchovy", rarityId: "common" },
-            { name: "Sardine", rarityId: "common" }, { name: "Rusty Anchor Link", rarityId: "common" }, { name: "Sailor's Flask", rarityId: "common" }, { name: "Coral Branch", rarityId: "common" },
-            // Uncommon (10)
-            { name: "Shark Tooth", rarityId: "uncommon" }, { name: "Pearl Oyster", rarityId: "uncommon" }, { name: "Sunken Compass", rarityId: "uncommon" },
-            { name: "Lanternfish", rarityId: "uncommon" }, { name: "Pufferfish", rarityId: "uncommon" }, { name: "Stingray", rarityId: "uncommon" },
-            { name: "Moray Eel", rarityId: "uncommon" }, { name: "Pirate Medallion", rarityId: "uncommon" }, { name: "Iron Harpoon", rarityId: "uncommon" }, { name: "Message in a Bottle", rarityId: "uncommon" },
-            // Rare (10)
-            { name: "Glowing Urchin", rarityId: "rare" }, { name: "Angler Lure", rarityId: "rare" }, { name: "Swordfish", rarityId: "rare" },
-            { name: "Hammerhead Shark", rarityId: "rare" }, { name: "Merfolk Dagger", rarityId: "rare" }, { name: "Aquamarine Shard", rarityId: "rare" },
-            { name: "Shipwheel Spoke", rarityId: "rare" }, { name: "Octopus", rarityId: "rare" }, { name: "Sea Turtle", rarityId: "rare" }, { name: "Bio-Jellyfish", rarityId: "rare" },
-            // Epic (10)
-            { name: "Kraken Tentacle", rarityId: "epic" }, { name: "Triton Conch", rarityId: "epic" }, { name: "Whirlpool Core", rarityId: "epic" },
-            { name: "Great White Shark", rarityId: "epic" }, { name: "Giant Squid", rarityId: "epic" }, { name: "Oarfish", rarityId: "epic" },
-            { name: "Captain's Logbook", rarityId: "epic" }, { name: "Siren Feather", rarityId: "epic" }, { name: "Abyssal Lantern", rarityId: "epic" }, { name: "Manta Ray", rarityId: "epic" },
-            // Legendary (10)
-            { name: "Heart of Ocean", rarityId: "legendary" }, { name: "Poseidon Trident", rarityId: "legendary" }, { name: "Megalodon Fang", rarityId: "legendary" },
-            { name: "Siren's Tear", rarityId: "legendary" }, { name: "Tidal Anchor", rarityId: "legendary" }, { name: "Sea Dragon Scale", rarityId: "legendary" },
-            { name: "Orca", rarityId: "legendary" }, { name: "Whale Shark", rarityId: "legendary" }, { name: "Coelacanth", rarityId: "legendary" }, { name: "Deep Sea Behemoth", rarityId: "legendary" },
-            // Mythic (10)
-            { name: "Leviathan Engine", rarityId: "mythic" }, { name: "Ocean Singularity", rarityId: "mythic" }, { name: "Breath of Sea", rarityId: "mythic" },
-            { name: "Abyssal Pulse", rarityId: "mythic" }, { name: "Trench Core", rarityId: "mythic" }, { name: "Blue Whale", rarityId: "mythic" },
-            { name: "Giant Isopod", rarityId: "mythic" }, { name: "Kraken Eye", rarityId: "mythic" }, { name: "Abyssal Worm", rarityId: "mythic" }, { name: "Sunken Crown", rarityId: "mythic" },
-            // Celestial (10)
-            { name: "Stardust Coral", rarityId: "celestial" }, { name: "Astral Pearl", rarityId: "celestial" }, { name: "Moon-Tide Amulet", rarityId: "celestial" },
-            { name: "Zodiac Compass", rarityId: "celestial" }, { name: "Solar Relic", rarityId: "celestial" }, { name: "Celestial Ray", rarityId: "celestial" },
-            { name: "Star-Eater Shark", rarityId: "celestial" }, { name: "Nebula Jelly", rarityId: "celestial" }, { name: "Lunar Whale", rarityId: "celestial" }, { name: "Comet Fragment", rarityId: "celestial" },
-            // Primordial (10)
-            { name: "Genesis Drop", rarityId: "primordial" }, { name: "Yggdrasil Root", rarityId: "primordial" }, { name: "The First Tear", rarityId: "primordial" },
-            { name: "Earth Core", rarityId: "primordial" }, { name: "Precursor Shard", rarityId: "primordial" }, { name: "Primordial Leviathan", rarityId: "primordial" },
-            { name: "Ancestral Kraken", rarityId: "primordial" }, { name: "Ocean Droplet", rarityId: "primordial" }, { name: "Earth-Shaker Crab", rarityId: "primordial" }, { name: "Time-Lost Fossil", rarityId: "primordial" },
-            // Transcendent (10)
-            { name: "Time Anchor", rarityId: "transcendent" }, { name: "Reality Shard", rarityId: "transcendent" }, { name: "Infinite Ocean", rarityId: "transcendent" },
-            { name: "Cosmos Whisper", rarityId: "transcendent" }, { name: "Eternity Prism", rarityId: "transcendent" }, { name: "Cosmic Whale", rarityId: "transcendent" },
-            { name: "Astral Serpent", rarityId: "transcendent" }, { name: "Void-Swimmer", rarityId: "transcendent" }, { name: "Dimension Rift", rarityId: "transcendent" }, { name: "Creator's Pearl", rarityId: "transcendent" }
+            { name: "Soggy Seaweed", rarityId: "trash", e: "🌿" }, { name: "Empty Can", rarityId: "trash", e: "🥫" }, { name: "Waterlogged Boot", rarityId: "trash", e: "👢" },
+            { name: "Rusty Nail", rarityId: "trash", e: "🔩" }, { name: "Muck Pile", rarityId: "trash", e: "💩" }, { name: "Plastic Bag", rarityId: "trash", e: "🛍️" },
+            { name: "Old Tire", rarityId: "trash", e: "🛞" }, { name: "Broken Fishing Rod", rarityId: "trash", e: "🎣" }, { name: "Driftwood", rarityId: "trash", e: "🪵" }, { name: "Torn Net", rarityId: "trash", e: "🕸️" },
+            { name: "Barnacle Shell", rarityId: "common", e: "🐚" }, { name: "Kelp Frond", rarityId: "common", e: "🍃" }, { name: "Sea Glass", rarityId: "common", e: "🪞" },
+            { name: "Starfish", rarityId: "common", e: "⭐" }, { name: "Sea Cucumber", rarityId: "common", e: "🥒" }, { name: "Anchovy", rarityId: "common", e: "🐟" },
+            { name: "Sardine", rarityId: "common", e: "🐠" }, { name: "Rusty Anchor Link", rarityId: "common", e: "⛓️" }, { name: "Sailor's Flask", rarityId: "common", e: "🫙" }, { name: "Coral Branch", rarityId: "common", e: "🪸" },
+            { name: "Shark Tooth", rarityId: "uncommon", e: "🦷" }, { name: "Pearl Oyster", rarityId: "uncommon", e: "🦪" }, { name: "Sunken Compass", rarityId: "uncommon", e: "🧭" },
+            { name: "Lanternfish", rarityId: "uncommon", e: "🏮" }, { name: "Pufferfish", rarityId: "uncommon", e: "🐡" }, { name: "Stingray", rarityId: "uncommon", e: "🪁" },
+            { name: "Moray Eel", rarityId: "uncommon", e: "🐍" }, { name: "Pirate Medallion", rarityId: "uncommon", e: "🪙" }, { name: "Iron Harpoon", rarityId: "uncommon", e: "🪝" }, { name: "Message in a Bottle", rarityId: "uncommon", e: "🍾" },
+            { name: "Glowing Urchin", rarityId: "rare", e: "🦔" }, { name: "Angler Lure", rarityId: "rare", e: "💡" }, { name: "Swordfish", rarityId: "rare", e: "🗡️" },
+            { name: "Hammerhead Shark", rarityId: "rare", e: "🦈" }, { name: "Merfolk Dagger", rarityId: "rare", e: "🔱" }, { name: "Aquamarine Shard", rarityId: "rare", e: "💎" },
+            { name: "Shipwheel Spoke", rarityId: "rare", e: "🎡" }, { name: "Octopus", rarityId: "rare", e: "🐙" }, { name: "Sea Turtle", rarityId: "rare", e: "🐢" }, { name: "Bio-Jellyfish", rarityId: "rare", e: "🪼" },
+            { name: "Kraken Tentacle", rarityId: "epic", e: "🦑" }, { name: "Triton Conch", rarityId: "epic", e: "📯" }, { name: "Whirlpool Core", rarityId: "epic", e: "🌀" },
+            { name: "Great White Shark", rarityId: "epic", e: "🦈" }, { name: "Giant Squid", rarityId: "epic", e: "🦑" }, { name: "Oarfish", rarityId: "epic", e: "🎏" },
+            { name: "Captain's Logbook", rarityId: "epic", e: "📓" }, { name: "Siren Feather", rarityId: "epic", e: "🪶" }, { name: "Abyssal Lantern", rarityId: "epic", e: "🏮" }, { name: "Manta Ray", rarityId: "epic", e: "🪁" },
+            { name: "Heart of Ocean", rarityId: "legendary", e: "💙" }, { name: "Poseidon Trident", rarityId: "legendary", e: "🔱" }, { name: "Megalodon Fang", rarityId: "legendary", e: "🦷" },
+            { name: "Siren's Tear", rarityId: "legendary", e: "💧" }, { name: "Tidal Anchor", rarityId: "legendary", e: "⚓" }, { name: "Sea Dragon Scale", rarityId: "legendary", e: "🐉" },
+            { name: "Orca", rarityId: "legendary", e: "🐋" }, { name: "Whale Shark", rarityId: "legendary", e: "🦈" }, { name: "Coelacanth", rarityId: "legendary", e: "🐟" }, { name: "Deep Sea Behemoth", rarityId: "legendary", e: "🦕" },
+            { name: "Leviathan Engine", rarityId: "mythic", e: "⚙️" }, { name: "Ocean Singularity", rarityId: "mythic", e: "🕳️" }, { name: "Breath of Sea", rarityId: "mythic", e: "💨" },
+            { name: "Abyssal Pulse", rarityId: "mythic", e: "🫀" }, { name: "Trench Core", rarityId: "mythic", e: "🌋" }, { name: "Blue Whale", rarityId: "mythic", e: "🐳" },
+            { name: "Giant Isopod", rarityId: "mythic", e: "🪲" }, { name: "Kraken Eye", rarityId: "mythic", e: "👁️" }, { name: "Abyssal Worm", rarityId: "mythic", e: "🪱" }, { name: "Sunken Crown", rarityId: "mythic", e: "👑" },
+            { name: "Stardust Coral", rarityId: "celestial", e: "✨" }, { name: "Astral Pearl", rarityId: "celestial", e: "🔮" }, { name: "Moon-Tide Amulet", rarityId: "celestial", e: "🧿" },
+            { name: "Zodiac Compass", rarityId: "celestial", e: "🧭" }, { name: "Solar Relic", rarityId: "celestial", e: "☀️" }, { name: "Celestial Ray", rarityId: "celestial", e: "☄️" },
+            { name: "Star-Eater Shark", rarityId: "celestial", e: "🌌" }, { name: "Nebula Jelly", rarityId: "celestial", e: "🪼" }, { name: "Lunar Whale", rarityId: "celestial", e: "🐋" }, { name: "Comet Fragment", rarityId: "celestial", e: "☄️" },
+            { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The First Tear", rarityId: "primordial", e: "💧" },
+            { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" },
+            { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
+            { name: "Time Anchor", rarityId: "transcendent", e: "⏳" }, { name: "Reality Shard", rarityId: "transcendent", e: "🪞" }, { name: "Infinite Ocean", rarityId: "transcendent", e: "🌌" },
+            { name: "Cosmos Whisper", rarityId: "transcendent", e: "🗣️" }, { name: "Eternity Prism", rarityId: "transcendent", e: "⏏️" }, { name: "Cosmic Whale", rarityId: "transcendent", e: "🐋" },
+            { name: "Astral Serpent", rarityId: "transcendent", e: "🐉" }, { name: "Void-Swimmer", rarityId: "transcendent", e: "🏊" }, { name: "Dimension Rift", rarityId: "transcendent", e: "🌌" }, { name: "Creator's Pearl", rarityId: "transcendent", e: "⚪" }
         ];
 
-        // --- EXCITING RATES ---
         const STANDARD_PACKS = [
             { id: 'flotsam', name: 'Flotsam Crate', cost: 0, currency: 'dubloon', icon: 'Waves', 
               weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
@@ -187,6 +176,49 @@
             { id: 'ethereal_pack', name: 'Ethereal Ascension', cost: 25000000, mutation: 'ethereal', desc: 'Mutate (500x).', icon: 'Waves' },
         ];
 
+        // --- THE AQUARIUM ENTITY ---
+        const AquariumEntity = React.memo(({ item }) => {
+            const x = useMemo(() => 5 + Math.random() * 80, []); 
+            const y = useMemo(() => 5 + Math.random() * 80, []);
+            const dur = useMemo(() => 10 + Math.random() * 15, []);
+            const delay = useMemo(() => Math.random() * -30, []);
+            
+            const mutKey = item.mutation || item.mut || 'none';
+            const mutConfig = MUTATIONS[mutKey];
+            const colorClass = mutConfig?.color || 'text-white';
+            
+            const rgbMatch = mutConfig?.glow?.match(/rgba\([^)]+\)/);
+            const dropShadow = rgbMatch ? `drop-shadow(0 0 12px ${rgbMatch[0]})` : 'drop-shadow(0 0 4px rgba(255,255,255,0.1))';
+            
+            const rarityLevels = ['trash', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
+            const rarityIdx = rarityLevels.indexOf(item.rarity.id);
+            const scale = 0.8 + (rarityIdx * 0.25); 
+            
+            const dbItem = MASTER_ITEM_DB.find(db => db.name === item.name);
+            const emoji = dbItem?.e || '🐟';
+            
+            return (
+                <div 
+                    className="absolute pointer-events-auto z-10"
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                >
+                    <div 
+                        style={{ animation: `drift ${dur}s ease-in-out ${delay}s infinite alternate` }}
+                        className="flex flex-col items-center justify-center group"
+                    >
+                        <div style={{ transform: `scale(${scale})` }} className="flex flex-col items-center relative">
+                            <div style={{ filter: dropShadow }} className="text-2xl transition-transform duration-500 ease-in-out transform group-hover:scale-125 cursor-pointer">
+                                {emoji}
+                            </div>
+                            <span className={`absolute top-full mt-1 pointer-events-none text-[5px] font-black uppercase tracking-wider whitespace-nowrap bg-slate-950/90 px-1.5 py-0.5 rounded-md border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${colorClass} shadow-lg z-50`}>
+                                {item.name} {item.currency === 'pearl' ? '✨' : ''}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
         const App = () => {
             const [dubloons, setDubloons] = useState(100);
             const [pearls, setPearls] = useState(0);
@@ -202,6 +234,12 @@
             const [lastPull, setLastPull] = useState(null);
             const [claimedSets, setClaimedSets] = useState([]);
             const [expandedRewardRarity, setExpandedRewardRarity] = useState(null);
+            
+            // Altar States
+            const [altarMode, setAltarMode] = useState('ascend');
+            const [transferSacrifice, setTransferSacrifice] = useState(null);
+            const [transferTarget, setTransferTarget] = useState(null);
+            const [inventoryModal, setInventoryModal] = useState(null);
             
             const [inspectedPack, setInspectedPack] = useState(null);
             const holdTimer = useRef(null);
@@ -244,7 +282,9 @@
                         bestItems[itemName] = item;
                     }
                 });
-                return Object.values(bestItems).reduce((acc, item) => {
+                
+                const list = Object.values(bestItems);
+                const totals = list.reduce((acc, item) => {
                     const itemMut = item.mutation || item.mut || 'none';
                     const mult = MUTATIONS[itemMut]?.mult || 1;
                     const val = (item.cps || 0) * mult;
@@ -252,15 +292,17 @@
                     else acc.dubloons += val;
                     return acc;
                 }, { dubloons: 0, pearls: 0 });
+                
+                return { income: totals, bestItemsList: list };
             }, [inventory]);
 
             useEffect(() => {
                 const timer = setInterval(() => {
-                    setDubloons(d => d + (incomeFlow.dubloons * upgrades.multiplier / 10));
-                    setPearls(p => p + (incomeFlow.pearls * upgrades.multiplier / 10));
+                    setDubloons(d => d + (incomeFlow.income.dubloons * upgrades.multiplier / 10));
+                    setPearls(p => p + (incomeFlow.income.pearls * upgrades.multiplier / 10));
                 }, 100);
                 return () => clearInterval(timer);
-            }, [incomeFlow, upgrades.multiplier]);
+            }, [incomeFlow.income, upgrades.multiplier]);
 
             const getDynamicWeights = (pack, luckLvl) => {
                 if(!pack.weights) return {};
@@ -349,9 +391,9 @@
             const createItem = (name, rarity, mutation, pack) => {
                 const isPearl = Math.random() < (rarity.pearlChance || 0);
                 const currency = isPearl ? 'pearl' : 'dubloon';
-                const tierIdx = STANDARD_PACKS.findIndex(p => p.id === pack.id);
+                const tierIdx = pack ? STANDARD_PACKS.findIndex(p => p.id === pack.id) : -1;
                 const cpsBase = rarity.incomeBase * (tierIdx === -1 ? 5 : (tierIdx * 0.3 + 1));
-                return { id: Date.now() + Math.random(), name, rarity, mutation, currency, cps: cpsBase, value: Math.floor(cpsBase * 50) };
+                return { id: Date.now() + Math.random(), name, rarity, mutation: mutation || 'none', currency, cps: cpsBase, value: Math.floor(cpsBase * 50) };
             };
 
             const ripTape = () => {
@@ -447,9 +489,74 @@
                 setClaimedSets(prev => [...prev, claimId]);
             };
 
+            const getDuplicatesForRarity = (rarityId) => {
+                const owned = inventory.filter(i => i.rarity.id === rarityId);
+                const groups = {};
+                owned.forEach(i => { if(!groups[i.name]) groups[i.name] = []; groups[i.name].push(i); });
+                const dupes = [];
+                Object.values(groups).forEach(g => {
+                    if (g.length > 1) {
+                        g.sort(sortItems);
+                        dupes.push(...g.slice(1));
+                    }
+                });
+                return dupes;
+            };
+
+            // --- ALTAR LOGIC ---
+            const handleAscend = (currentRarityId, nextRarity) => {
+                const dupes = getDuplicatesForRarity(currentRarityId);
+                const worst5 = dupes.sort(sortItems).reverse().slice(0, 5);
+                
+                let bestMutIdx = 0;
+                worst5.forEach(i => {
+                    const mutIdx = MUTATION_ORDER.indexOf(i.mutation || i.mut || 'none');
+                    if (mutIdx > bestMutIdx) bestMutIdx = mutIdx;
+                });
+                const inheritedMut = MUTATION_ORDER[bestMutIdx];
+
+                const items = MASTER_ITEM_DB.filter(i => (i.rarityId || i.rid) === nextRarity.id);
+                const randomDbItem = items[Math.floor(Math.random() * items.length)];
+                
+                const newItem = createItem(randomDbItem.name, nextRarity, inheritedMut, null);
+
+                const idsToRemove = worst5.map(i => i.id);
+                setInventory(prev => [newItem, ...prev.filter(i => !idsToRemove.includes(i.id))]);
+                setLastPull(newItem);
+            };
+
+            const getTransferCost = (targetItem) => {
+                if (!targetItem) return null;
+                return targetItem.rarity.transferCost;
+            };
+
+            const handleTransfer = () => {
+                const costObj = getTransferCost(transferTarget);
+                if (!costObj || !transferSacrifice) return;
+
+                if (costObj.curr === 'pearl') {
+                    if (pearls < costObj.amt) return;
+                    setPearls(p => p - costObj.amt);
+                } else {
+                    if (dubloons < costObj.amt) return;
+                    setDubloons(d => d - costObj.amt);
+                }
+                
+                const newTarget = { ...transferTarget, mutation: transferSacrifice.mutation };
+                
+                setInventory(prev => {
+                    const filtered = prev.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id);
+                    return [newTarget, ...filtered];
+                });
+                
+                setTransferSacrifice(null);
+                setTransferTarget(null);
+                setLastPull(newTarget);
+            };
+
             return (
                 <div className="h-screen flex flex-col bg-slate-950 relative overflow-hidden">
-                    {/* Fixed Background Included Directly in App to prevent React Scope issues */}
+                    {/* Background Bubbles */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-b from-cyan-900 via-blue-950 to-slate-950">
                         {[...Array(15)].map((_, i) => (
                             <div key={i} className="bubble" style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 15 + 5}px`, height: `${Math.random() * 15 + 5}px`, animationDuration: `${Math.random() * 5 + 5}s`, animationDelay: `${Math.random() * 5}s` }} />
@@ -463,14 +570,14 @@
                                     <Icon name="Coins" size={14} className="text-amber-400 shrink-0" />
                                     <span className="text-xs font-black truncate">{formatNum(dubloons)}</span>
                                 </div>
-                                <span className="text-[9px] font-black text-amber-400/60">+{formatNum(incomeFlow.dubloons * upgrades.multiplier)}/s</span>
+                                <span className="text-[9px] font-black text-amber-400/60">+{formatNum(incomeFlow.income.dubloons * upgrades.multiplier)}/s</span>
                             </div>
                             <div className="flex items-center justify-between bg-slate-900/80 px-3 py-1 rounded-full border border-white/5 w-44">
                                 <div className="flex items-center gap-2">
                                     <Icon name="Droplet" size={14} className="text-cyan-400 shrink-0" />
                                     <span className="text-xs font-black truncate">{formatNum(pearls)}</span>
                                 </div>
-                                <span className="text-[9px] font-black text-cyan-400/60">+{formatNum(incomeFlow.pearls * upgrades.multiplier)}/s</span>
+                                <span className="text-[9px] font-black text-cyan-400/60">+{formatNum(incomeFlow.income.pearls * upgrades.multiplier)}/s</span>
                             </div>
                         </div>
                         <div className="text-right"><div className="text-[10px] font-black uppercase opacity-40">Abyssal Bounty</div><div className="text-[9px] font-black text-teal-400">x{upgrades.multiplier.toFixed(1)} POWER</div></div>
@@ -478,9 +585,9 @@
 
                     <main className="flex-1 overflow-y-auto max-w-md mx-auto w-full p-4 flex flex-col no-scrollbar z-10">
                         <div className="flex gap-2 mb-4 shrink-0">
-                            {[{id:'shop',i:'Anchor'},{id:'shrine',i:'Zap'},{id:'inventory',i:'Log'}].map(t => (
-                                <button key={t.id} onClick={()=>setView(t.id)} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[10px] border transition-all flex items-center justify-center gap-2 ${view === t.id ? 'bg-white text-black' : 'bg-white/5 opacity-60'}`}>
-                                    <Icon name={t.i} size={12}/>{t.id}
+                            {[{id:'shop',i:'Anchor'},{id:'aquarium',i:'Fish'},{id:'altar',i:'Flame'},{id:'shrine',i:'Zap'},{id:'inventory',i:'Log'}].map(t => (
+                                <button key={t.id} onClick={()=>setView(t.id)} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[9px] border transition-all flex items-center justify-center gap-1.5 ${view === t.id ? 'bg-white text-black' : 'bg-white/5 opacity-60'}`}>
+                                    <Icon name={t.i} size={12}/> <span className="hidden sm:inline">{t.id}</span><span className="sm:hidden">{t.id.slice(0,3)}</span>
                                 </button>
                             ))}
                         </div>
@@ -526,14 +633,127 @@
                                                 <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border bg-white/90 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>
                                                 {(lastPull.mutation || lastPull.mut || 'none') !== 'none' && <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border bg-white/90 ${MUTATIONS[lastPull.mutation || lastPull.mut].color}`}>{MUTATIONS[lastPull.mutation || lastPull.mut].label}</span>}
                                             </div>
+                                            <div className="text-6xl mb-4 drop-shadow-lg">{MASTER_ITEM_DB.find(db=>db.name===lastPull.name)?.e || '🐟'}</div>
                                             <h2 className={`text-4xl font-black mb-2 tracking-tighter ${MUTATIONS[lastPull.mutation || lastPull.mut || 'none'].color}`}>{lastPull.name}</h2>
                                             <div className="mb-6 flex items-center justify-center gap-1.5 bg-slate-900/50 px-3 py-1.5 rounded-full border border-white/10">
                                                 <Icon name={lastPull.currency === 'pearl' ? 'Droplet' : 'Coins'} size={12} className={lastPull.currency === 'pearl' ? 'text-cyan-400' : 'text-amber-400'}/>
                                                 <span className={`text-[10px] font-black ${lastPull.currency === 'pearl' ? 'text-cyan-400' : 'text-amber-400'}`}>+{formatNum((lastPull.cps * (MUTATIONS[lastPull.mutation || lastPull.mut || 'none']?.mult || 1)) * upgrades.multiplier)}/s</span>
                                             </div>
-                                            <button onClick={()=>sellItem(lastPull)} className="w-full bg-white text-slate-950 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Sell for {formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || lastPull.mut || 'none']?.mult || 1))}</button>
+                                            <button onClick={()=>sellItem(lastPull)} className="w-full bg-white text-slate-950 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Sell for {formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1))}</button>
                                             <button onClick={()=>setLastPull(null)} className="w-full mt-2 py-3 rounded-2xl font-black text-[10px] uppercase opacity-50">Stow in Log</button>
                                         </div> : <div className="opacity-10 text-center text-6xl">⚓</div>}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'aquarium' && (
+                            <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900/50 rounded-3xl border border-white/5 shadow-inner mb-4">
+                                <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-slate-950 to-transparent z-20 flex justify-between items-start pointer-events-none">
+                                    <div>
+                                        <h3 className="text-lg font-black uppercase tracking-tighter text-white drop-shadow-md">The Trench</h3>
+                                        <p className="text-[10px] font-black uppercase opacity-70 text-cyan-400 drop-shadow-md">{incomeFlow.bestItemsList.length} Active Earners</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 relative w-full h-full">
+                                    {incomeFlow.bestItemsList.length === 0 ? (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30">
+                                            <Icon name="Fish" size={48} className="mb-2" />
+                                            <span className="text-xs font-black uppercase tracking-widest">Trench is Empty</span>
+                                        </div>
+                                    ) : (
+                                        incomeFlow.bestItemsList.map(item => (
+                                            <AquariumEntity key={item.id} item={item} />
+                                        ))
+                                    )}
+                                </div>
+                                {/* Ambient Lighting Overlay */}
+                                <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-slate-950/40 to-slate-950"></div>
+                            </div>
+                        )}
+
+                        {view === 'altar' && (
+                            <div className="flex-1 flex flex-col relative overflow-hidden bg-fuchsia-950/20 rounded-3xl border border-fuchsia-500/10 shadow-inner mb-4 p-4">
+                                <div className="flex gap-2 p-1 bg-slate-900/50 rounded-2xl border border-white/5 mb-4 shrink-0">
+                                    <button onClick={()=>setAltarMode('ascend')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase ${altarMode==='ascend'?'bg-fuchsia-600 text-white shadow-[0_0_10px_rgba(192,38,211,0.5)]':'text-white/50'}`}>Ascension</button>
+                                    <button onClick={()=>setAltarMode('transfer')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase ${altarMode==='transfer'?'bg-fuchsia-600 text-white shadow-[0_0_10px_rgba(192,38,211,0.5)]':'text-white/50'}`}>Transfer</button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto no-scrollbar">
+                                    {altarMode === 'ascend' && (
+                                        <div className="space-y-3 pb-4">
+                                            <p className="text-[10px] text-center text-fuchsia-400/80 uppercase mb-4">Sacrifice 5 <span className="font-black text-white">duplicate</span> items of the same rarity to forge 1 random item of the next rarity. The new item inherits the highest mutation from the sacrifices!</p>
+                                            {RARITIES.slice(0, -1).map((r, idx) => {
+                                                const dupes = getDuplicatesForRarity(r.id);
+                                                const nextRarity = RARITIES[idx + 1];
+                                                const canAscend = dupes.length >= 5;
+                                                if (inventory.filter(i => i.rarity.id === r.id).length === 0) return null;
+
+                                                return (
+                                                    <div key={r.id} className="bg-white/5 p-4 rounded-3xl border border-white/10 flex items-center justify-between">
+                                                        <div>
+                                                            <div className={`text-xs font-black uppercase tracking-wider ${r.color}`}>{r.label}</div>
+                                                            <div className="text-[10px] text-white/50">{dupes.length} Dups Avail.</div>
+                                                        </div>
+                                                        <button 
+                                                            disabled={!canAscend}
+                                                            onClick={() => handleAscend(r.id, nextRarity)}
+                                                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 ${canAscend ? 'bg-fuchsia-600 text-white active:scale-95 shadow-[0_0_15px_rgba(192,38,211,0.5)]' : 'bg-slate-800 text-white/30'}`}
+                                                        >
+                                                            Forge <Icon name="Zap" size={10} /> {nextRarity.label}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {altarMode === 'transfer' && (
+                                        <div className="space-y-4 flex flex-col h-full justify-center pb-8">
+                                            <p className="text-[10px] text-center text-fuchsia-400/80 uppercase px-4">Extract a powerful mutation from a sacrifice and bind it to another vessel. The sacrifice is destroyed.</p>
+                                            
+                                            <div className="flex gap-4 items-center justify-center pt-4">
+                                                <button onClick={()=>setInventoryModal('sacrifice')} className={`w-28 h-32 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 ${transferSacrifice ? MUTATIONS[transferSacrifice.mutation||'none']?.glow + ' border-transparent bg-white/10' : 'border-red-500/30 text-red-400/50 hover:bg-red-500/10'}`}>
+                                                    {transferSacrifice ? (
+                                                        <>
+                                                            <span className="text-3xl drop-shadow-md">{MASTER_ITEM_DB.find(db=>db.name===transferSacrifice.name)?.e || '🐟'}</span>
+                                                            <span className={`text-[8px] font-black uppercase text-center px-2 ${MUTATIONS[transferSacrifice.mutation||'none'].color}`}>{MUTATIONS[transferSacrifice.mutation||'none'].label}</span>
+                                                        </>
+                                                    ) : (
+                                                        <><Icon name="Flame" size={24} /><span className="text-[9px] font-black uppercase text-center px-2">Select<br/>Sacrifice</span></>
+                                                    )}
+                                                </button>
+
+                                                <Icon name="Wand2" size={20} className="text-fuchsia-400 animate-pulse" />
+
+                                                <button onClick={()=>setInventoryModal('target')} className={`w-28 h-32 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 ${transferTarget ? 'border-transparent bg-white/10' : 'border-cyan-500/30 text-cyan-400/50 hover:bg-cyan-500/10'}`}>
+                                                    {transferTarget ? (
+                                                        <>
+                                                            <span className="text-3xl drop-shadow-md">{MASTER_ITEM_DB.find(db=>db.name===transferTarget.name)?.e || '🐟'}</span>
+                                                            <span className={`text-[8px] font-black uppercase text-center px-2 text-white/50`}>{transferTarget.name}</span>
+                                                        </>
+                                                    ) : (
+                                                        <><Icon name="Box" size={24} /><span className="text-[9px] font-black uppercase text-center px-2">Select<br/>Vessel</span></>
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            <div className="flex justify-center pt-4">
+                                                <button 
+                                                    disabled={!transferSacrifice || !transferTarget || (getTransferCost(transferTarget)?.curr === 'pearl' ? pearls < getTransferCost(transferTarget).amt : dubloons < getTransferCost(transferTarget)?.amt)}
+                                                    onClick={handleTransfer}
+                                                    className={`w-full max-w-[250px] py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && (getTransferCost(transferTarget)?.curr === 'pearl' ? pearls >= getTransferCost(transferTarget).amt : dubloons >= getTransferCost(transferTarget).amt) ? 'bg-fuchsia-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.5)] active:scale-95' : 'bg-slate-800 text-white/20'}`}
+                                                >
+                                                    {transferTarget && transferSacrifice ? (
+                                                        <span className="flex items-center justify-center gap-1.5">
+                                                            Cost: {formatNum(getTransferCost(transferTarget).amt)} 
+                                                            <Icon name={getTransferCost(transferTarget).curr === 'pearl' ? 'Droplet' : 'Coins'} size={12} className={getTransferCost(transferTarget).curr === 'pearl' ? 'text-cyan-400' : 'text-amber-400'} />
+                                                        </span>
+                                                    ) : 'Select Items'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -659,7 +879,7 @@
                                                     return (
                                                         <div key={best.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[bestMut]?.bg || 'bg-white/90'} border-white/10 ${MUTATIONS[bestMut]?.glow || ''}`}>
                                                             <div className="flex items-center gap-4 truncate">
-                                                                <Icon name="Box" size={20} className={MUTATIONS[bestMut]?.color || 'text-slate-900'} />
+                                                                <span className="text-2xl drop-shadow-md">{MASTER_ITEM_DB.find(db=>db.name===best.name)?.e || '🐟'}</span>
                                                                 <div className="text-left truncate">
                                                                     <div className="flex items-center gap-2">
                                                                         <h5 className="font-black text-xs truncate text-slate-900">{best.name}</h5>
@@ -683,6 +903,40 @@
                             </div>
                         )}
                     </main>
+
+                    {/* ALtAR INVENTORY MODAL */}
+                    {inventoryModal && (
+                        <div className="absolute inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex flex-col p-4" onClick={()=>setInventoryModal(null)}>
+                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-4 flex flex-col overflow-hidden shadow-2xl" onClick={e=>e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-sm font-black uppercase text-white tracking-widest">{inventoryModal === 'sacrifice' ? 'Select Sacrifice' : 'Select Vessel'}</h3>
+                                    <button onClick={()=>setInventoryModal(null)}><Icon name="X" size={20} className="text-white/50"/></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
+                                    {inventory
+                                        .filter(i => inventoryModal === 'sacrifice' ? (i.mutation && i.mutation !== 'none') : i.id !== transferSacrifice?.id)
+                                        .map(item => (
+                                        <div key={item.id} onClick={() => {
+                                            if (inventoryModal === 'sacrifice') setTransferSacrifice(item);
+                                            else setTransferTarget(item);
+                                            setInventoryModal(null);
+                                        }} className={`p-3 rounded-2xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer ${MUTATIONS[item.mutation||'none']?.glow}`}>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-2xl drop-shadow-md">{MASTER_ITEM_DB.find(db=>db.name===item.name)?.e || '🐟'}</span>
+                                                <div>
+                                                    <div className="text-xs font-black text-white">{item.name} {item.currency === 'pearl' && '✨'}</div>
+                                                    <div className={`text-[9px] font-black uppercase ${MUTATIONS[item.mutation||'none'].color}`}>{MUTATIONS[item.mutation||'none'].label || 'Base'} • {item.rarity.label}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {inventory.filter(i => inventoryModal === 'sacrifice' ? (i.mutation && i.mutation !== 'none') : i.id !== transferSacrifice?.id).length === 0 && (
+                                        <div className="text-center text-white/30 text-xs mt-10 uppercase tracking-widest">No valid items found</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* DROP RATES MODAL */}
                     {inspectedPack && (
@@ -735,7 +989,6 @@
         const root = ReactDOM.createRoot(container);
         root.render(<App />);
         
-        // Remove loading screen once React is mounted
         document.getElementById('loading-screen').style.display = 'none';
     </script>
 </body>
