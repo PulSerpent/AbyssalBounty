@@ -279,6 +279,7 @@
 
             const holdTimer = useRef(null);
             const isHolding = useRef(false);
+            const isSwiping = useRef(false);
 
             const activeTheme = THEMES[currentThemeId];
             const { RARITIES, MUTATION_ORDER, MUTATIONS, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
@@ -411,10 +412,9 @@
                 return Math.floor(p.cost * discount); 
             };
 
-            const openPack = (p) => {
-                const isShrine = p.isShrine || false;
+            const openPack = (p, isShrine = false) => {
                 const cost = getPackCost(p, isShrine);
-                if ((p.currency === 'primary' ? currency1 : currency2) < cost) return;
+                if ((p.currency === 'primary' ? currency1 : currency2) < cost) return false;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
                 setTimeout(() => {
@@ -444,6 +444,7 @@
                     });
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
+                return true;
             };
 
             const getDuplicatesForRarity = (rId) => {
@@ -462,12 +463,26 @@
                 return Math.floor(baseCost * mutMult);
             };
 
-            const handleHoldStart = (p) => { isHolding.current = false; holdTimer.current = setTimeout(() => { isHolding.current = true; setInspectedPack(p); }, 500); };
+            const handleHoldStart = (p) => { 
+                isSwiping.current = false; 
+                isHolding.current = false; 
+                holdTimer.current = setTimeout(() => { 
+                    if (!isSwiping.current) {
+                        isHolding.current = true; 
+                        setInspectedPack(p); 
+                    }
+                }, 500); 
+            };
+            const handleHoldMove = () => { 
+                isSwiping.current = true; 
+                clearTimeout(holdTimer.current); 
+            };
             const handleHoldEnd = (p) => { 
                 clearTimeout(holdTimer.current); 
+                if (isSwiping.current) return; 
                 if(!isHolding.current) {
-                    openPack(p);
-                    if (p.isShrine) setView('shop');
+                    const success = openPack(p, p.isShrine);
+                    if (success && p.isShrine) setView('shop');
                 }
             };
 
@@ -649,7 +664,7 @@
                                         return (
                                             <div key={p.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`}
                                                 onMouseDown={() => handleHoldStart(p)} onMouseUp={() => handleHoldEnd(p)} onMouseLeave={() => clearTimeout(holdTimer.current)}
-                                                onTouchStart={() => handleHoldStart(p)} onTouchEnd={() => handleHoldEnd(p)}
+                                                onTouchStart={() => handleHoldStart(p)} onTouchMove={handleHoldMove} onTouchEnd={() => handleHoldEnd(p)}
                                             >
                                                 {/* HIGH OPACITY GREEK PACKS (Responsive) */}
                                                 <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${p.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
@@ -896,7 +911,7 @@
                                 <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mt-1 sm:mt-2 mx-auto w-fit border shadow-lg`}>
                                     <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-400'}`}>Manifest pure arcane mutations with a perfect 10% chance for any rarity.</p>
                                 </div>
-                                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 px-2 sm:px-4 scroll-smooth snap-x scrollbar-hide items-center justify-start sm:justify-center">
+                                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 pt-2 px-6 sm:px-8 scroll-smooth snap-x scrollbar-hide items-center justify-start w-full">
                                     {SHRINE_CATEGORIES.map(cat => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
@@ -909,7 +924,7 @@
                                         return (
                                             <div key={cat.id} className={`snap-center shrink-0 w-32 sm:w-44 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
                                                 onMouseDown={() => handleHoldStart(pk)} onMouseUp={() => handleHoldEnd(pk)} onMouseLeave={() => clearTimeout(holdTimer.current)}
-                                                onTouchStart={() => handleHoldStart(pk)} onTouchEnd={() => handleHoldEnd(pk)}>
+                                                onTouchStart={() => handleHoldStart(pk)} onTouchMove={handleHoldMove} onTouchEnd={() => handleHoldEnd(pk)}>
                                                 <div className={`w-full aspect-[3/4] rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-br ${cat.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 shadow-xl ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/40' : 'border-white/20'}`}>
                                                     <Icon name={cat.icon} size={36} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:scale-125" />
                                                     <div className={`text-[10px] sm:text-xs font-black uppercase text-white drop-shadow-[0_1px_2px_black] text-center mt-2 leading-tight`}>{cat.name}</div>
