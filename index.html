@@ -15,6 +15,7 @@
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
         @keyframes heavenly-drift { 0% { transform: translateY(-10vh) translateX(0) scale(0.5) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(50px) scale(1.2) rotate(360deg); opacity: 0; } }
         @keyframes shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
+        @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-10px, -10px); } 20%, 40%, 60%, 80% { transform: translate(10px, 10px); } }
         @keyframes ghost-drift { 0% { transform: translate(var(--startX), var(--startY)); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(var(--endX), var(--endY)); opacity: 0; } }
         @keyframes orb-drift { 0% { transform: translateX(calc(100vw + 100px)) translateY(60px) scale(0.8); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(-100px) translateY(-20px) scale(1.2); opacity: 0; } }
         @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -22,11 +23,23 @@
         @keyframes void-pulse { 0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: scale(1.1) rotate(180deg); filter: hue-rotate(90deg); } }
         @keyframes heavenly-sky { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         
+        /* Encounter Animations */
+        @keyframes tentacle-sway { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(15deg) translateY(-20px); } }
+        @keyframes claw-slash { 
+            0% { transform: scaleX(0) scaleY(1.5) rotate(-45deg); opacity: 0; } 
+            10% { transform: scaleX(1.2) scaleY(1.5) rotate(-45deg); opacity: 1; filter: brightness(2); } 
+            50% { transform: scaleX(1) scaleY(1.2) rotate(-45deg); opacity: 0.8; }
+            100% { transform: scaleX(1) scaleY(0.8) rotate(-45deg); opacity: 0; } 
+        }
+
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
         body { background-color: #020617; margin: 0; overflow: hidden; color: white; font-family: system-ui, -apple-system, sans-serif; }
         .animate-ritual { animation: ritual-glow 2s ease-in-out infinite; }
+        .animate-tentacle { animation: tentacle-sway 4s ease-in-out infinite; transform-origin: bottom center; }
+        .animate-slash { animation: claw-slash 0.6s ease-out forwards; }
+        .animate-heavy-shake { animation: shake-heavy 0.5s ease-in-out; }
         
         /* Theme Backgrounds */
         .bg-theme-abyssal { background: linear-gradient(to bottom, #083344, #172554, #020617); }
@@ -95,7 +108,7 @@
                 terms: {
                     primary: 'Dubloons', primaryIcon: 'Coins',
                     secondary: 'Pearls', secondaryIcon: 'Droplet',
-                    packMenu: 'Dive', log: 'Log', beast: '🦑'
+                    packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.05, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 20 },
@@ -129,7 +142,7 @@
                     { name: "Heart of Ocean", rarityId: "legendary", e: "💙" }, { name: "Poseidon Trident", rarityId: "legendary", e: "🔱" }, { name: "Megalodon Fang", rarityId: "legendary", e: "🦷" }, { name: "Siren's Tear", rarityId: "legendary", e: "💧" }, { name: "Tidal Anchor", rarityId: "legendary", e: "⚓" }, { name: "Sea Dragon Scale", rarityId: "legendary", e: "🐉" }, { name: "Orca", rarityId: "legendary", e: "🐋" }, { name: "Whale Shark", rarityId: "legendary", e: "🦈" }, { name: "Coelacanth", rarityId: "legendary", e: "🐟" }, { name: "Deep Sea Behemoth", rarityId: "legendary", e: "🦕" },
                     { name: "Leviathan Engine", rarityId: "mythic", e: "⚙️" }, { name: "Ocean Singularity", rarityId: "mythic", e: "🕳️" }, { name: "Breath of Sea", rarityId: "mythic", e: "💨" }, { name: "Abyssal Pulse", rarityId: "mythic", e: "🫀" }, { name: "Trench Core", rarityId: "mythic", e: "🌋" }, { name: "Blue Whale", rarityId: "mythic", e: "🐳" }, { name: "Giant Isopod", rarityId: "mythic", e: "🪲" }, { name: "Kraken Eye", rarityId: "mythic", e: "👁️" }, { name: "Abyssal Worm", rarityId: "mythic", e: "🪱" }, { name: "Sunken Crown", rarityId: "mythic", e: "👑" },
                     { name: "Stardust Coral", rarityId: "celestial", e: "✨" }, { name: "Astral Pearl", rarityId: "celestial", e: "🔮" }, { name: "Moon-Tide Amulet", rarityId: "celestial", e: "🧿" }, { name: "Zodiac Compass", rarityId: "celestial", e: "🧭" }, { name: "Solar Relic", rarityId: "celestial", e: "☀️" }, { name: "Celestial Ray", rarityId: "celestial", e: "☄️" }, { name: "Star-Eater Shark", rarityId: "celestial", e: "🌌" }, { name: "Nebula Jelly", rarityId: "celestial", e: "🪼" }, { name: "Lunar Whale", rarityId: "celestial", e: "🐋" }, { name: "Comet Fragment", rarityId: "celestial", e: "☄️" },
-                    { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The First Tear", rarityId: "primordial", e: "💧" }, { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" }, { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
+                    { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The banner Tear", rarityId: "primordial", e: "💧" }, { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" }, { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
                     { name: "Time Anchor", rarityId: "transcendent", e: "⏳" }, { name: "Reality Shard", rarityId: "transcendent", e: "🪞" }, { name: "Infinite Ocean", rarityId: "transcendent", e: "🌌" }, { name: "Cosmos Whisper", rarityId: "transcendent", e: "🗣️" }, { name: "Eternity Prism", rarityId: "transcendent", e: "⏏️" }, { name: "Cosmic Whale", rarityId: "transcendent", e: "🐋" }, { name: "Astral Serpent", rarityId: "transcendent", e: "🐉" }, { name: "Void-Swimmer", rarityId: "transcendent", e: "🏊" }, { name: "Dimension Rift", rarityId: "transcendent", e: "🌌" }, { name: "Creator's Pearl", rarityId: "transcendent", e: "⚪" }
                 ],
                 STANDARD_PACKS: [
@@ -160,7 +173,7 @@
                 terms: {
                     primary: 'Drachma', primaryIcon: 'Coins',
                     secondary: 'Ambrosia', secondaryIcon: 'Star',
-                    packMenu: 'Summon', log: 'Fates', beast: '🐂'
+                    packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.05, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' }, manifestCost: 100000000000 },
@@ -195,7 +208,7 @@
                     { name: "Trident of Oceans", rarityId: "mythic", e: "🔱" }, { name: "Zeus' Lightning", rarityId: "mythic", e: "⚡" }, { name: "Helm of Darkness", rarityId: "mythic", e: "🌑" }, { name: "Pandora's Box", rarityId: "mythic", e: "📦" }, { name: "Prometheus' Flame", rarityId: "mythic", e: "🔥" }, { name: "Atlas' Chain", rarityId: "mythic", e: "⛓️" }, { name: "Chronos' Hourglass", rarityId: "mythic", e: "⏳" }, { name: "Tartarus Core", rarityId: "mythic", e: "🌋" }, { name: "Thread of Atropos", rarityId: "mythic", e: "✂️" }, { name: "Eye of the Fates", rarityId: "mythic", e: "👁️" },
                     { name: "Constellation Core", rarityId: "celestial", e: "🌌" }, { name: "Tear of Uranus", rarityId: "celestial", e: "☄️" }, { name: "Helios' Chariot", rarityId: "celestial", e: "☀️" }, { name: "Selene's Crescent", rarityId: "celestial", e: "🌙" }, { name: "Star of Olympus", rarityId: "celestial", e: "✨" }, { name: "Zodiac Wheel", rarityId: "celestial", e: "🎡" }, { name: "Astral Ambrosia", rarityId: "celestial", e: "🍯" }, { name: "Nyx's Veil", rarityId: "celestial", e: "🌌" }, { name: "Erebus Shadow", rarityId: "celestial", e: "🌑" }, { name: "Aether Spark", rarityId: "celestial", e: "✨" },
                     { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "Themis' Law", rarityId: "primordial", e: "⚖️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
-                    { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "The First Word", rarityId: "transcendent", e: "🗣️" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }
+                    { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "The banner Word", rarityId: "transcendent", e: "🗣️" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }
                 ],
                 STANDARD_PACKS: [
                     { id: 'pack1', name: 'Peasant Offering', cost: 5000000000000, currency: 'primary', icon: 'Flame', color: 'from-orange-400 to-yellow-600', glow: 'shadow-orange-200/50', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
@@ -489,7 +502,7 @@
                                 ) : (
                                     <div className="flex flex-col items-center gap-6">
                                         <div className="bg-slate-950/80 border border-red-500/30 p-6 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
-                                            <h2 className="text-2xl font-black uppercase text-red-400 animate-pulse tracking-tighter">Beast Attack!</h2>
+                                            <h2 className="text-2xl font-black uppercase text-red-400 animate-pulse tracking-tighter">{terms.beastName} Attack!</h2>
                                             <p className="text-[10px] font-black uppercase opacity-60 mb-4">Tap to Fight Back!</p>
                                             <div className="w-64 h-8 bg-slate-900 rounded-full border border-white/10 overflow-hidden relative">
                                                 <div className={`h-full bg-gradient-to-r from-red-600 to-${currentThemeId === 'olympian' ? 'amber-500' : 'fuchsia-600'} transition-all duration-300`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
@@ -533,7 +546,6 @@
 
                     <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-4 flex flex-col z-10 scrollbar-hide pb-32">
                         <div className="flex gap-1 sm:gap-2 mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
-                            {/* UPDATED: "Trench" (Display) button has been removed from navigation */}
                             {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Altar' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[50px] flex flex-col items-center justify-center py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]') : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
@@ -768,17 +780,6 @@
                                             setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
                                             setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
                                         }} className={`${currentThemeId === 'olympian' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'} flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase border active:scale-95 transition-all text-center`}>Sell Dups</button>
-                                        <button onClick={() => {
-                                            const trash = activeInventory.filter(i => i.rarity.id === 'trash');
-                                            if(!trash.length) return;
-                                            let dAdded = 0, pAdded = 0;
-                                            trash.forEach(it => {
-                                                const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1);
-                                                if(it.currency === 'secondary') pAdded += val; else dAdded += val;
-                                            });
-                                            setCurrency1(d => d + dAdded); setCurrency2(p => p + pAdded);
-                                            setInventory(v => v.filter(i => !trash.some(t => t.id === i.id)));
-                                        }} className={`${currentThemeId === 'olympian' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'} flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase border active:scale-95 transition-all text-center`}>Recycle Debris</button>
                                     </div>
                                 </div>
                                 {RARITIES.map(r => {
@@ -851,6 +852,68 @@
                             </div>
                         </div>
                     )}
+
+                    {/* Encounter Overlays with Visuals */}
+                    {krakenEvent && (
+                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-cyan-950/90' : 'bg-red-950/90'} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId === 'olympian' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                            {/* Kraken Visuals */}
+                            {currentThemeId === 'abyssal' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    {[...Array(6)].map((_, i) => (
+                                        <svg key={i} className={`absolute animate-tentacle opacity-40`} style={{ 
+                                            bottom: '-10%', left: `${i * 20}%`, width: '150px', height: '400px', 
+                                            animationDelay: `${i * 0.4}s`,
+                                            filter: 'drop-shadow(0 0 15px cyan)'
+                                        }} viewBox="0 0 100 200">
+                                            <path d="M50,200 Q40,150 50,100 T50,0" stroke="cyan" strokeWidth="15" fill="none" strokeLinecap="round" />
+                                            <circle cx="50" cy="180" r="4" fill="white" />
+                                            <circle cx="50" cy="140" r="3" fill="white" />
+                                            <circle cx="50" cy="100" r="2" fill="white" />
+                                        </svg>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Minotaur Visuals */}
+                            {currentThemeId === 'olympian' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <div className="absolute top-1/4 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" />
+                                    <div className="absolute top-1/3 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" style={{ animationDelay: '0.1s' }} />
+                                    <div className="absolute top-1/2 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" style={{ animationDelay: '0.2s' }} />
+                                    
+                                    <div className="absolute top-1/2 right-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red] rotate-[130deg]" style={{ animationDelay: '0.4s' }} />
+                                    <div className="absolute top-1/3 right-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red] rotate-[130deg]" style={{ animationDelay: '0.5s' }} />
+                                </div>
+                            )}
+
+                            <div className="relative z-10 flex flex-col items-center">
+                                {krakenFeedback ? (
+                                    <div className="bg-slate-900 border-2 border-white/20 p-8 rounded-[3rem] text-center shadow-2xl animate-in zoom-in-50">
+                                        <h2 className="text-3xl font-black uppercase text-white mb-2">{krakenFeedback}</h2>
+                                        <div className="text-6xl">{terms.beast}</div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-6">
+                                        <div className="bg-slate-950/80 border border-white/10 p-6 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
+                                            <h2 className={`text-2xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400' : 'text-orange-500'} animate-pulse tracking-tighter`}>{terms.beastName} Encounter!</h2>
+                                            <p className="text-[10px] font-black uppercase opacity-60 mb-4">Tap to Fight Back!</p>
+                                            <div className="w-64 h-8 bg-slate-900 rounded-full border border-white/10 overflow-hidden relative shadow-inner">
+                                                <div className={`h-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 to-blue-500' : 'bg-gradient-to-r from-red-600 to-orange-500'}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
+                                            </div>
+                                            <div className="mt-4 text-white text-xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
+                                        </div>
+                                        <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
+                                            const jackpot = Math.max(100, Math.floor(incomeFlow.income.c2 * 500 + 500 * activeMultiplier));
+                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-8 ${currentThemeId === 'abyssal' ? 'bg-cyan-600/30 border-cyan-400/40' : 'bg-orange-600/30 border-orange-400/40'}`}>
+                                            <span className="text-3xl font-black text-white uppercase drop-shadow-lg">STRIKE</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="fixed inset-0 pointer-events-none z-[1000] border-[16px] border-white/5 opacity-20" />
                 </div>
             );
