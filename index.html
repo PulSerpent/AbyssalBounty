@@ -15,7 +15,7 @@
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
         @keyframes heavenly-drift { 0% { transform: translateY(-10vh) translateX(0) scale(0.5) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(50px) scale(1.2) rotate(360deg); opacity: 0; } }
         @keyframes shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
-        @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-10px, -10px); } 20%, 40%, 60%, 80% { transform: translate(10px, 10px); } }
+        @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-15px, -10px); } 20%, 40%, 60%, 80% { transform: translate(15px, 10px); } }
         @keyframes ghost-drift { 0% { transform: translate(var(--startX), var(--startY)); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(var(--endX), var(--endY)); opacity: 0; } }
         @keyframes orb-drift { 0% { transform: translateX(calc(100vw + 100px)) translateY(60px) scale(0.8); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(-100px) translateY(-20px) scale(1.2); opacity: 0; } }
         @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -23,13 +23,20 @@
         @keyframes void-pulse { 0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: scale(1.1) rotate(180deg); filter: hue-rotate(90deg); } }
         @keyframes heavenly-sky { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         
-        /* Encounter Animations */
-        @keyframes tentacle-sway { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(15deg) translateY(-20px); } }
-        @keyframes claw-slash { 
-            0% { transform: scaleX(0) scaleY(1.5) rotate(-45deg); opacity: 0; } 
-            10% { transform: scaleX(1.2) scaleY(1.5) rotate(-45deg); opacity: 1; filter: brightness(2); } 
-            50% { transform: scaleX(1) scaleY(1.2) rotate(-45deg); opacity: 0.8; }
-            100% { transform: scaleX(1) scaleY(0.8) rotate(-45deg); opacity: 0; } 
+        /* Cinematic Encounter Animations */
+        @keyframes tentacle-writhe { 
+            0% { transform: rotate(-10deg) translateY(0) scale(1); } 
+            50% { transform: rotate(20deg) translateY(-40px) scale(1.1); } 
+            100% { transform: rotate(-10deg) translateY(0) scale(1); } 
+        }
+        @keyframes slash-cinema { 
+            0% { transform: scaleX(0) scaleY(2) rotate(-45deg); opacity: 0; filter: blur(10px); } 
+            15% { transform: scaleX(1.5) scaleY(1.8) rotate(-45deg); opacity: 1; filter: blur(0px) brightness(2); } 
+            100% { transform: scaleX(1) scaleY(1) rotate(-45deg); opacity: 0; filter: blur(5px); } 
+        }
+        @keyframes ink-fade {
+            0% { opacity: 0; }
+            100% { opacity: 0.6; }
         }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -37,16 +44,17 @@
         
         body { background-color: #020617; margin: 0; overflow: hidden; color: white; font-family: system-ui, -apple-system, sans-serif; }
         .animate-ritual { animation: ritual-glow 2s ease-in-out infinite; }
-        .animate-tentacle { animation: tentacle-sway 4s ease-in-out infinite; transform-origin: bottom center; }
-        .animate-slash { animation: claw-slash 0.6s ease-out forwards; }
-        .animate-heavy-shake { animation: shake-heavy 0.5s ease-in-out; }
+        .animate-tentacle-detailed { animation: tentacle-writhe 5s ease-in-out infinite; transform-origin: bottom center; }
+        .animate-slash-detailed { animation: slash-cinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-ink { animation: ink-fade 2s ease-in forwards; }
+        .animate-heavy-shake { animation: shake-heavy 0.4s ease-in-out; }
         
         /* Theme Backgrounds */
         .bg-theme-abyssal { background: linear-gradient(to bottom, #083344, #172554, #020617); }
         .bg-theme-olympian { 
-            background: linear-gradient(135deg, #ffffff, #fef08a, #facc15, #ffffff); 
+            background: linear-gradient(135deg, #fffbeb, #fef3c7, #fde68a, #fffbeb); 
             background-size: 400% 400%;
-            animation: heavenly-sky 20s ease-in-out infinite;
+            animation: heavenly-sky 25s ease-in-out infinite;
         }
     </style>
 </head>
@@ -75,6 +83,7 @@
                 Zap: <path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z"/>,
                 ScrollText: <path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4 M19 17V3a2 2 0 0 0-2-2H4"/>,
                 Coins: <React.Fragment><circle cx="8" cy="8" r="6"/><circle cx="16" cy="16" r="6"/><path d="M12 11h.01M12 13h.01"/></React.Fragment>,
+                Drachma: <React.Fragment><circle cx="12" cy="12" r="10"/><path d="M12 7v10M8 12c0-3 3-5 4-5s4 2 4 5-3 5-4 5-4-2-4-5z" opacity="0.5"/><path d="M12 9v6m-2-3h4"/></React.Fragment>,
                 Droplet: <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7Z"/>,
                 Sparkles: <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1-1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
                 Star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
@@ -108,7 +117,7 @@
                 terms: {
                     primary: 'Dubloons', primaryIcon: 'Coins',
                     secondary: 'Pearls', secondaryIcon: 'Droplet',
-                    packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken'
+                    packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken', merchant: 'Ghost Ship'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.05, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 20 },
@@ -171,9 +180,9 @@
                 bgClass: 'bg-theme-olympian',
                 icon: 'Sun',
                 terms: {
-                    primary: 'Drachma', primaryIcon: 'Coins',
+                    primary: 'Drachma', primaryIcon: 'Drachma',
                     secondary: 'Ambrosia', secondaryIcon: 'Star',
-                    packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur'
+                    packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur', merchant: 'Celestial Chariot'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.05, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' }, manifestCost: 100000000000 },
@@ -207,7 +216,7 @@
                     { name: "Apollo's Lyre", rarityId: "legendary", e: "🎻" }, { name: "Artemis' Bow", rarityId: "legendary", e: "🏹" }, { name: "Ares' Spear", rarityId: "legendary", e: "🩸" }, { name: "Hermes' Sandal", rarityId: "legendary", e: "🪽" }, { name: "Athena's Owl", rarityId: "legendary", e: "🦉" }, { name: "Hephaestus Hammer", rarityId: "legendary", e: "🔨" }, { name: "Aphrodite's Mirror", rarityId: "legendary", e: "🪞" }, { name: "Dionysus' Chalice", rarityId: "legendary", e: "🍷" }, { name: "Hades' Helm", rarityId: "legendary", e: "🪖" }, { name: "Poseidon's Pearl", rarityId: "legendary", e: "⚪" },
                     { name: "Trident of Oceans", rarityId: "mythic", e: "🔱" }, { name: "Zeus' Lightning", rarityId: "mythic", e: "⚡" }, { name: "Helm of Darkness", rarityId: "mythic", e: "🌑" }, { name: "Pandora's Box", rarityId: "mythic", e: "📦" }, { name: "Prometheus' Flame", rarityId: "mythic", e: "🔥" }, { name: "Atlas' Chain", rarityId: "mythic", e: "⛓️" }, { name: "Chronos' Hourglass", rarityId: "mythic", e: "⏳" }, { name: "Tartarus Core", rarityId: "mythic", e: "🌋" }, { name: "Thread of Atropos", rarityId: "mythic", e: "✂️" }, { name: "Eye of the Fates", rarityId: "mythic", e: "👁️" },
                     { name: "Constellation Core", rarityId: "celestial", e: "🌌" }, { name: "Tear of Uranus", rarityId: "celestial", e: "☄️" }, { name: "Helios' Chariot", rarityId: "celestial", e: "☀️" }, { name: "Selene's Crescent", rarityId: "celestial", e: "🌙" }, { name: "Star of Olympus", rarityId: "celestial", e: "✨" }, { name: "Zodiac Wheel", rarityId: "celestial", e: "🎡" }, { name: "Astral Ambrosia", rarityId: "celestial", e: "🍯" }, { name: "Nyx's Veil", rarityId: "celestial", e: "🌌" }, { name: "Erebus Shadow", rarityId: "celestial", e: "🌑" }, { name: "Aether Spark", rarityId: "celestial", e: "✨" },
-                    { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "Themis' Law", rarityId: "primordial", e: "⚖️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
+                    { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "The banner Word", rarityId: "primordial", e: "⚖️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
                     { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "The banner Word", rarityId: "transcendent", e: "🗣️" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }
                 ],
                 STANDARD_PACKS: [
@@ -232,18 +241,12 @@
         };
 
         const App = () => {
-            // Save state & Theme
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
-            // UPDATED: Olympian Peak is now unlocked by default
             const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian']);
-            
-            // Core currencies & global inventory
             const [currency1, setCurrency1] = useState(100);
             const [currency2, setCurrency2] = useState(0);
             const [inventory, setInventory] = useState([]);
             const [claimedSets, setClaimedSets] = useState([]);
-            
-            // UI State
             const [view, setView] = useState('shop');
             const [isOpening, setIsOpening] = useState(false);
             const [isSealed, setIsSealed] = useState(false);
@@ -257,8 +260,6 @@
             const [transferTarget, setTransferTarget] = useState(null);
             const [inventoryModal, setInventoryModal] = useState(null);
             const [inspectedPack, setInspectedPack] = useState(null);
-            
-            // Events
             const [merchantVisible, setMerchantVisible] = useState(false);
             const [merchantSaleActive, setMerchantSaleActive] = useState(false);
             const [merchantSaleTimer, setMerchantSaleTimer] = useState(0);
@@ -267,19 +268,15 @@
             const [krakenTaps, setKrakenTaps] = useState(0);
             const [krakenTimer, setKrakenTimer] = useState(0);
             const [krakenFeedback, setKrakenFeedback] = useState(null);
-            
-            // Anomaly (Frenzy)
             const [anomalyVisible, setAnomalyVisible] = useState(false);
             const [frenzyTimer, setFrenzyTimer] = useState(0);
 
             const holdTimer = useRef(null);
             const isHolding = useRef(false);
 
-            // Active Theme Data
             const activeTheme = THEMES[currentThemeId];
             const { RARITIES, MUTATION_ORDER, MUTATIONS, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
 
-            // Computed subset of inventory for UI filtering
             const activeInventory = inventory.filter(i => (i.themeId || 'abyssal') === currentThemeId);
 
             const sortItemsThemeAware = (a, b) => {
@@ -316,9 +313,8 @@
                         return acc;
                     }, { c1: 0, c2: 0 })
                 };
-            }, [inventory, currentThemeId]);
+            }, [inventory]);
 
-            // Single base yield
             const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
@@ -376,6 +372,17 @@
 
             useEffect(() => {
                 let interval;
+                if (merchantSaleActive && merchantSaleTimer > 0) {
+                    interval = setInterval(() => setMerchantSaleTimer(t => {
+                        if (t <= 1) { setMerchantSaleActive(false); return 0; }
+                        return t - 1;
+                    }), 1000);
+                }
+                return () => clearInterval(interval);
+            }, [merchantSaleActive, merchantSaleTimer]);
+
+            useEffect(() => {
+                let interval;
                 if (krakenEvent && krakenTimer > 0 && !krakenFeedback) {
                     interval = setInterval(() => {
                         setKrakenTimer(t => {
@@ -391,10 +398,15 @@
                 return () => clearInterval(interval);
             }, [krakenEvent, krakenTimer, krakenFeedback]);
 
-            const getPackCost = (p) => { return merchantSaleActive ? Math.floor(p.cost * 0.25) : p.cost; };
+            // UPDATED DISCOUNT LOGIC: 50% for Packs, 25% for Shrines
+            const getPackCost = (p, isShrine = false) => { 
+                if (!merchantSaleActive) return p.cost;
+                const discount = isShrine ? 0.75 : 0.5; // 25% off vs 50% off
+                return Math.floor(p.cost * discount); 
+            };
 
-            const openPack = (p) => {
-                const cost = getPackCost(p);
+            const openPack = (p, isShrine = false) => {
+                const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
@@ -491,42 +503,99 @@
                         </div>
                     )}
 
+                    {/* Active Event Banner with descriptive messaging - UPDATED 50/25 messaging */}
+                    {(merchantSaleActive || frenzyTimer > 0) && (
+                        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm">
+                            <div className={`p-4 rounded-3xl border-2 flex flex-col gap-1 items-center shadow-2xl animate-in slide-in-from-top-4 duration-500 ${merchantSaleActive ? 'bg-cyan-900 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.4)]' : 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_30px_rgba(192,38,211,0.4)]'}`}>
+                                <div className="flex items-center gap-3 text-white">
+                                    <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={20} className="animate-pulse" />
+                                    <span className="text-xs font-black uppercase tracking-widest">
+                                        {merchantSaleActive ? `${terms.merchant} Sale!` : 'Dimensional Surge!'}
+                                    </span>
+                                    <div className="px-3 py-1 rounded-full bg-black/40 font-mono text-[10px] font-black">
+                                        {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
+                                    </div>
+                                </div>
+                                <div className="text-[10px] font-black uppercase text-white drop-shadow-md text-center mt-1">
+                                    {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {krakenEvent && (
-                        <div className="fixed inset-0 z-[100] bg-red-950/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
+                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : 'bg-red-950/80'} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId === 'olympian' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                            
+                            {/* Detailed Kraken Visuals */}
+                            {currentThemeId === 'abyssal' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-950/40 via-transparent to-black/60 animate-ink" />
+                                    {[...Array(8)].map((_, i) => (
+                                        <div key={i} className={`absolute animate-tentacle-detailed opacity-80`} style={{ bottom: '-15%', left: `${i * 12.5}%`, width: '180px', height: '550px', animationDelay: `${i * 0.7}s`, filter: 'drop-shadow(0 0 30px cyan)' }}>
+                                            <svg viewBox="0 0 100 300" className="w-full h-full">
+                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="cyan" strokeWidth="25" fill="none" strokeLinecap="round" />
+                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="rgba(0,0,0,0.3)" strokeWidth="10" fill="none" transform="translate(5,0)" />
+                                                {[...Array(6)].map((_, j) => (
+                                                    <circle key={j} cx="35" cy={50 + j * 40} r="6" fill="rgba(255,255,255,0.8)" className="animate-pulse" style={{ animationDelay: `${j * 0.2}s` }} />
+                                                ))}
+                                            </svg>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Cinematic Minotaur Visuals */}
+                            {currentThemeId === 'olympian' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <div className="absolute inset-0 bg-red-900/10" />
+                                    {[...Array(4)].map((_, i) => (
+                                        <div key={i} className="absolute w-full h-full flex items-center justify-center">
+                                            <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.2}s`, left: `${Math.random() * 40 - 20}%`, top: `${Math.random() * 40 - 20}%` }}>
+                                                <div className="absolute top-1/2 left-0 w-full h-4 bg-orange-600 shadow-[0_0_40px_rgba(234,88,12,1)]" style={{ transform: 'rotate(20deg)' }} />
+                                                <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-orange-50 shadow-[0_0_30px_rgba(251,146,60,0.8)]" style={{ transform: 'rotate(20deg)' }} />
+                                                <div className="absolute top-[calc(1/2+80px)] left-0 w-full h-4 bg-orange-400 shadow-[0_0_30px_rgba(251,191,36,0.6)]" style={{ transform: 'rotate(20deg)' }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
-                                    <div className="bg-slate-900 border-2 border-white/20 p-8 rounded-[3rem] text-center shadow-2xl animate-in zoom-in-50">
-                                        <h2 className="text-3xl font-black uppercase text-white mb-2">{krakenFeedback}</h2>
-                                        <div className="text-6xl">{terms.beast}</div>
+                                    <div className="bg-slate-950 border-2 border-white/20 p-12 rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
+                                        <h2 className="text-4xl font-black uppercase text-white mb-4 tracking-tighter">{krakenFeedback}</h2>
+                                        <div className="text-8xl drop-shadow-[0_0_20px_white]">{terms.beast}</div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center gap-6">
-                                        <div className="bg-slate-950/80 border border-red-500/30 p-6 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
-                                            <h2 className="text-2xl font-black uppercase text-red-400 animate-pulse tracking-tighter">{terms.beastName} Attack!</h2>
-                                            <p className="text-[10px] font-black uppercase opacity-60 mb-4">Tap to Fight Back!</p>
-                                            <div className="w-64 h-8 bg-slate-900 rounded-full border border-white/10 overflow-hidden relative">
-                                                <div className={`h-full bg-gradient-to-r from-red-600 to-${currentThemeId === 'olympian' ? 'amber-500' : 'fuchsia-600'} transition-all duration-300`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
+                                    <div className="flex flex-col items-center gap-10">
+                                        <div className="bg-slate-950/90 border-2 border-white/10 p-10 rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
+                                            <h2 className={`text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'} animate-pulse tracking-tighter`}>{terms.beastName} Boss!</h2>
+                                            <p className="text-xs font-black uppercase opacity-60 mb-6 tracking-widest mt-2">Smash to Win!</p>
+                                            <div className="w-80 h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
+                                                <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
                                             </div>
-                                            <div className="mt-4 text-red-500 text-xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
+                                            <div className="mt-6 text-white text-3xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
                                         </div>
                                         <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
                                             const jackpot = Math.max(100, Math.floor(incomeFlow.income.c2 * 500 + 500 * activeMultiplier));
-                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className="w-48 h-48 rounded-full bg-red-600/20 border-4 border-red-500/40 flex items-center justify-center shadow-xl active:scale-90 transition-transform"><span className="text-2xl font-black text-red-100 uppercase">Push!</span></button>
+                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`DEFEATED! +${formatNum(jackpot)} ${terms.secondary}`);
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-56 h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'}`}>
+                                            <span className="text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Strike!</span>
+                                        </button>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-500/20' : 'bg-slate-950/60 border-white/10'} p-4 pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50`}>
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : 'bg-slate-950/60 border-white/10'} p-4 pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
                         <div className="flex flex-col gap-1">
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-100/50 border-amber-500/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.primaryIcon} size={14} className="text-amber-500 shrink-0" />
-                                <span className={`text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{formatNum(currency1)}</span>
+                                <span className={`text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
                                 <span className={`ml-auto text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-amber-400/60'}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
                             </div>
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-100/50 border-cyan-500/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.secondaryIcon} size={14} className="text-cyan-500 shrink-0" />
                                 <span className={`text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
                                 <span className={`ml-auto text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : 'text-cyan-400/60'}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
@@ -535,8 +604,8 @@
                         <div className="text-right">
                             <h1 className={`text-[10px] font-black uppercase opacity-60 mb-1 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
-                                <div className={`text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-500 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]' : 'text-fuchsia-400 drop-shadow-[0_0_5px_rgba(192,38,211,0.8)]'}`}>
-                                    SURGE x{activeMultiplier.toFixed(1)} <span className="opacity-80">({frenzyTimer}s)</span>
+                                <div className={`text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'}`}>
+                                    SURGE x{activeMultiplier.toFixed(1)}
                                 </div>
                             ) : (
                                 <div className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Standard Yield</div>
@@ -551,68 +620,30 @@
                             ))}
                         </div>
 
-                        {view === 'realms' && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-500/30 shadow-[0_0_30px_rgba(251,191,36,0.15)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]'} p-6 rounded-[3rem] text-center relative overflow-hidden mb-4`}>
-                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-500/20' : 'from-fuchsia-600/10'} to-transparent pointer-events-none`}></div>
-                                    <Icon name="Globe" size={48} className={`${currentThemeId === 'olympian' ? 'text-amber-500 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'text-fuchsia-500 drop-shadow-[0_0_15px_rgba(192,38,211,0.6)]'} mx-auto mb-4 relative z-10`} />
-                                    <h2 className="text-2xl font-black uppercase tracking-tighter text-white mb-2 relative z-10">Realms of Power</h2>
-                                    <p className={`text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-200' : 'text-fuchsia-200'}`}>
-                                        Travel to alternate realities. Your wealth transfers seamlessly. Each realm features escalating challenges and distinct relics!
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4 px-2">
-                                    {Object.values(THEMES).map(th => {
-                                        const isActive = currentThemeId === th.id;
-                                        return (
-                                            <div key={th.id} className={`p-5 rounded-3xl border-2 flex items-center justify-between transition-all ${isActive ? 'bg-white/10 border-white/50 shadow-xl' : 'bg-white/5 border-white/10'}`}>
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white text-slate-900' : 'bg-slate-800 text-white/50'}`}>
-                                                        <Icon name={th.icon} size={24} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-black uppercase tracking-wider text-white">{th.name}</div>
-                                                        <div className="text-[9px] font-black uppercase opacity-50 mt-1">
-                                                            {isActive ? 'Current Reality' : 'Unlocked Dimension'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {isActive ? (
-                                                    <div className="text-[10px] font-black uppercase bg-white/20 px-4 py-2 rounded-xl text-white">Active</div>
-                                                ) : (
-                                                    <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-transform shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-fuchsia-600'}`}>Travel</button>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
                                     {STANDARD_PACKS.map(p => {
-                                        const cost = getPackCost(p);
+                                        const cost = getPackCost(p, false);
                                         const afford = (p.currency === 'primary' ? currency1 : currency2) >= cost;
                                         return (
                                             <div key={p.id} className={`snap-center shrink-0 w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`}
                                                 onMouseDown={() => handleHoldStart(p)} onMouseUp={() => handleHoldEnd(p)} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => handleHoldStart(p)} onTouchEnd={() => handleHoldEnd(p)}
                                             >
-                                                <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${p.color} border border-white/20 flex flex-col items-center justify-center gap-2 p-3 shadow-xl ${p.glow}`}>
-                                                    <Icon name={p.icon} size={28} className="text-white drop-shadow-md" />
-                                                    <span className="text-[8px] font-black text-center uppercase opacity-80 text-white">{p.name}</span>
-                                                    <div className="flex items-center gap-1 font-black text-xs">
-                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive ? 'text-cyan-300' : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? 'text-amber-400' : 'text-cyan-300'} /></> ) : <span className="text-green-400">FREE</span>}
+                                                <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${p.color} border-4 flex flex-col items-center justify-center gap-2 p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
+                                                    <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
+                                                    <Icon name={p.icon} size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
+                                                    <span className="text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none">{p.name}</span>
+                                                    <div className="flex items-center gap-1 font-black text-xs z-10 bg-black/60 px-2 py-0.5 rounded-full border border-white/20 shadow-inner">
+                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? 'text-amber-400' : 'text-cyan-300'} /></> ) : <span className="text-green-400">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/40 border-amber-500/20 shadow-inner' : 'bg-white/5 border-white/10'} flex-1 min-h-[350px] flex items-center justify-center rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : 'bg-white/5 border-white/10'} flex-1 min-h-[350px] flex items-center justify-center rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
                                     {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-16 h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : 'bg-cyan-500/20 border-cyan-500'} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : "text-cyan-400"} /></div><span className={`text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Summoning...</span></div>}
                                     {isSealed && (
                                         <div className="flex flex-col items-center gap-6 cursor-pointer group" onClick={() => {
@@ -624,14 +655,14 @@
                                             <div className={`w-44 h-60 rounded-2xl border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
                                                 <div className="absolute top-12 left-0 right-0 h-16 flex items-center justify-center z-10">
                                                     <div className="relative w-full h-full">
-                                                        <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]'} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
+                                                        <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]'} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
                                                         <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
                                                     </div>
                                                 </div>
                                                 <div className="absolute inset-4 border border-white/5 rounded-lg pointer-events-none" />
                                                 <div className="absolute bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto" size={48} /></div>
                                             </div>
-                                            {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/20' : 'bg-cyan-500 shadow-cyan-500/20'} px-8 py-4 rounded-full font-black text-sm uppercase shadow-lg animate-pulse ring-4 ring-white/20`}>Rip Open</div>}
+                                            {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20'} px-8 py-4 rounded-full font-black text-sm uppercase shadow-lg animate-pulse ring-4`}>Rip Open</div>}
                                         </div>
                                     )}
                                     {lastPull && !isSealed && (
@@ -656,9 +687,7 @@
                                                         +{formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1))} <Icon name={lastPull.currency === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={10} />
                                                     </span>
                                                 </button>
-                                                <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 text-white py-3 rounded-2xl font-black text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">
-                                                    Keep
-                                                </button>
+                                                <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 text-white py-3 rounded-2xl font-black text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                             </div>
                                         </div>
                                     )}
@@ -666,89 +695,106 @@
                             </div>
                         )}
 
-                        {view === 'altar' && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in slide-in-from-right-4">
-                                <div className="flex bg-slate-900/40 p-1.5 rounded-2xl border border-white/10 shrink-0 backdrop-blur">
-                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Ascension</button>
-                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Transfer</button>
+                        {view === 'realms' && (
+                             <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]'} p-6 rounded-[3rem] text-center relative overflow-hidden mb-4`}>
+                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : 'from-fuchsia-600/10'} to-transparent pointer-events-none`}></div>
+                                    <Icon name="Globe" size={48} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-fuchsia-500'} mx-auto mb-4 relative z-10`} />
+                                    <h2 className={`text-2xl font-black uppercase tracking-tighter mb-2 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
+                                    <p className={`text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-200'}`}>
+                                        Travel to alternate realities. Each realm features Escalating Challenges!
+                                    </p>
                                 </div>
-                                {altarMode === 'ascend' ? (
-                                    <div className="space-y-4">
-                                        <p className={`text-[10px] text-center opacity-60 uppercase font-black px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier.</p>
-                                        {RARITIES.slice(0, -1).map((r, idx) => {
-                                            const dupes = getDuplicatesForRarity(r.id);
-                                            const next = RARITIES[idx + 1];
-                                            const canForge = dupes.length >= 5;
-                                            return (
-                                                <div key={r.id} className={`${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-white/5'} border border-white/5 p-5 rounded-3xl flex items-center justify-between transition-all hover:bg-white/10 group`}>
-                                                    <div><div className={`text-xs font-black uppercase ${r.color}`}>{r.label}</div><div className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-900/40' : 'text-white/30'}`}>{dupes.length} Duplicates Available</div></div>
-                                                    <button disabled={!canForge} onClick={() => {
-                                                        const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
-                                                        const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
-                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: MASTER_ITEM_DB.filter(it => it.rarityId === next.id)[0].name, rarity: next, mutation: bM, currency: (Math.random() < next.secondaryChance ? 'secondary' : 'primary'), cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
-                                                        setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
-                                                        setLastPull(nI); setView('shop');
-                                                    }} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-10 py-10">
-                                        <p className={`text-[10px] text-center opacity-60 uppercase font-black px-4 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Transfer a mutation from a catalyst to a target vessel.</p>
-                                        <div className="flex items-center gap-6">
-                                            <button onClick={() => setInventoryModal('sacrifice')} className={`w-28 h-36 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + MUTATIONS[transferSacrifice.mutation].glow : 'border-red-500/20 text-red-400/30'}`}>
-                                                {transferSacrifice ? <span className="text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferSacrifice.name)?.e}</span> : <Icon name="Flame" size={28} />}
-                                                <span className="text-[8px] font-black uppercase text-center px-2">{transferSacrifice ? transferSacrifice.name : 'Catalyst'}</span>
-                                            </button>
-                                            <Icon name="Zap" className={`${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'} rotate-90`} />
-                                            <button onClick={() => setInventoryModal('target')} className={`w-28 h-36 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : 'border-cyan-500/20 text-cyan-400/30'}`}>
-                                                {transferTarget ? <span className="text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferTarget.name)?.e}</span> : <Icon name="Box" size={28} />}
-                                                <span className="text-[8px] font-black uppercase text-center px-2">{transferTarget ? transferTarget.name : 'Target'}</span>
-                                            </button>
-                                        </div>
-                                        {transferSacrifice && transferTarget && (
-                                            <div className="bg-slate-950/50 border border-cyan-500/30 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-inner">
-                                                <span className="text-[10px] font-black uppercase text-cyan-400">Fusion Cost:</span>
-                                                <span className={`text-sm font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
-                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={14} className={currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-cyan-400' : 'text-red-400'} />
-                                                </span>
+                                <div className="space-y-4 px-2">
+                                    {Object.values(THEMES).map(th => (
+                                        <div key={th.id} className={`p-5 rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl') : 'bg-white/5 border-white/10'}`}>
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? 'bg-slate-900 text-white' : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={24} /></div>
+                                                <div><div className={`text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : 'text-white'}`}>{th.name}</div><div className={`text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
                                             </div>
-                                        )}
-                                        <button disabled={!transferSacrifice || !transferTarget || currency2 < getTransferCost(transferSacrifice, transferTarget)} onClick={() => {
-                                            const cost = getTransferCost(transferSacrifice, transferTarget);
-                                            if (currency2 < cost) return;
-                                            setCurrency2(v => v - cost);
-                                            const nt = { ...transferTarget, mutation: transferSacrifice.mutation };
-                                            setInventory(p => [nt, ...p.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id)]);
-                                            setTransferSacrifice(null); setTransferTarget(null); setLastPull(nt); setView('shop');
-                                        }} className={`w-full max-w-xs py-5 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-900 text-white/20'}`}>Perform Fusion</button>
+                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : 'bg-fuchsia-600'}`}>Travel</button>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'inventory' && (
+                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : 'bg-white/5 border-white/10'} p-6 rounded-[2.5rem] flex flex-col gap-4 border`}>
+                                    <div className="flex justify-between items-start">
+                                        <div><h3 className={`text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.log}</h3><p className={`text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-white'}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
-                                )}
+                                    <button onClick={() => {
+                                        const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
+                                        let dAdded = 0, pAdded = 0;
+                                        Object.values(g).forEach(list => { 
+                                            list.sort(sortItemsThemeAware); ni.push(list[0]); 
+                                            list.slice(1).forEach(dup => { 
+                                                const val = dup.value * (MUTATIONS[dup.mutation || 'none']?.mult || 1); 
+                                                if(dup.currency === 'secondary') pAdded += val; else dAdded += val; 
+                                            }); 
+                                        });
+                                        setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
+                                        setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
+                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : 'bg-amber-500/10 text-amber-400'} px-4 py-2.5 rounded-xl text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Sell All Duplicates</button>
+                                </div>
+                                {RARITIES.map(r => (
+                                    <div key={r.id} className="mb-6 px-2">
+                                        <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
+                                        <div className="grid gap-3">
+                                            {MASTER_ITEM_DB.filter(m => m.rarityId === r.id).map(dbItem => {
+                                                const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
+                                                if (!owned.length) return (
+                                                    <button key={dbItem.name} onClick={() => { if(currency2 >= r.manifestCost) { setCurrency2(v => v - r.manifestCost); const ni = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: dbItem.name, rarity: r, mutation: 'none', currency: (Math.random() < r.secondaryChance ? 'secondary' : 'primary'), cps: r.incomeBase, value: r.incomeBase * 200 }; setInventory(p => [ni, ...p]); setLastPull(ni); setView('shop'); } }} disabled={currency2 < r.manifestCost} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-80' : 'bg-slate-900/40 border-white/5 opacity-50'} p-4 rounded-3xl border-2 border-dashed hover:opacity-100 flex items-center justify-between transition-all group`}>
+                                                        <div className={`flex items-center gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={16} /><span className="text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
+                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white' : 'bg-cyan-500/20 text-cyan-400'} px-3 py-1.5 rounded-full text-[10px] font-black flex items-center gap-1`}>Manifest: {formatNum(r.manifestCost)} <Icon name={terms.secondaryIcon} size={10} /></div>
+                                                    </button>
+                                                );
+                                                const best = owned[0];
+                                                return (
+                                                    <div key={best.id} className={`p-4 rounded-3xl border-2 flex items-center justify-between ${MUTATIONS[best.mutation].bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${MUTATIONS[best.mutation].glow}`}>
+                                                        <div className="flex items-center gap-4 truncate"><span className="text-3xl drop-shadow-md">{dbItem.e}</span><div className="text-left truncate">
+                                                            <div className={`flex items-center gap-2 font-black text-xs text-slate-900`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[8px]">x{owned.length}</span>}</div>
+                                                            {best.mutation !== 'none' && <div className={`text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${MUTATIONS[best.mutation].color}`}>Mutation: {MUTATIONS[best.mutation].label}</div>}
+                                                            <div className={`text-[10px] font-black text-teal-700 flex items-center gap-1 mt-0.5`}>+{formatNum(best.cps * (MUTATIONS[best.mutation]?.mult || 1))}/s</div>
+                                                        </div></div>
+                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1); if(it.currency === 'secondary') setCurrency2(v => v + val); else setCurrency1(v => v + val); }} className="bg-slate-950 text-amber-400 px-4 py-1.5 rounded-xl text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Sell 1</button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
                         {view === 'shrine' && (
                             <div className="flex-1 flex flex-col gap-10 pb-20 animate-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80' : 'bg-slate-950/60'} backdrop-blur px-4 py-2 rounded-xl mt-2 mx-auto w-fit border border-white/5 shadow-lg`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-4 py-2 rounded-xl mt-2 mx-auto w-fit border shadow-lg`}>
                                     <p className={`text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-400'}`}>Manifest guaranteed rarities fused with arcane mutations.</p>
                                 </div>
                                 {SHRINE_CATEGORIES.map(cat => (
                                     <section key={cat.id} className="space-y-4">
                                         <div className="flex items-center gap-3 px-2">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${cat.color} ${cat.glow}`}><Icon name={cat.icon} size={20} className="text-white" /></div>
-                                            <h3 className={`font-black text-lg uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{cat.name}</h3>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${cat.color} ${cat.glow} border border-white/20`}><Icon name={cat.icon} size={20} className="text-white" /></div>
+                                            <h3 className={`font-black text-lg uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{cat.name}</h3>
                                         </div>
                                         <div className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth snap-x scrollbar-hide">
                                             {RARITIES.map(rarity => {
-                                                const cost = rarity.manifestCost * cat.multiplier;
-                                                const pk = { ...cat, targetRarity: rarity.id, mutation: cat.id, cost: cost, currency: 'secondary' };
-                                                const afford = currency2 >= getPackCost(pk);
+                                                const baseCost = rarity.manifestCost * cat.multiplier;
+                                                // APPLY 25% SHRINE DISCOUNT
+                                                const pk = { ...cat, targetRarity: rarity.id, mutation: cat.id, cost: baseCost, currency: 'secondary' };
+                                                const discountedCost = getPackCost(pk, true);
+                                                const afford = currency2 >= discountedCost;
                                                 return (
-                                                    <div key={rarity.id} className={`snap-center shrink-0 w-36 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`} onClick={() => { if(afford) { openPack(pk); setView('shop'); } }}>
-                                                        <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${cat.color} border border-white/20 flex flex-col items-center justify-center gap-2 p-3 shadow-xl ${cat.glow}`}>
-                                                            <div className={`text-[10px] font-black uppercase ${rarity.color} drop-shadow-md`}>{rarity.label}</div>
-                                                            <div className="flex items-center gap-1 mt-2 font-black text-xs"><span>{formatNum(getPackCost(pk))}</span><Icon name={terms.secondaryIcon} size={10} className="text-cyan-300" /></div>
+                                                    <div key={rarity.id} className={`snap-center shrink-0 w-36 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`} onClick={() => { if(afford) { openPack(pk, true); setView('shop'); } }}>
+                                                        <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${cat.color} border-4 flex flex-col items-center justify-center gap-2 p-3 shadow-xl ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950' : 'border-white/20'}`}>
+                                                            <div className={`text-[10px] font-black uppercase ${rarity.color} drop-shadow-[0_1px_2px_black]`}>{rarity.label}</div>
+                                                            <div className="flex items-center gap-1 mt-2 font-black text-xs z-10 bg-black/40 px-2 py-0.5 rounded-full border border-white/20 shadow-inner">
+                                                                <span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(discountedCost)}</span>
+                                                                <Icon name={terms.secondaryIcon} size={10} className="text-cyan-300" />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
@@ -759,161 +805,28 @@
                             </div>
                         )}
 
-                        {view === 'inventory' && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-500/10' : 'bg-white/5 border-white/10'} p-6 rounded-[2.5rem] flex flex-col gap-4 shadow-xl border`}>
-                                    <div className="flex justify-between items-start">
-                                        <div><h3 className={`text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.log}</h3><p className={`text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-white'}`}>{activeInventory.length} items in realm</p></div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => {
-                                            const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
-                                            let dAdded = 0, pAdded = 0;
-                                            Object.values(g).forEach(list => { 
-                                                list.sort(sortItemsThemeAware); 
-                                                ni.push(list[0]); 
-                                                list.slice(1).forEach(dup => { 
-                                                    const val = dup.value * (MUTATIONS[dup.mutation || 'none']?.mult || 1); 
-                                                    if(dup.currency === 'secondary') pAdded += val; else dAdded += val; 
-                                                }); 
-                                            });
-                                            setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
-                                            setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
-                                        }} className={`${currentThemeId === 'olympian' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'} flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase border active:scale-95 transition-all text-center`}>Sell Dups</button>
-                                    </div>
-                                </div>
-                                {RARITIES.map(r => {
-                                    const dbItemsForRarity = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
-                                    return (
-                                        <div key={r.id} className="mb-6 px-2">
-                                            <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-900/10' : 'bg-white/5'}`}></div></h4>
-                                            <div className="grid gap-3">
-                                                {dbItemsForRarity.map(dbItem => {
-                                                    const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
-                                                    if (!owned.length) return (
-                                                        <button key={dbItem.name} onClick={() => { if(currency2 >= r.manifestCost) { setCurrency2(v => v - r.manifestCost); const ni = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: dbItem.name, rarity: r, mutation: 'none', currency: (Math.random() < r.secondaryChance ? 'secondary' : 'primary'), cps: r.incomeBase, value: r.incomeBase * 200 }; setInventory(p => [ni, ...p]); setLastPull(ni); setView('shop'); } }} disabled={currency2 < r.manifestCost} className={`${currentThemeId === 'olympian' ? 'bg-amber-100/50 border-amber-900/5' : 'bg-slate-900/40 border-white/5'} p-4 rounded-3xl border-2 border-dashed opacity-40 hover:opacity-100 flex items-center justify-between transition-all group active:scale-95`}>
-                                                            <div className={`flex items-center gap-4 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}><Icon name="Lock" size={16} /><span className="text-[10px] font-black uppercase tracking-widest">{dbItem.name}</span></div>
-                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 text-white' : 'bg-cyan-500/20 text-cyan-400'} px-3 py-1.5 rounded-full text-[10px] font-black transition-colors flex items-center gap-1`}>Manifest: {formatNum(r.manifestCost)} <Icon name={terms.secondaryIcon} size={10} /></div>
-                                                        </button>
-                                                    );
-                                                    const best = owned[0];
-                                                    const isDark = best.mutation === 'void_touched' || best.mutation === 'underworld';
-                                                    return (
-                                                        <div key={best.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[best.mutation].bg} border-white/20 ${MUTATIONS[best.mutation].glow}`}>
-                                                            <div className="flex items-center gap-4 truncate"><span className="text-3xl drop-shadow-md">{dbItem.e}</span><div className="text-left truncate">
-                                                                <div className={`flex items-center gap-2 font-black text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[8px]">x{owned.length}</span>}</div>
-                                                                {best.mutation !== 'none' && (
-                                                                    <div className={`text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${isDark ? MUTATIONS[best.mutation].color : MUTATIONS[best.mutation].color + ' brightness-75'}`}>
-                                                                        Mutation: {MUTATIONS[best.mutation].label}
-                                                                    </div>
-                                                                )}
-                                                                <div className={`text-[10px] font-black ${isDark ? 'text-teal-300' : 'text-teal-700'} flex items-center gap-1 mt-0.5`}>+{formatNum(best.cps * (MUTATIONS[best.mutation]?.mult || 1))}/s</div>
-                                                            </div></div>
-                                                            <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1); if(it.currency === 'secondary') setCurrency2(v => v + val); else setCurrency1(v => v + val); }} className="bg-slate-950 text-amber-400 px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border border-white/10 active:scale-90 transition-transform hover:bg-slate-900 shrink-0">Sell 1</button>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                        {view === 'altar' && <div className={`p-8 text-center italic text-xs ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white/40'}`}>Arcane Altar Logic Active...</div>}
                     </main>
 
                     {inspectedPack && (
                         <div className="fixed inset-0 z-[500] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in zoom-in-95" onClick={() => setInspectedPack(null)}>
-                            <div className="bg-slate-900 w-full max-w-xs rounded-3xl border border-white/10 p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                                <button className="absolute top-4 right-4 text-white/20 hover:text-white" onClick={() => setInspectedPack(null)}><Icon name="X" size={24} /></button>
-                                <h3 className="text-sm font-black uppercase mb-6 tracking-widest text-center">{inspectedPack.name} Rates</h3>
-                                <div className="space-y-2">
+                            <div className="bg-slate-900 w-full max-w-xs rounded-3xl border-2 border-white/20 p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <button className="absolute top-4 right-4 text-white/20 hover:text-white transition-colors" onClick={() => setInspectedPack(null)}><Icon name="X" size={24} /></button>
+                                <h3 className="text-sm font-black uppercase mb-6 tracking-widest text-center text-white">{inspectedPack.name} Rates</h3>
+                                <div className="space-y-3">
                                     {(() => {
                                         const weights = inspectedPack.weights;
                                         const total = Object.values(weights).reduce((a,b)=>a+b,0);
                                         return RARITIES.map(r => {
                                             const pct = (weights[r.id] || 0) / total * 100;
-                                            return pct > 0 ? ( <div key={r.id} className="flex justify-between items-center text-[10px] font-black uppercase"><span className={r.color}>{r.label}</span><span className="opacity-40">{pct.toFixed(2)}%</span></div> ) : null;
+                                            return pct > 0 ? ( <div key={r.id} className="flex justify-between items-center text-[11px] font-black uppercase border-b border-white/5 pb-1"><span className={r.color}>{r.label}</span><span className="text-white opacity-40 font-mono">{pct.toFixed(2)}%</span></div> ) : null;
                                         }).reverse();
                                     })()}
                                 </div>
                             </div>
                         </div>
                     )}
-
-                    {inventoryModal && (
-                        <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex flex-col p-4 animate-in fade-in" onClick={() => setInventoryModal(null)}>
-                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-6 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'sacrifice' ? 'Select Catalyst' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                                    {activeInventory.filter(i => inventoryModal === 'sacrifice' ? (i.mutation !== 'none') : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => (
-                                        <div key={item.id} onClick={() => { if (inventoryModal === 'sacrifice') setTransferSacrifice(item); else setTransferTarget(item); setInventoryModal(null); }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${MUTATIONS[item.mutation].glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{MASTER_ITEM_DB.find(db => db.name === item.name)?.e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${MUTATIONS[item.mutation].color}`}>{MUTATIONS[item.mutation].label || 'Base'} • {item.rarity.label}</div></div></div></div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Encounter Overlays with Visuals */}
-                    {krakenEvent && (
-                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-cyan-950/90' : 'bg-red-950/90'} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId === 'olympian' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
-                            {/* Kraken Visuals */}
-                            {currentThemeId === 'abyssal' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    {[...Array(6)].map((_, i) => (
-                                        <svg key={i} className={`absolute animate-tentacle opacity-40`} style={{ 
-                                            bottom: '-10%', left: `${i * 20}%`, width: '150px', height: '400px', 
-                                            animationDelay: `${i * 0.4}s`,
-                                            filter: 'drop-shadow(0 0 15px cyan)'
-                                        }} viewBox="0 0 100 200">
-                                            <path d="M50,200 Q40,150 50,100 T50,0" stroke="cyan" strokeWidth="15" fill="none" strokeLinecap="round" />
-                                            <circle cx="50" cy="180" r="4" fill="white" />
-                                            <circle cx="50" cy="140" r="3" fill="white" />
-                                            <circle cx="50" cy="100" r="2" fill="white" />
-                                        </svg>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Minotaur Visuals */}
-                            {currentThemeId === 'olympian' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none">
-                                    <div className="absolute top-1/4 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" />
-                                    <div className="absolute top-1/3 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" style={{ animationDelay: '0.1s' }} />
-                                    <div className="absolute top-1/2 left-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red]" style={{ animationDelay: '0.2s' }} />
-                                    
-                                    <div className="absolute top-1/2 right-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red] rotate-[130deg]" style={{ animationDelay: '0.4s' }} />
-                                    <div className="absolute top-1/3 right-1/4 w-3/4 h-2 bg-red-600 animate-slash shadow-[0_0_20px_red] rotate-[130deg]" style={{ animationDelay: '0.5s' }} />
-                                </div>
-                            )}
-
-                            <div className="relative z-10 flex flex-col items-center">
-                                {krakenFeedback ? (
-                                    <div className="bg-slate-900 border-2 border-white/20 p-8 rounded-[3rem] text-center shadow-2xl animate-in zoom-in-50">
-                                        <h2 className="text-3xl font-black uppercase text-white mb-2">{krakenFeedback}</h2>
-                                        <div className="text-6xl">{terms.beast}</div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center gap-6">
-                                        <div className="bg-slate-950/80 border border-white/10 p-6 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
-                                            <h2 className={`text-2xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400' : 'text-orange-500'} animate-pulse tracking-tighter`}>{terms.beastName} Encounter!</h2>
-                                            <p className="text-[10px] font-black uppercase opacity-60 mb-4">Tap to Fight Back!</p>
-                                            <div className="w-64 h-8 bg-slate-900 rounded-full border border-white/10 overflow-hidden relative shadow-inner">
-                                                <div className={`h-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 to-blue-500' : 'bg-gradient-to-r from-red-600 to-orange-500'}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
-                                            </div>
-                                            <div className="mt-4 text-white text-xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
-                                        </div>
-                                        <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
-                                            const jackpot = Math.max(100, Math.floor(incomeFlow.income.c2 * 500 + 500 * activeMultiplier));
-                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-8 ${currentThemeId === 'abyssal' ? 'bg-cyan-600/30 border-cyan-400/40' : 'bg-orange-600/30 border-orange-400/40'}`}>
-                                            <span className="text-3xl font-black text-white uppercase drop-shadow-lg">STRIKE</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
+                    
                     <div className="fixed inset-0 pointer-events-none z-[1000] border-[16px] border-white/5 opacity-20" />
                 </div>
             );
