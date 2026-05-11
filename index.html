@@ -17,6 +17,7 @@
         @keyframes ghost-drift { 0% { transform: translateX(-100px) translateY(0); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translateX(calc(100vw + 100px)) translateY(30px); opacity: 0; } }
         @keyframes kraken-sway { 0%, 100% { transform: translateY(10px) rotate(-5deg); } 50% { transform: translateY(-10px) rotate(5deg); } }
         @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes ritual-glow { 0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(34,211,238,0.3)); } 50% { filter: brightness(1.3) drop-shadow(0 0 25px rgba(192,38,211,0.6)); } }
         
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -29,9 +30,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        .seal-jagged {
-            clip-path: polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0);
-        }
+        .animate-ritual { animation: ritual-glow 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -40,7 +39,18 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // Internal Icon Component for 100% reliability without external library objects
+        /**
+         * --- UTILS ---
+         */
+        const formatNum = (num) => {
+            if (num === undefined || num === null || isNaN(num)) return "0";
+            if (num < 1000) return Math.floor(num).toString();
+            if (num < 1000000) return (num / 1000).toFixed(1) + 'k';
+            if (num < 1000000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num < 1000000000000) return (num / 1000000000).toFixed(2) + 'B';
+            return (num / 1000000000000).toFixed(2) + 'T';
+        };
+
         const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
                 Anchor: <path d="M12 22V8m0 0 4 4m-4-4-4 4M5 12a7 7 0 0 0 14 0"/>,
@@ -154,48 +164,17 @@
         ];
 
         const MUTATION_PACKS = [
-            { id: 'glimmer_pack', name: 'Glimmer Shard', cost: 100, mutation: 'glimmering', desc: 'Mutate (1.5x).', icon: 'Sparkles' },
-            { id: 'bio_pack', name: 'Bioluminescence', cost: 500, mutation: 'bioluminescent', desc: 'Mutate (3x).', icon: 'Zap' },
-            { id: 'abyssal_pack', name: 'Abyssal Depths', cost: 15000, mutation: 'abyssal', desc: 'Mutate (15x).', icon: 'Anchor' },
-            { id: 'prism_pack', name: 'Prismatic Tide', cost: 1000000, mutation: 'prismatic', desc: 'Mutate (100x).', icon: 'Sparkles' },
-            { id: 'ethereal_pack', name: 'Ethereal Ascension', cost: 250000000, mutation: 'ethereal', desc: 'Mutate (500x).', icon: 'Waves' }, 
+            { id: 'glimmer_pack', name: 'Glimmer Shard', cost: 100, mutation: 'glimmering', desc: 'Mutate (1.5x).', icon: 'Sparkles', color: 'from-yellow-600 to-yellow-900',
+                weights: { trash: 60, common: 30, uncommon: 8, rare: 1.5, epic: 0.4, legendary: 0.08, mythic: 0.015, celestial: 0.004, primordial: 0.0009, transcendent: 0.0001 } },
+            { id: 'bio_pack', name: 'Bioluminescence', cost: 1000, mutation: 'bioluminescent', desc: 'Mutate (3x).', icon: 'Zap', color: 'from-lime-600 to-lime-900',
+                weights: { trash: 20, common: 50, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+            { id: 'abyssal_pack', name: 'Abyssal Depths', cost: 150000, mutation: 'abyssal', desc: 'Mutate (15x).', icon: 'Anchor', color: 'from-violet-700 to-indigo-950',
+                weights: { trash: 1, common: 10, uncommon: 40, rare: 35, epic: 12, legendary: 1.5, mythic: 0.4, celestial: 0.08, primordial: 0.015, transcendent: 0.005 } },
+            { id: 'prism_pack', name: 'Prismatic Tide', cost: 1000000, mutation: 'prismatic', desc: 'Mutate (100x).', icon: 'Sparkles', color: 'from-fuchsia-600 to-rose-950',
+                weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 30, epic: 45, legendary: 15, mythic: 3.5, celestial: 0.8, primordial: 0.08, transcendent: 0.02 } },
+            { id: 'ethereal_pack', name: 'Ethereal Ascension', cost: 250000000, mutation: 'ethereal', desc: 'Mutate (500x).', icon: 'Waves', color: 'from-cyan-400 to-blue-900',
+                weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 40, mythic: 35, celestial: 11, primordial: 2.5, transcendent: 0.389 } }, 
         ];
-
-        const formatNum = (num) => {
-            if (num === undefined || num === null || isNaN(num)) return "0";
-            if (num < 1000) return Math.floor(num).toString();
-            if (num < 1000000) return (num / 1000).toFixed(1) + 'k';
-            if (num < 1000000000) return (num / 1000000).toFixed(2) + 'M';
-            if (num < 1000000000000) return (num / 1000000000).toFixed(2) + 'B';
-            return (num / 1000000000000).toFixed(2) + 'T';
-        };
-
-        const AquariumEntity = React.memo(({ item }) => {
-            const x = useMemo(() => 5 + Math.random() * 80, []); 
-            const y = useMemo(() => 5 + Math.random() * 80, []);
-            const dur = useMemo(() => 10 + Math.random() * 15, []);
-            const delay = useMemo(() => Math.random() * -30, []);
-            const mutKey = item.mutation || 'none';
-            const mutConfig = MUTATIONS[mutKey];
-            const colorClass = mutConfig?.color || 'text-white';
-            const rgbMatch = mutConfig?.glow?.match(/rgba\([^)]+\)/);
-            const dropShadow = rgbMatch ? `drop-shadow(0 0 12px ${rgbMatch[0]})` : 'drop-shadow(0 0 4px rgba(255,255,255,0.1))';
-            const rarityLevels = ['trash', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
-            const rarityIdx = rarityLevels.indexOf(item.rarity.id);
-            const scale = 0.8 + (rarityIdx * 0.15); 
-            const dbItem = MASTER_ITEM_DB.find(db => db.name === item.name);
-            const emoji = dbItem?.e || '🐟';
-            return (
-                <div className="absolute pointer-events-auto z-10 transition-all duration-1000" style={{ left: `${x}%`, top: `${y}%` }}>
-                    <div style={{ animation: `drift ${dur}s ease-in-out ${delay}s infinite alternate` }} className="flex flex-col items-center justify-center group">
-                        <div style={{ transform: `scale(${scale})` }} className="flex flex-col items-center relative">
-                            <div style={{ filter: dropShadow }} className="text-3xl transition-transform duration-500 ease-in-out transform group-hover:scale-125 cursor-pointer">{emoji}</div>
-                            <span className={`absolute top-full mt-1 pointer-events-none text-[8px] font-black uppercase tracking-wider whitespace-nowrap bg-slate-950/90 px-2 py-1 rounded border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${colorClass} shadow-xl z-50`}>{item.name} {item.currency === 'pearl' ? '✨' : ''}</span>
-                        </div>
-                    </div>
-                </div>
-            );
-        });
 
         const App = () => {
             const [dubloons, setDubloons] = useState(100);
@@ -240,7 +219,7 @@
             };
 
             useEffect(() => {
-                const saved = localStorage.getItem('abyssal_v11_save');
+                const saved = localStorage.getItem('abyssal_v12_save');
                 if (saved) {
                     try {
                         const d = JSON.parse(saved);
@@ -254,7 +233,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('abyssal_v11_save', JSON.stringify({ dubloons, pearls, inventory, upgrades, claimedSets }));
+                localStorage.setItem('abyssal_v12_save', JSON.stringify({ dubloons, pearls, inventory, upgrades, claimedSets }));
             }, [dubloons, pearls, inventory, upgrades, claimedSets]);
 
             const incomeFlow = useMemo(() => {
@@ -415,28 +394,19 @@
                 else setPearls(p => p - cost);
 
                 setTimeout(() => {
-                    let rarity, mutation = pack.mutation || 'none';
-                    if (pack.mutation) {
-                        const ownedNames = [...new Set(inventory.map(i => i.name))];
-                        const pool = ownedNames.length ? ownedNames : MASTER_ITEM_DB.map(i => i.name);
-                        const name = pool[Math.floor(Math.random() * pool.length)];
-                        const dbMatch = MASTER_ITEM_DB.find(i => i.name === name) || MASTER_ITEM_DB[0];
-                        rarity = RARITIES.find(r => r.id === dbMatch.rarityId) || RARITIES[0];
-                        setPendingLoot(createItem(name, rarity, mutation, pack));
-                    } else {
-                        const weights = getDynamicWeights(pack, upgrades.luck);
-                        const total = Object.values(weights).reduce((a, b) => a + b, 0);
-                        let rand = Math.random() * total;
-                        rarity = RARITIES[0];
-                        for (const r of [...RARITIES].reverse()) {
-                            const w = weights[r.id] || 0;
-                            if (w > 0 && rand < w) { rarity = r; break; }
-                            rand -= w;
-                        }
-                        const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
-                        const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
-                        setPendingLoot(createItem(item.name, rarity, 'none', pack));
+                    const weights = getDynamicWeights(pack, upgrades.luck);
+                    const total = Object.values(weights).reduce((a, b) => a + b, 0);
+                    let rand = Math.random() * total;
+                    let rarity = RARITIES[0];
+                    for (const r of [...RARITIES].reverse()) {
+                        const w = weights[r.id] || 0;
+                        if (w > 0 && rand < w) { rarity = r; break; }
+                        rand -= w;
                     }
+                    const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
+                    const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
+                    setPendingLoot(createItem(item.name, rarity, pack.mutation || 'none', pack));
+                    
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
             };
@@ -459,7 +429,8 @@
                     epic: 2200, legendary: 3000, mythic: 4200, 
                     celestial: 5800, primordial: 7500, transcendent: 9500
                 };
-                const shakeTime = shakeDelays[rarityId] || 1000;
+                const shakeTime = Math.min(shakeDelays[rarityId] || 1000, 3000);
+
                 setTimeout(() => {
                     setIsShaking(false);
                     setIsRipping(true);
@@ -579,6 +550,22 @@
                 return dupes;
             };
 
+            const handlePressStart = (e, pack) => {
+                if (e.touches && e.touches.length > 0) touchStartY.current = e.touches[0].clientY;
+                isHolding.current = false;
+                holdTimer.current = setTimeout(() => {
+                    isHolding.current = true;
+                    setInspectedPack(pack);
+                }, 500);
+            };
+
+            const handlePressEnd = () => {
+                if (holdTimer.current) {
+                    clearTimeout(holdTimer.current);
+                    holdTimer.current = null;
+                }
+            };
+
             return (
                 <div className="h-screen w-full flex flex-col bg-slate-950 text-white relative overflow-hidden font-sans select-none touch-none">
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-b from-cyan-950 via-blue-950 to-slate-950">
@@ -672,7 +659,11 @@
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth snap-x scrollbar-hide">
                                     {STANDARD_PACKS.map(p => (
-                                        <div key={p.id} className="snap-center shrink-0 w-32 flex flex-col items-center group cursor-pointer" onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; holdTimer.current = setTimeout(() => { isHolding.current = true; setInspectedPack(p); }, 500); }} onTouchEnd={() => { clearTimeout(holdTimer.current); }} onMouseDown={() => { isHolding.current = false; holdTimer.current = setTimeout(() => { isHolding.current = true; setInspectedPack(p); }, 500); }} onMouseUp={() => { clearTimeout(holdTimer.current); }} onClick={() => { if(!isHolding.current) openPack(p); }}>
+                                        <div key={p.id} className="snap-center shrink-0 w-32 flex flex-col items-center group cursor-pointer" 
+                                            onTouchStart={(e) => handlePressStart(e, p)} onTouchEnd={handlePressEnd} 
+                                            onMouseDown={(e) => handlePressStart(e, p)} onMouseUp={handlePressEnd}
+                                            onClick={() => { if(!isHolding.current) openPack(p); }}
+                                        >
                                             <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${p.color} border border-white/20 flex flex-col items-center justify-center gap-2 p-3 transition-all group-hover:scale-105 group-hover:border-white/40 group-active:scale-95 shadow-xl ${p.glow} ${p.currency === 'dubloon' ? (dubloons < getPackCost(p) ? 'opacity-30' : '') : (pearls < getPackCost(p) ? 'opacity-30' : '')}`}>
                                                 <Icon name={p.icon} size={28} className="text-white group-hover:scale-110 transition-transform drop-shadow-md" />
                                                 <span className="text-[8px] font-black text-center uppercase opacity-80 text-white">{p.name}</span>
@@ -687,17 +678,17 @@
                                     {isOpening && <div className="flex flex-col items-center gap-4 animate-pulse"><div className="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-500 flex items-center justify-center animate-spin"><Icon name="Anchor" className="text-cyan-400" size={32} /></div><span className="text-xs font-black uppercase tracking-widest text-cyan-400">Diving Deeper...</span></div>}
                                     {isSealed && (
                                         <div className="flex flex-col items-center gap-6 cursor-pointer group" onClick={ripTape}>
-                                            <div className={`w-44 h-60 rounded-2xl border-4 border-white/20 shadow-2xl relative transition-all duration-500 bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'}`}>
+                                            <div className={`w-44 h-60 rounded-2xl border-4 border-white/20 shadow-2xl relative transition-all duration-500 bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation ? 'animate-ritual' : ''}`}>
                                                 <div className="absolute top-12 left-0 right-0 h-16 flex items-center justify-center z-10">
                                                     <div className="relative w-full h-full">
-                                                        <div className={`absolute inset-0 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] border-y border-white/30 transition-all duration-700 flex items-center justify-center ${isRipping ? '-translate-y-16 opacity-0 rotate-[-5deg]' : ''}`}><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
+                                                        <div className={`absolute inset-0 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] border-y border-white/30 transition-all duration-700 flex items-center justify-center ${isRipping ? '-translate-y-16 opacity-0 rotate-[-5deg]' : ''}`}><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">{activePack?.mutation ? 'Arcane Seal' : 'Sealed Cache'}</span></div>
                                                         <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
                                                     </div>
                                                 </div>
                                                 <div className="absolute inset-4 border border-white/5 rounded-lg pointer-events-none" />
                                                 <div className="absolute bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack.icon} className="mx-auto" size={48} /></div>
                                             </div>
-                                            {!isShaking && !isRipping && <div className="bg-cyan-500 px-8 py-4 rounded-full font-black text-sm uppercase tracking-widest shadow-lg animate-pulse ring-4 ring-cyan-500/20">Rip Open</div>}
+                                            {!isShaking && !isRipping && <div className="bg-cyan-500 px-8 py-4 rounded-full font-black text-sm uppercase tracking-widest shadow-lg animate-pulse ring-4 ring-cyan-500/20">{activePack?.mutation ? 'Unlock Mutation' : 'Rip Open'}</div>}
                                         </div>
                                     )}
                                     {lastPull && !isSealed && (
@@ -754,7 +745,27 @@
                         {view === 'shrine' && (
                             <div className="flex-1 flex flex-col gap-8 animate-in slide-in-from-left-4">
                                 <section><h3 className="text-[10px] font-black uppercase opacity-30 mb-4 tracking-[0.4em] flex items-center gap-2 px-2"><Icon name="Sparkles" size={14} /> Arcane Mutations</h3>
-                                    <div className="space-y-3">{MUTATION_PACKS.map(p => ( <button key={p.id} disabled={pearls < getPackCost(p)} onClick={() => openPack(p)} className="w-full bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-all disabled:opacity-20"><div className="flex items-center gap-4 text-left"><div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${MUTATIONS[p.mutation].bg}`}><Icon name={p.icon} size={24} className={MUTATIONS[p.mutation].color} /></div><div><h4 className="font-black text-sm">{p.name}</h4><p className="text-[10px] opacity-50 uppercase tracking-widest">{p.desc}</p></div></div><div className="flex flex-col items-end"><div className="bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1 border border-cyan-500/10">{formatNum(getPackCost(p))} <Icon name="Droplet" size={12} /></div>{merchantSaleActive && <span className="text-[8px] text-cyan-200 font-black mt-1 uppercase">Sale active</span>}</div></button> ))}</div>
+                                    <div className="space-y-3">{MUTATION_PACKS.map(p => ( 
+                                        <div key={p.id}
+                                            onTouchStart={(e) => handlePressStart(e, p)} onTouchEnd={handlePressEnd} 
+                                            onMouseDown={(e) => handlePressStart(e, p)} onMouseUp={handlePressEnd}
+                                            onClick={() => { 
+                                                if(!isHolding.current) { 
+                                                    const cost = getPackCost(p);
+                                                    if(pearls >= cost) { openPack(p); setView('shop'); }
+                                                } 
+                                            }} 
+                                            className={`w-full bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-all cursor-pointer ${pearls < getPackCost(p) ? 'opacity-30' : ''}`}>
+                                            <div className="flex items-center gap-4 text-left pointer-events-none">
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${MUTATIONS[p.mutation].bg}`}><Icon name={p.icon} size={24} className={MUTATIONS[p.mutation].color} /></div>
+                                                <div><h4 className="font-black text-sm">{p.name}</h4><p className="text-[10px] opacity-50 uppercase tracking-widest">{p.desc}</p></div>
+                                            </div>
+                                            <div className="flex flex-col items-end pointer-events-none">
+                                                <div className="bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1 border border-cyan-500/10">{formatNum(getPackCost(p))} <Icon name="Droplet" size={12} /></div>
+                                                {merchantSaleActive && <span className="text-[8px] text-cyan-200 font-black mt-1 uppercase">Sale active</span>}
+                                            </div>
+                                        </div> 
+                                    ))}</div>
                                 </section>
                                 <section><h3 className="text-[10px] font-black uppercase opacity-30 mb-4 tracking-[0.4em] flex items-center gap-2 px-2"><Icon name="Compass" size={14} /> Fleet Upgrades</h3>
                                     <div className="space-y-3">
@@ -777,7 +788,7 @@
                                     const hasUnclaimed = MUTATION_ORDER.some(mutKey => { const prog = getSetProgress(r.id, mutKey); return prog.count >= prog.total && !claimedSets.includes(`${r.id}-${mutKey}`); });
                                     return ( <div key={r.id} className="mb-6"><div className="flex justify-between items-center mb-4 px-2"><h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${r.color} flex items-center gap-2`}><div className={`w-1.5 h-4 rounded-full ${r.bg.split(' ')[0]}`} /> {r.label}</h4><button onClick={() => setExpandedRewardRarity(isExpanded ? null : r.id)} className={`relative px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${isExpanded ? 'bg-white text-slate-950' : 'bg-white/5 text-white/50 border-white/5'}`}>{isExpanded ? 'Hide Prizes' : 'Set Prizes'}{hasUnclaimed && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />}</button></div>
                                         {isExpanded && ( <div className="grid gap-2 mb-6 animate-in slide-in-from-top-2">{MUTATION_ORDER.map(mutKey => { const prog = getSetProgress(r.id, mutKey); const isClaimed = claimedSets.includes(`${r.id}-${mutKey}`); const canClaim = prog.count >= prog.total && !isClaimed; const mutLabel = MUTATIONS[mutKey].label || 'Standard'; const prizeAmt = r.setPrize.amt * MUTATIONS[mutKey].mult; return ( <div key={mutKey} className="bg-slate-900/50 border border-white/5 p-3 rounded-2xl flex justify-between items-center"><div className="text-left"><span className={`text-[10px] font-black uppercase ${MUTATIONS[mutKey].color}`}>{mutLabel} Set</span><div className="text-[9px] opacity-30 font-black">{prog.count}/{prog.total} Found</div></div><button disabled={!canClaim} onClick={() => claimSetPrize(r, mutKey)} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1.5 ${isClaimed ? 'bg-slate-800 text-white/20' : canClaim ? 'bg-amber-500 text-slate-950 shadow-lg active:scale-95' : 'bg-white/5 text-white/20'}`}>{isClaimed ? <><Icon name="Check" size={10} /> Claimed</> : <><Icon name="Star" size={10} /> {formatNum(prizeAmt)} {r.setPrize.curr === 'pearl' ? 'P' : 'D'}</>}</button></div> ); })}</div> )}
-                                        <div className="grid gap-3">{dbItemsOfRarity.map(m => { const owned = inventory.filter(i => i.name === m.name).sort(sortItems); if (!owned.length) return ( <button key={m.name} onClick={() => buySpecificItem(m, r)} disabled={pearls < r.manifestCost} className="p-4 rounded-3xl border-2 border-dashed border-white/5 bg-slate-900/40 opacity-40 hover:opacity-100 hover:bg-white/5 flex items-center justify-between transition-all group active:scale-95 disabled:hover:opacity-40"><div className="flex items-center gap-4"><Icon name="Lock" size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">{m.name}</span></div><div className="flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-black border border-cyan-500/10 group-hover:bg-cyan-500 group-hover:text-white transition-colors">Manifest: {formatNum(r.manifestCost)} <Icon name="Droplet" size={10} /></div></button> ); const best = owned[0]; const worst = owned[owned.length-1]; return ( <div key={best.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[best.mutation].bg} border-white/10 ${MUTATIONS[best.mutation].glow}`}><div className="flex items-center gap-4 truncate"><span className="text-3xl drop-shadow-md">{m.e}</span><div className="text-left truncate"><div className="flex items-center gap-2"><h5 className="font-black text-xs text-slate-900 truncate">{best.name}</h5>{owned.length > 1 && <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[8px] font-black">x{owned.length}</span>}</div><div className="flex items-center gap-1 text-[10px] font-black text-teal-600">{best.currency === 'pearl' ? <Icon name="Droplet" size={10} /> : <Icon name="Coins" size={10} />} +{formatNum(best.cps * MUTATIONS[best.mutation].mult)}/s</div></div></div><button onClick={() => sellItem(worst)} className="w-14 h-12 rounded-2xl bg-slate-950 flex flex-col items-center justify-center active:scale-90 border border-white/5 transition-transform"><span className="text-[8px] font-black text-white/40 uppercase">{owned.length > 1 ? 'Dup' : 'Sell'}</span><span className="text-[9px] font-black text-amber-400">{formatNum(worst.value * MUTATIONS[worst.mutation].mult)}</span></button></div> ); })}</div>
+                                        <div className="grid gap-3">{dbItemsOfRarity.map(m => { const owned = inventory.filter(i => i.name === m.name).sort(sortItems); if (!owned.length) return ( <button key={m.name} onClick={() => buySpecificItem(m, r)} disabled={pearls < r.manifestCost} className="p-4 rounded-3xl border-2 border-dashed border-white/5 bg-slate-900/40 opacity-40 hover:opacity-100 hover:bg-white/5 flex items-center justify-between transition-all group active:scale-95 disabled:hover:opacity-40"><div className="flex items-center gap-4"><Icon name="Lock" size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">{m.name}</span></div><div className="flex items-center gap-1.5 bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-black border border-cyan-500/10 group-hover:bg-cyan-500 group-hover:text-white transition-colors">Manifest: {formatNum(r.manifestCost)} <Icon name="Droplet" size={10} /></div></button> ); const best = owned[0]; const worst = owned[owned.length-1]; return ( <div key={best.id} className={`p-4 rounded-3xl border flex items-center justify-between ${MUTATIONS[best.mutation].bg} border-white/10 ${MUTATIONS[best.mutation].glow}`}><div className="flex items-center gap-4 truncate"><span className="text-3xl drop-shadow-md">{m.e}</span><div className="text-left truncate"><div className="flex flex-col"><div className="flex items-center gap-2"><h5 className="font-black text-xs text-slate-900 truncate">{best.name}</h5>{owned.length > 1 && <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[8px] font-black">x{owned.length}</span>}</div>{best.mutation !== 'none' && <span className={`text-[8px] font-black uppercase tracking-tighter ${MUTATIONS[best.mutation].color}`}>{MUTATIONS[best.mutation].label} Upgrade</span>}</div><div className="flex items-center gap-1 text-[10px] font-black text-teal-600">{best.currency === 'pearl' ? <Icon name="Droplet" size={10} /> : <Icon name="Coins" size={10} />} +{formatNum(best.cps * MUTATIONS[best.mutation].mult)}/s</div></div></div><button onClick={() => sellItem(worst)} className="w-14 h-12 rounded-2xl bg-slate-950 flex flex-col items-center justify-center active:scale-90 border border-white/5 transition-transform"><span className="text-[8px] font-black text-white/40 uppercase">{owned.length > 1 ? 'Dup' : 'Sell'}</span><span className="text-[9px] font-black text-amber-400">{formatNum(worst.value * MUTATIONS[worst.mutation].mult)}</span></button></div> ); })}</div>
                                     </div> ); })}
                             </div>
                         )}
