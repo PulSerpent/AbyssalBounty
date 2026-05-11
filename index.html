@@ -15,7 +15,7 @@
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
         @keyframes heavenly-drift { 0% { transform: translateY(-10vh) translateX(0) scale(0.5) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(50px) scale(1.2) rotate(360deg); opacity: 0; } }
         @keyframes shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
-        @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-15px, -10px); } 20%, 40%, 60%, 80% { transform: translate(15px, 10px); } }
+        @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-10px, -8px); } 20%, 40%, 60%, 80% { transform: translate(10px, 8px); } }
         @keyframes ghost-drift { 0% { transform: translate(var(--startX), var(--startY)); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(var(--endX), var(--endY)); opacity: 0; } }
         @keyframes orb-drift { 0% { transform: translateX(calc(100vw + 100px)) translateY(60px) scale(0.8); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(-100px) translateY(-20px) scale(1.2); opacity: 0; } }
         @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -31,8 +31,9 @@
         }
         @keyframes slash-cinema { 
             0% { transform: scaleX(0) scaleY(2) rotate(-45deg); opacity: 0; filter: blur(10px); } 
-            15% { transform: scaleX(1.5) scaleY(1.8) rotate(-45deg); opacity: 1; filter: blur(0px) brightness(2); } 
-            100% { transform: scaleX(1) scaleY(1) rotate(-45deg); opacity: 0; filter: blur(5px); } 
+            10% { transform: scaleX(1.5) scaleY(1.8) rotate(-45deg); opacity: 1; filter: blur(0px) brightness(2); } 
+            30% { transform: scaleX(1) scaleY(1) rotate(-45deg); opacity: 0; filter: blur(5px); } 
+            100% { opacity: 0; } 
         }
         @keyframes ink-fade {
             0% { opacity: 0; }
@@ -45,7 +46,7 @@
         body { background-color: #020617; margin: 0; overflow: hidden; color: white; font-family: system-ui, -apple-system, sans-serif; }
         .animate-ritual { animation: ritual-glow 2s ease-in-out infinite; }
         .animate-tentacle-detailed { animation: tentacle-writhe 5s ease-in-out infinite; transform-origin: bottom center; }
-        .animate-slash-detailed { animation: slash-cinema 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-slash-detailed { animation: slash-cinema 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
         .animate-ink { animation: ink-fade 2s ease-in forwards; }
         .animate-heavy-shake { animation: shake-heavy 0.4s ease-in-out; }
         
@@ -66,13 +67,14 @@
         const formatNum = (n) => {
             if (n === undefined || n === null || isNaN(n)) return "0";
             if (n < 1000) return Math.floor(n).toString();
-            if (n < 1000000) return (n / 1000).toFixed(1) + 'k';
-            if (n < 1000000000) return (n / 1000000).toFixed(2) + 'M';
-            if (n < 1000000000000) return (n / 1000000000).toFixed(2) + 'B';
-            if (n < 1000000000000000) return (n / 1000000000000).toFixed(2) + 'T';
-            if (n < 1000000000000000000) return (n / 1000000000000000).toFixed(2) + 'Qa';
-            if (n < 1000000000000000000000) return (n / 1000000000000000000).toFixed(2) + 'Qi';
-            return (n / 1000000000000000000000).toFixed(2) + 'Sx';
+            if (n < 1e6) return (n / 1e3).toFixed(1) + 'k';
+            if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
+            if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
+            if (n < 1e15) return (n / 1e12).toFixed(2) + 'T';
+            if (n < 1e18) return (n / 1e15).toFixed(2) + 'Qu';
+            if (n < 1e21) return (n / 1e18).toFixed(2) + 'Qi';
+            if (n < 1e24) return (n / 1e21).toFixed(2) + 'Sx';
+            return (n / 1e24).toFixed(2) + 'Sp';
         };
 
         const Icon = ({ name, size = 24, className = "" }) => {
@@ -120,23 +122,23 @@
                     packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken', merchant: 'Ghost Ship'
                 },
                 RARITIES: [
-                    { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.05, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 20 },
-                    { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 3.0, secondaryChance: 0.10, setPrize: { amt: 75000, curr: 'primary' }, transferCost: { amt: 25000, curr: 'primary' }, manifestCost: 100 },
-                    { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 15.0, secondaryChance: 0.15, setPrize: { amt: 500000, curr: 'primary' }, transferCost: { amt: 250000, curr: 'primary' }, manifestCost: 500 },
-                    { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 80.0, secondaryChance: 0.20, setPrize: { amt: 3000000, curr: 'primary' }, transferCost: { amt: 2500000, curr: 'primary' }, manifestCost: 4000 },
-                    { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 450.0, secondaryChance: 0.30, setPrize: { amt: 25000000, curr: 'primary' }, transferCost: { amt: 50000000, curr: 'primary' }, manifestCost: 25000 },
-                    { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 3000.0, secondaryChance: 0.50, setPrize: { amt: 200000000, curr: 'primary' }, transferCost: { amt: 1500000000, curr: 'primary' }, manifestCost: 300000 },
-                    { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 25000.0, secondaryChance: 0.75, setPrize: { amt: 5000000000, curr: 'primary' }, transferCost: { amt: 75000000000, curr: 'primary' }, manifestCost: 2500000 },
-                    { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 250000.0, secondaryChance: 1.0, setPrize: { amt: 1000000, curr: 'secondary' }, transferCost: { amt: 250000, curr: 'secondary' }, manifestCost: 25000000 },
-                    { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 3000000.0, secondaryChance: 1.0, setPrize: { amt: 50000000, curr: 'secondary' }, transferCost: { amt: 15000000, curr: 'secondary' }, manifestCost: 250000000 },
-                    { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 50000000.0, secondaryChance: 1.0, setPrize: { amt: 5000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' }, manifestCost: 2500000000 },
+                    { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.01, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 200 },
+                    { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 3.0, secondaryChance: 0.02, setPrize: { amt: 75000, curr: 'primary' }, transferCost: { amt: 25000, curr: 'primary' }, manifestCost: 1000 },
+                    { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 15.0, secondaryChance: 0.05, setPrize: { amt: 500000, curr: 'primary' }, transferCost: { amt: 250000, curr: 'primary' }, manifestCost: 5000 },
+                    { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 80.0, secondaryChance: 0.10, setPrize: { amt: 3000000, curr: 'primary' }, transferCost: { amt: 2500000, curr: 'primary' }, manifestCost: 40000 },
+                    { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 450.0, secondaryChance: 0.15, setPrize: { amt: 25000000, curr: 'primary' }, transferCost: { amt: 50000000, curr: 'primary' }, manifestCost: 250000 },
+                    { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 3000.0, secondaryChance: 0.25, setPrize: { amt: 200000000, curr: 'primary' }, transferCost: { amt: 1500000000, curr: 'primary' }, manifestCost: 3000000 },
+                    { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 25000.0, secondaryChance: 0.40, setPrize: { amt: 5000000000, curr: 'primary' }, transferCost: { amt: 75000000000, curr: 'primary' }, manifestCost: 25000000 },
+                    { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 250000.0, secondaryChance: 0.60, setPrize: { amt: 1000000, curr: 'secondary' }, transferCost: { amt: 250000, curr: 'secondary' }, manifestCost: 250000000 },
+                    { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 3000000.0, secondaryChance: 0.80, setPrize: { amt: 50000000, curr: 'secondary' }, transferCost: { amt: 15000000, curr: 'secondary' }, manifestCost: 2500000000 },
+                    { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 50000000.0, secondaryChance: 1.0, setPrize: { amt: 5000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' }, manifestCost: 25000000000 },
                 ],
                 MUTATION_ORDER: ['none', 'glimmering', 'bioluminescent', 'cursed', 'abyssal', 'void_touched', 'prismatic', 'ethereal'],
                 MUTATIONS: {
                     none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
                     glimmering: { label: 'Glimmering', mult: 1.5, bg: 'bg-yellow-50/90', color: 'text-yellow-600', glow: 'shadow-[0_0_15px_rgba(202,138,4,0.6)]' },
                     bioluminescent: { label: 'Bioluminescent', mult: 3, bg: 'bg-lime-50/90', color: 'text-lime-600', glow: 'shadow-[0_0_15px_rgba(101,163,13,0.6)]' },
-                    cursed: { label: 'Cursed', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.6)]' },
+                    cursed: { label: 'Mystic', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.6)]' },
                     abyssal: { label: 'Abyssal', mult: 15, bg: 'bg-violet-50/90', color: 'text-violet-700', glow: 'shadow-[0_0_15px_rgba(109,40,217,0.6)]' },
                     void_touched: { label: 'Void-Touched', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100', glow: 'shadow-[0_0_15px_rgba(241,245,249,0.4)]' },
                     prismatic: { label: 'Prismatic', mult: 100, bg: 'bg-fuchsia-50/90', color: 'text-fuchsia-600', glow: 'shadow-[0_0_15px_rgba(192,38,211,0.6)]' },
@@ -151,7 +153,7 @@
                     { name: "Heart of Ocean", rarityId: "legendary", e: "💙" }, { name: "Poseidon Trident", rarityId: "legendary", e: "🔱" }, { name: "Megalodon Fang", rarityId: "legendary", e: "🦷" }, { name: "Siren's Tear", rarityId: "legendary", e: "💧" }, { name: "Tidal Anchor", rarityId: "legendary", e: "⚓" }, { name: "Sea Dragon Scale", rarityId: "legendary", e: "🐉" }, { name: "Orca", rarityId: "legendary", e: "🐋" }, { name: "Whale Shark", rarityId: "legendary", e: "🦈" }, { name: "Coelacanth", rarityId: "legendary", e: "🐟" }, { name: "Deep Sea Behemoth", rarityId: "legendary", e: "🦕" },
                     { name: "Leviathan Engine", rarityId: "mythic", e: "⚙️" }, { name: "Ocean Singularity", rarityId: "mythic", e: "🕳️" }, { name: "Breath of Sea", rarityId: "mythic", e: "💨" }, { name: "Abyssal Pulse", rarityId: "mythic", e: "🫀" }, { name: "Trench Core", rarityId: "mythic", e: "🌋" }, { name: "Blue Whale", rarityId: "mythic", e: "🐳" }, { name: "Giant Isopod", rarityId: "mythic", e: "🪲" }, { name: "Kraken Eye", rarityId: "mythic", e: "👁️" }, { name: "Abyssal Worm", rarityId: "mythic", e: "🪱" }, { name: "Sunken Crown", rarityId: "mythic", e: "👑" },
                     { name: "Stardust Coral", rarityId: "celestial", e: "✨" }, { name: "Astral Pearl", rarityId: "celestial", e: "🔮" }, { name: "Moon-Tide Amulet", rarityId: "celestial", e: "🧿" }, { name: "Zodiac Compass", rarityId: "celestial", e: "🧭" }, { name: "Solar Relic", rarityId: "celestial", e: "☀️" }, { name: "Celestial Ray", rarityId: "celestial", e: "☄️" }, { name: "Star-Eater Shark", rarityId: "celestial", e: "🌌" }, { name: "Nebula Jelly", rarityId: "celestial", e: "🪼" }, { name: "Lunar Whale", rarityId: "celestial", e: "🐋" }, { name: "Comet Fragment", rarityId: "celestial", e: "☄️" },
-                    { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The banner Tear", rarityId: "primordial", e: "💧" }, { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" }, { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
+                    { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The First Tear", rarityId: "primordial", e: "💧" }, { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" }, { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
                     { name: "Time Anchor", rarityId: "transcendent", e: "⏳" }, { name: "Reality Shard", rarityId: "transcendent", e: "🪞" }, { name: "Infinite Ocean", rarityId: "transcendent", e: "🌌" }, { name: "Cosmos Whisper", rarityId: "transcendent", e: "🗣️" }, { name: "Eternity Prism", rarityId: "transcendent", e: "⏏️" }, { name: "Cosmic Whale", rarityId: "transcendent", e: "🐋" }, { name: "Astral Serpent", rarityId: "transcendent", e: "🐉" }, { name: "Void-Swimmer", rarityId: "transcendent", e: "🏊" }, { name: "Dimension Rift", rarityId: "transcendent", e: "🌌" }, { name: "Creator's Pearl", rarityId: "transcendent", e: "⚪" }
                 ],
                 STANDARD_PACKS: [
@@ -166,11 +168,13 @@
                     { id: 'pack9', name: 'Atlantis Core', cost: 1500000000000, currency: 'primary', icon: 'Boxes', color: 'from-blue-600 to-black', glow: 'shadow-cyan-400/40', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
                 ],
                 SHRINE_CATEGORIES: [
-                    { id: 'glimmering', name: 'Glimmer Shards', icon: 'Sparkles', multiplier: 2, color: 'from-yellow-600 to-yellow-900', glow: 'shadow-yellow-500/20' },
-                    { id: 'bioluminescent', name: 'Bioluminescence', icon: 'Zap', multiplier: 5, color: 'from-lime-600 to-lime-900', glow: 'shadow-lime-500/20' },
+                    { id: 'glimmering', name: 'Glimmer Shards', icon: 'Sparkles', multiplier: 1, color: 'from-yellow-600 to-yellow-900', glow: 'shadow-yellow-500/20' },
+                    { id: 'bioluminescent', name: 'Bioluminescence', icon: 'Zap', multiplier: 3, color: 'from-lime-600 to-lime-900', glow: 'shadow-lime-500/20' },
+                    { id: 'cursed', name: 'Cursed Relics', icon: 'Flame', multiplier: 8, color: 'from-red-600 to-red-900', glow: 'shadow-red-500/20' },
                     { id: 'abyssal', name: 'Abyssal Depths', icon: 'Anchor', multiplier: 25, color: 'from-violet-700 to-indigo-950', glow: 'shadow-violet-500/20' },
-                    { id: 'prismatic', name: 'Prismatic Tide', icon: 'Sparkles', multiplier: 150, color: 'from-fuchsia-600 to-rose-950', glow: 'shadow-fuchsia-500/20' },
-                    { id: 'ethereal', name: 'Ethereal Ascension', icon: 'Waves', multiplier: 750, color: 'from-cyan-400 to-blue-900', glow: 'shadow-cyan-400/20' }
+                    { id: 'void_touched', name: 'Void Essence', icon: 'Globe', multiplier: 75, color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-500/20' },
+                    { id: 'prismatic', name: 'Prismatic Tide', icon: 'Sparkles', multiplier: 250, color: 'from-fuchsia-600 to-rose-950', glow: 'shadow-fuchsia-500/20' },
+                    { id: 'ethereal', name: 'Ethereal Ascension', icon: 'Waves', multiplier: 1000, color: 'from-cyan-400 to-blue-900', glow: 'shadow-cyan-400/20' }
                 ]
             },
             
@@ -185,16 +189,16 @@
                     packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur', merchant: 'Celestial Chariot'
                 },
                 RARITIES: [
-                    { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.05, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' }, manifestCost: 100000000000 },
-                    { id: 'common', label: 'Common', color: 'text-amber-600', bg: 'bg-amber-50/90', multiplier: 1, incomeBase: 500000000.0, secondaryChance: 0.10, setPrize: { amt: 250000000000000, curr: 'primary' }, transferCost: { amt: 100000000000, curr: 'primary' }, manifestCost: 500000000000 },
-                    { id: 'uncommon', label: 'Uncommon', color: 'text-orange-600', bg: 'bg-orange-50/90', multiplier: 3, incomeBase: 2500000000.0, secondaryChance: 0.15, setPrize: { amt: 1500000000000000, curr: 'primary' }, transferCost: { amt: 1000000000000, curr: 'primary' }, manifestCost: 2500000000000 },
-                    { id: 'rare', label: 'Heroic', color: 'text-sky-600', bg: 'bg-sky-50/90', multiplier: 8, incomeBase: 15000000000.0, secondaryChance: 0.20, setPrize: { amt: 10000000000000000, curr: 'primary' }, transferCost: { amt: 10000000000000, curr: 'primary' }, manifestCost: 20000000000000 },
-                    { id: 'epic', label: 'Epic', color: 'text-indigo-600', bg: 'bg-indigo-50/90', multiplier: 20, incomeBase: 100000000000.0, secondaryChance: 0.30, setPrize: { amt: 80000000000000000, curr: 'primary' }, transferCost: { amt: 200000000000000, curr: 'primary' }, manifestCost: 150000000000000 },
-                    { id: 'legendary', label: 'Legendary', color: 'text-yellow-700', bg: 'bg-yellow-50/95', multiplier: 60, incomeBase: 800000000000.0, secondaryChance: 0.50, setPrize: { amt: 500000000000000000, curr: 'primary' }, transferCost: { amt: 5000000000000000, curr: 'primary' }, manifestCost: 1500000000000000 },
-                    { id: 'mythic', label: 'Mythic', color: 'text-rose-600', bg: 'bg-rose-50/90', multiplier: 200, incomeBase: 5000000000000.0, secondaryChance: 0.75, setPrize: { amt: 4000000000000000000, curr: 'primary' }, transferCost: { amt: 250000000000000000, curr: 'primary' }, manifestCost: 10000000000000000 },
-                    { id: 'celestial', label: 'Divine', color: 'text-cyan-600', bg: 'bg-white/95', multiplier: 800, incomeBase: 50000000000000.0, secondaryChance: 1.0, setPrize: { amt: 5000000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' }, manifestCost: 100000000000 },
-                    { id: 'primordial', label: 'Titan', color: 'text-fuchsia-600', bg: 'bg-slate-50/95', multiplier: 3500, incomeBase: 500000000000000.0, secondaryChance: 1.0, setPrize: { amt: 50000000000000, curr: 'secondary' }, transferCost: { amt: 50000000000, curr: 'secondary' }, manifestCost: 1000000000000 },
-                    { id: 'transcendent', label: 'Olympian', color: 'text-yellow-600', bg: 'bg-white/95', multiplier: 15000, incomeBase: 5000000000000000.0, secondaryChance: 1.0, setPrize: { amt: 500000000000000, curr: 'secondary' }, transferCost: { amt: 5000000000000, curr: 'secondary' }, manifestCost: 10000000000000 },
+                    { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.01, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' } },
+                    { id: 'common', label: 'Common', color: 'text-amber-600', bg: 'bg-amber-50/90', multiplier: 1, incomeBase: 500000000.0, secondaryChance: 0.02, setPrize: { amt: 250000000000000, curr: 'primary' }, transferCost: { amt: 100000000000, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Uncommon', color: 'text-orange-600', bg: 'bg-orange-50/90', multiplier: 3, incomeBase: 2500000000.0, secondaryChance: 0.05, setPrize: { amt: 1500000000000000, curr: 'primary' }, transferCost: { amt: 1000000000000, curr: 'primary' } },
+                    { id: 'rare', label: 'Heroic', color: 'text-sky-600', bg: 'bg-sky-50/90', multiplier: 8, incomeBase: 15000000000.0, secondaryChance: 0.10, setPrize: { amt: 10000000000000000, curr: 'primary' }, transferCost: { amt: 10000000000000, curr: 'primary' } },
+                    { id: 'epic', label: 'Epic', color: 'text-indigo-600', bg: 'bg-indigo-50/90', multiplier: 20, incomeBase: 100000000000.0, secondaryChance: 0.15, setPrize: { amt: 80000000000000000, curr: 'primary' }, transferCost: { amt: 200000000000000, curr: 'primary' } },
+                    { id: 'legendary', label: 'Legendary', color: 'text-yellow-700', bg: 'bg-yellow-50/95', multiplier: 60, incomeBase: 800000000000.0, secondaryChance: 0.25, setPrize: { amt: 500000000000000000, curr: 'primary' }, transferCost: { amt: 5000000000000000, curr: 'primary' } },
+                    { id: 'mythic', label: 'Mythic', color: 'text-rose-600', bg: 'bg-rose-50/90', multiplier: 200, incomeBase: 5000000000000.0, secondaryChance: 0.40, setPrize: { amt: 4000000000000000000, curr: 'primary' }, transferCost: { amt: 250000000000000000, curr: 'primary' } },
+                    { id: 'celestial', label: 'Divine', color: 'text-cyan-600', bg: 'bg-white/95', multiplier: 800, incomeBase: 50000000000000.0, secondaryChance: 0.60, setPrize: { amt: 5000000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Titan', color: 'text-fuchsia-600', bg: 'bg-slate-50/95', multiplier: 3500, incomeBase: 500000000000000.0, secondaryChance: 0.80, setPrize: { amt: 50000000, curr: 'secondary' }, transferCost: { amt: 50000000000, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Olympian', color: 'text-yellow-600', bg: 'bg-white/95', multiplier: 15000, incomeBase: 5000000000000000.0, secondaryChance: 1.0, setPrize: { amt: 500000000000000, curr: 'secondary' }, transferCost: { amt: 5000000000000, curr: 'secondary' } },
                 ],
                 MUTATION_ORDER: ['none', 'blessed', 'glowing', 'mythic', 'titanic', 'underworld', 'elysian', 'pantheon'],
                 MUTATIONS: {
@@ -203,21 +207,21 @@
                     glowing: { label: 'Glowing', mult: 3, bg: 'bg-orange-50/90', color: 'text-orange-600', glow: 'shadow-[0_0_15px_rgba(234,88,12,0.6)]' },
                     mythic: { label: 'Mythic', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.6)]' },
                     titanic: { label: 'Titanic', mult: 15, bg: 'bg-rose-50/90', color: 'text-rose-700', glow: 'shadow-[0_0_15px_rgba(225,29,72,0.6)]' },
-                    underworld: { label: 'Underworld', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100', glow: 'shadow-[0_0_15px_rgba(241,245,249,0.4)]' },
+                    underworld: { label: 'Chthonic', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100', glow: 'shadow-[0_0_15px_rgba(241,245,249,0.4)]' },
                     elysian: { label: 'Elysian', mult: 100, bg: 'bg-teal-50/90', color: 'text-teal-600', glow: 'shadow-[0_0_15px_rgba(13,148,136,0.6)]' },
                     pantheon: { label: 'Pantheon', mult: 500, bg: 'bg-white/95', color: 'text-amber-500', glow: 'shadow-[0_0_20px_rgba(251,191,36,0.8)]' }
                 },
                 MASTER_ITEM_DB: [
                     { name: "Broken Pottery", rarityId: "trash", e: "🏺" }, { name: "Withered Olive", rarityId: "trash", e: "🌿" }, { name: "Torn Toga", rarityId: "trash", e: "🥻" }, { name: "Dull Bronze", rarityId: "trash", e: "🥉" }, { name: "Cracked Marble", rarityId: "trash", e: "🪨" }, { name: "Spoiled Wine", rarityId: "trash", e: "🍷" }, { name: "Chipped Flute", rarityId: "trash", e: "🪈" }, { name: "Dry Fig", rarityId: "trash", e: "🍇" }, { name: "Dusty Scroll", rarityId: "trash", e: "📜" }, { name: "Rusty Strigil", rarityId: "trash", e: "🥄" },
                     { name: "Bronze Drachma", rarityId: "common", e: "🪙" }, { name: "Fresh Olive", rarityId: "common", e: "🫒" }, { name: "Woven Basket", rarityId: "common", e: "🧺" }, { name: "Temple Candle", rarityId: "common", e: "🕯️" }, { name: "Clay Amphora", rarityId: "common", e: "🏺" }, { name: "Goat Cheese", rarityId: "common", e: "🧀" }, { name: "Honey Jar", rarityId: "common", e: "🍯" }, { name: "Shepherd Crook", rarityId: "common", e: "🦯" }, { name: "Linen Tunic", rarityId: "common", e: "👕" }, { name: "Iron Dagger", rarityId: "common", e: "🗡️" },
-                    { name: "Silver Coin", rarityId: "uncommon", e: "🪙" }, { name: "Spartan Helmet", rarityId: "uncommon", e: "🪖" }, { name: "Laurel Wreath", rarityId: "uncommon", e: "🍃" }, { name: "Pomegranate", rarityId: "uncommon", e: "🍎" }, { name: "Oracle Bone", rarityId: "uncommon", e: "🦴" }, { name: "Hoplite Shield", rarityId: "uncommon", e: "🛡️" }, { name: "Poisoned Arrow", rarityId: "uncommon", e: "🏹" }, { name: "Chariot Wheel", rarityId: "uncommon", e: "🛞" }, { name: "Lyre String", rarityId: "uncommon", e: "🧶" }, { name: "Nymph Veil", rarityId: "uncommon", e: "🕸️" },
+                    { name: "Silver Coin", rarityId: "uncommon", e: "🪙" }, { name: "Spartan Helmet", rarityId: "uncommon", e: "🪖" }, { name: "Laurel Wreath", rarityId: "uncommon", e: "🍃" }, { name: "Pomegranate", rarityId: "uncommon", e: "🍎" }, { name: "Oracle Bone", rarityId: "uncommon", e: "🦴" }, { name: "Hoplite Shield", rarityId: "uncommon", e: "🛡️" }, { name: "Swift Arrow", rarityId: "uncommon", e: "🏹" }, { name: "Chariot Wheel", rarityId: "uncommon", e: "🛞" }, { name: "Lyre String", rarityId: "uncommon", e: "🧶" }, { name: "Nymph Veil", rarityId: "uncommon", e: "🕸️" },
                     { name: "Pegasus Feather", rarityId: "rare", e: "🪶" }, { name: "Centaur Hoof", rarityId: "rare", e: "🧲" }, { name: "Gold Drachma", rarityId: "rare", e: "🪙" }, { name: "Hero's Sword", rarityId: "rare", e: "🗡️" }, { name: "Minotaur Horn", rarityId: "rare", e: "🐂" }, { name: "Siren Scale", rarityId: "rare", e: "🧜‍♀️" }, { name: "Chimera Fang", rarityId: "rare", e: "🦷" }, { name: "Gorgon Snake", rarityId: "rare", e: "🐍" }, { name: "Harpy Talon", rarityId: "rare", e: "🦅" }, { name: "Cyclops Eye", rarityId: "rare", e: "👁️" },
-                    { name: "Aegis Shard", rarityId: "epic", e: "🛡️" }, { name: "Caduceus Rod", rarityId: "epic", e: "⚕️" }, { name: "Medusa's Gaze", rarityId: "epic", e: "👁️" }, { name: "Golden Fleece", rarityId: "epic", e: "🧥" }, { name: "Cerberus Collar", rarityId: "epic", e: "🐕" }, { name: "Styx Water", rarityId: "epic", e: "🧪" }, { name: "Elysian Bloom", rarityId: "epic", e: "🌸" }, { name: "Hydra Venom", rarityId: "epic", e: "☠️" }, { name: "Nemean Pelt", rarityId: "epic", e: "🦁" }, { name: "Ambrosia Drop", rarityId: "epic", e: "🍯" },
-                    { name: "Apollo's Lyre", rarityId: "legendary", e: "🎻" }, { name: "Artemis' Bow", rarityId: "legendary", e: "🏹" }, { name: "Ares' Spear", rarityId: "legendary", e: "🩸" }, { name: "Hermes' Sandal", rarityId: "legendary", e: "🪽" }, { name: "Athena's Owl", rarityId: "legendary", e: "🦉" }, { name: "Hephaestus Hammer", rarityId: "legendary", e: "🔨" }, { name: "Aphrodite's Mirror", rarityId: "legendary", e: "🪞" }, { name: "Dionysus' Chalice", rarityId: "legendary", e: "🍷" }, { name: "Hades' Helm", rarityId: "legendary", e: "🪖" }, { name: "Poseidon's Pearl", rarityId: "legendary", e: "⚪" },
+                    { name: "Aegis Shard", rarityId: "epic", e: "🛡️" }, { name: "Caduceus Rod", rarityId: "epic", e: "⚕️" }, { name: "Medusa's Gaze", rarityId: "epic", e: "👁️" }, { name: "Golden Fleece", rarityId: "epic", e: "🧥" }, { name: "Cerberus Collar", rarityId: "epic", e: "🐕" }, { name: "River Styx Vial", rarityId: "epic", e: "🧪" }, { name: "Elysian Bloom", rarityId: "epic", e: "🌸" }, { name: "Hydra Scale", rarityId: "epic", e: "🐉" }, { name: "Nemean Pelt", rarityId: "epic", e: "🦁" }, { name: "Ambrosia Drop", rarityId: "epic", e: "🍯" },
+                    { name: "Apollo's Lyre", rarityId: "legendary", e: "🎻" }, { name: "Artemis' Bow", rarityId: "legendary", e: "🏹" }, { name: "Ares' Spear", rarityId: "legendary", e: "☄️" }, { name: "Hermes' Sandal", rarityId: "legendary", e: "🪽" }, { name: "Athena's Owl", rarityId: "legendary", e: "🦉" }, { name: "Hephaestus Hammer", rarityId: "legendary", e: "🔨" }, { name: "Aphrodite's Mirror", rarityId: "legendary", e: "🪞" }, { name: "Dionysus' Chalice", rarityId: "legendary", e: "🍷" }, { name: "Hades' Helm", rarityId: "legendary", e: "🪖" }, { name: "Poseidon's Pearl", rarityId: "legendary", e: "⚪" },
                     { name: "Trident of Oceans", rarityId: "mythic", e: "🔱" }, { name: "Zeus' Lightning", rarityId: "mythic", e: "⚡" }, { name: "Helm of Darkness", rarityId: "mythic", e: "🌑" }, { name: "Pandora's Box", rarityId: "mythic", e: "📦" }, { name: "Prometheus' Flame", rarityId: "mythic", e: "🔥" }, { name: "Atlas' Chain", rarityId: "mythic", e: "⛓️" }, { name: "Chronos' Hourglass", rarityId: "mythic", e: "⏳" }, { name: "Tartarus Core", rarityId: "mythic", e: "🌋" }, { name: "Thread of Atropos", rarityId: "mythic", e: "✂️" }, { name: "Eye of the Fates", rarityId: "mythic", e: "👁️" },
                     { name: "Constellation Core", rarityId: "celestial", e: "🌌" }, { name: "Tear of Uranus", rarityId: "celestial", e: "☄️" }, { name: "Helios' Chariot", rarityId: "celestial", e: "☀️" }, { name: "Selene's Crescent", rarityId: "celestial", e: "🌙" }, { name: "Star of Olympus", rarityId: "celestial", e: "✨" }, { name: "Zodiac Wheel", rarityId: "celestial", e: "🎡" }, { name: "Astral Ambrosia", rarityId: "celestial", e: "🍯" }, { name: "Nyx's Veil", rarityId: "celestial", e: "🌌" }, { name: "Erebus Shadow", rarityId: "celestial", e: "🌑" }, { name: "Aether Spark", rarityId: "celestial", e: "✨" },
-                    { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "The banner Word", rarityId: "primordial", e: "⚖️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
-                    { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "The banner Word", rarityId: "transcendent", e: "🗣️" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }
+                    { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "The First Word", rarityId: "primordial", e: "🗣️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
+                    { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }, { name: "The First Tear", rarityId: "transcendent", e: "💧" }
                 ],
                 STANDARD_PACKS: [
                     { id: 'pack1', name: 'Peasant Offering', cost: 5000000000000, currency: 'primary', icon: 'Flame', color: 'from-orange-400 to-yellow-600', glow: 'shadow-orange-200/50', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
@@ -231,11 +235,13 @@
                     { id: 'pack9', name: 'Olympus Core', cost: 150000000000000000000000, currency: 'primary', icon: 'Globe', color: 'from-amber-200 to-yellow-600', glow: 'shadow-yellow-400/80', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
                 ],
                 SHRINE_CATEGORIES: [
-                    { id: 'blessed', name: 'Blessed Sparks', icon: 'Sparkles', multiplier: 2, color: 'from-yellow-500 to-yellow-700', glow: 'shadow-yellow-500/20' },
-                    { id: 'glowing', name: 'Golden Ichor', icon: 'Droplet', multiplier: 5, color: 'from-orange-400 to-orange-600', glow: 'shadow-orange-500/20' },
-                    { id: 'underworld', name: 'Underworld Embers', icon: 'Flame', multiplier: 25, color: 'from-stone-700 to-stone-900', glow: 'shadow-stone-500/20' },
-                    { id: 'elysian', name: 'Elysian Light', icon: 'Sun', multiplier: 150, color: 'from-teal-400 to-teal-600', glow: 'shadow-teal-500/20' },
-                    { id: 'pantheon', name: 'Olympian Glory', icon: 'Castle', multiplier: 750, color: 'from-amber-300 to-amber-500', glow: 'shadow-amber-400/30' }
+                    { id: 'blessed', name: 'Blessed Sparks', icon: 'Sparkles', multiplier: 1, color: 'from-yellow-500 to-yellow-700', glow: 'shadow-yellow-500/20' },
+                    { id: 'glowing', name: 'Golden Ichor', icon: 'Droplet', multiplier: 3, color: 'from-orange-400 to-orange-600', glow: 'shadow-orange-500/20' },
+                    { id: 'mythic', name: 'Mythic Echoes', icon: 'Star', multiplier: 8, color: 'from-red-500 to-red-700', glow: 'shadow-red-500/20' },
+                    { id: 'titanic', name: 'Titan Force', icon: 'Compass', multiplier: 25, color: 'from-rose-600 to-rose-900', glow: 'shadow-rose-500/20' },
+                    { id: 'underworld', name: 'Chthonic Embers', icon: 'Flame', multiplier: 75, color: 'from-stone-700 to-stone-900', glow: 'shadow-stone-500/20' },
+                    { id: 'elysian', name: 'Elysian Light', icon: 'Sun', multiplier: 250, color: 'from-teal-400 to-teal-600', glow: 'shadow-teal-500/20' },
+                    { id: 'pantheon', name: 'Olympian Glory', icon: 'Castle', multiplier: 1000, color: 'from-amber-300 to-amber-500', glow: 'shadow-amber-400/30' }
                 ]
             }
         };
@@ -318,7 +324,7 @@
             const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
-                const saved = localStorage.getItem('abyssal_v19_realms');
+                const saved = localStorage.getItem('abyssal_v22_realms_safe');
                 if (saved) {
                     try {
                         const d = JSON.parse(saved);
@@ -333,7 +339,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('abyssal_v19_realms', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
+                localStorage.setItem('abyssal_v22_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
             }, [currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets]);
 
             useEffect(() => {
@@ -387,7 +393,7 @@
                     interval = setInterval(() => {
                         setKrakenTimer(t => {
                             if (t <= 0.1) {
-                                setKrakenFeedback("Defeat...");
+                                setKrakenFeedback("VANQUISHED...");
                                 setTimeout(() => setKrakenEvent(false), 2000);
                                 return 0;
                             }
@@ -405,30 +411,35 @@
                 return Math.floor(p.cost * discount); 
             };
 
-            const openPack = (p, isShrine = false) => {
+            const openPack = (p) => {
+                const isShrine = p.isShrine || false;
                 const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
                 setTimeout(() => {
                     let rarity;
-                    if(p.targetRarity) rarity = RARITIES.find(r => r.id === p.targetRarity);
-                    else {
-                        const weights = p.weights;
-                        const total = Object.values(weights).reduce((a,b) => a+b, 0);
-                        let rand = Math.random() * total; rarity = RARITIES[0];
-                        for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
-                    }
+                    const weights = p.weights;
+                    const total = Object.values(weights).reduce((a,b) => a+b, 0);
+                    let rand = Math.random() * total; rarity = RARITIES[0];
+                    for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
+                    
                     const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
                     const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
+                    
+                    // MIDDLE GROUND: Secondary currency items generate 30% of the base CPS.
+                    // If from a Shrine, ALWAYS make it secondary. If from a pack, roll the chance.
+                    const isSec = isShrine || Math.random() < (rarity.secondaryChance || 0);
+                    const cpsBase = rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3));
+                    
                     setPendingLoot({ 
                         id: Math.random().toString(36).substr(2, 9), 
                         themeId: currentThemeId,
                         name: item.name, 
                         rarity, 
                         mutation: p.mutation || 'none', 
-                        currency: (Math.random() < (rarity.secondaryChance || 0) ? 'secondary' : 'primary'), 
-                        cps: rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3)), 
+                        currency: isSec ? 'secondary' : 'primary', 
+                        cps: isSec ? cpsBase * 0.3 : cpsBase, 
                         value: Math.floor(rarity.incomeBase * 200) 
                     });
                     setIsOpening(false); setIsSealed(true);
@@ -452,7 +463,13 @@
             };
 
             const handleHoldStart = (p) => { isHolding.current = false; holdTimer.current = setTimeout(() => { isHolding.current = true; setInspectedPack(p); }, 500); };
-            const handleHoldEnd = (p) => { clearTimeout(holdTimer.current); if(!isHolding.current) openPack(p); };
+            const handleHoldEnd = (p) => { 
+                clearTimeout(holdTimer.current); 
+                if(!isHolding.current) {
+                    openPack(p);
+                    if (p.isShrine) setView('shop');
+                }
+            };
 
             const handleRealmSwitch = (themeId) => {
                 if (currentThemeId === themeId) return;
@@ -484,7 +501,7 @@
                     </div>
 
                     {anomalyVisible && (
-                        <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(30); }}>
+                        <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
                             <div className="flex flex-col items-center">
                                 <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500/30 border-amber-300 text-amber-100' : 'bg-fuchsia-600/30 border-fuchsia-400 text-fuchsia-100'} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Frenzy Surge!</div>
                                 <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${currentThemeId === 'olympian' ? 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200' : 'from-fuchsia-800 to-indigo-500 shadow-[0_0_30px_rgba(192,38,211,0.8)] border-fuchsia-300'} animate-[void-pulse_2s_ease-in-out_infinite] flex items-center justify-center border-2`}>
@@ -503,20 +520,20 @@
                         </div>
                     )}
 
-                    {/* Active Event Banner with descriptive messaging - UPDATED 50/25 messaging */}
+                    {/* Active Event Banner with descriptive messaging */}
                     {(merchantSaleActive || frenzyTimer > 0) && (
-                        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm">
-                            <div className={`p-4 rounded-3xl border-2 flex flex-col gap-1 items-center shadow-2xl animate-in slide-in-from-top-4 duration-500 ${merchantSaleActive ? 'bg-cyan-900 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.4)]' : 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_30px_rgba(192,38,211,0.4)]'}`}>
+                        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm">
+                            <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 flex flex-col gap-1 items-center shadow-2xl animate-in slide-in-from-top-4 duration-500 ${merchantSaleActive ? 'bg-cyan-900 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.4)]' : 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_30px_rgba(192,38,211,0.4)]'}`}>
                                 <div className="flex items-center gap-3 text-white">
                                     <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={20} className="animate-pulse" />
-                                    <span className="text-xs font-black uppercase tracking-widest">
+                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">
                                         {merchantSaleActive ? `${terms.merchant} Sale!` : 'Dimensional Surge!'}
                                     </span>
-                                    <div className="px-3 py-1 rounded-full bg-black/40 font-mono text-[10px] font-black">
+                                    <div className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-black/40 font-mono text-[9px] sm:text-[10px] font-black">
                                         {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
                                     </div>
                                 </div>
-                                <div className="text-[10px] font-black uppercase text-white drop-shadow-md text-center mt-1">
+                                <div className="text-[8.5px] sm:text-[10px] font-black uppercase text-white drop-shadow-md text-center mt-1">
                                     {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
                                 </div>
                             </div>
@@ -548,39 +565,42 @@
                             {currentThemeId === 'olympian' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none">
                                     <div className="absolute inset-0 bg-red-900/10" />
-                                    {[...Array(4)].map((_, i) => (
-                                        <div key={i} className="absolute w-full h-full flex items-center justify-center">
-                                            <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.2}s`, left: `${Math.random() * 40 - 20}%`, top: `${Math.random() * 40 - 20}%` }}>
-                                                <div className="absolute top-1/2 left-0 w-full h-4 bg-orange-600 shadow-[0_0_40px_rgba(234,88,12,1)]" style={{ transform: 'rotate(20deg)' }} />
-                                                <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-orange-50 shadow-[0_0_30px_rgba(251,146,60,0.8)]" style={{ transform: 'rotate(20deg)' }} />
-                                                <div className="absolute top-[calc(1/2+80px)] left-0 w-full h-4 bg-orange-400 shadow-[0_0_30px_rgba(251,191,36,0.6)]" style={{ transform: 'rotate(20deg)' }} />
+                                    {[...Array(6)].map((_, i) => {
+                                        const angle = (i * 73) % 360;
+                                        return (
+                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
+                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
+                                                    <div className="absolute top-1/2 left-0 w-full h-4 bg-orange-600 shadow-[0_0_40px_rgba(234,88,12,1)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-orange-50 shadow-[0_0_30px_rgba(251,146,60,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                    <div className="absolute top-[calc(1/2+80px)] left-0 w-full h-4 bg-orange-400 shadow-[0_0_30px_rgba(251,191,36,0.6)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
-                                    <div className="bg-slate-950 border-2 border-white/20 p-12 rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
-                                        <h2 className="text-4xl font-black uppercase text-white mb-4 tracking-tighter">{krakenFeedback}</h2>
-                                        <div className="text-8xl drop-shadow-[0_0_20px_white]">{terms.beast}</div>
+                                    <div className="bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
+                                        <h2 className="text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter">{krakenFeedback}</h2>
+                                        <div className="text-6xl sm:text-8xl drop-shadow-[0_0_20px_white]">{terms.beast}</div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center gap-10">
-                                        <div className="bg-slate-950/90 border-2 border-white/10 p-10 rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
-                                            <h2 className={`text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'} animate-pulse tracking-tighter`}>{terms.beastName} Boss!</h2>
-                                            <p className="text-xs font-black uppercase opacity-60 mb-6 tracking-widest mt-2">Smash to Win!</p>
-                                            <div className="w-80 h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
+                                    <div className="flex flex-col items-center gap-6 sm:gap-10">
+                                        <div className="bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                            <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
+                                            <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
                                                 <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
                                             </div>
-                                            <div className="mt-6 text-white text-3xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
+                                            <div className="mt-4 sm:mt-6 text-white text-2xl sm:text-3xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
                                         </div>
                                         <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
-                                            const jackpot = Math.max(100, Math.floor(incomeFlow.income.c2 * 500 + 500 * activeMultiplier));
-                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`DEFEATED! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-56 h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'}`}>
-                                            <span className="text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Strike!</span>
+                                            const jackpot = Math.max(50, Math.floor(incomeFlow.income.c2 * 40 + 50 * activeMultiplier));
+                                            setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'}`}>
+                                            <span className="text-3xl sm:text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Defend!</span>
                                         </button>
                                     </div>
                                 )}
@@ -588,54 +608,55 @@
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : 'bg-slate-950/60 border-white/10'} p-4 pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : 'bg-slate-950/60 border-white/10'} p-3 sm:p-4 pt-8 sm:pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
                         <div className="flex flex-col gap-1">
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : 'bg-slate-900/80 border-white/5'} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border w-36 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.primaryIcon} size={14} className="text-amber-500 shrink-0" />
-                                <span className={`text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
-                                <span className={`ml-auto text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-amber-400/60'}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
+                                <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-amber-400/60'}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
                             </div>
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-2 px-3 py-1.5 rounded-full border w-40 sm:w-48 shadow-inner`}>
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border w-36 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.secondaryIcon} size={14} className="text-cyan-500 shrink-0" />
-                                <span className={`text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
-                                <span className={`ml-auto text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : 'text-cyan-400/60'}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
+                                <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : 'text-cyan-400/60'}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className={`text-[10px] font-black uppercase opacity-60 mb-1 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{activeTheme.name}</h1>
+                            <h1 className={`text-[9px] sm:text-[10px] font-black uppercase opacity-60 mb-1 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
-                                <div className={`text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'}`}>
+                                <div className={`text-[8.5px] sm:text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'}`}>
                                     SURGE x{activeMultiplier.toFixed(1)}
                                 </div>
                             ) : (
-                                <div className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Standard Yield</div>
+                                <div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Standard Yield</div>
                             )}
                         </div>
                     </nav>
 
-                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-4 flex flex-col z-10 scrollbar-hide pb-32">
-                        <div className="flex gap-1 sm:gap-2 mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
-                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Altar' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
-                                <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[50px] flex flex-col items-center justify-center py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]') : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
+                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 sm:p-4 flex flex-col z-10 scrollbar-hide pb-24 sm:pb-32">
+                        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1.5 sm:py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
+                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
+                                <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]') : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
                         </div>
 
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
+                                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-1 sm:px-2 scrollbar-hide">
                                     {STANDARD_PACKS.map(p => {
                                         const cost = getPackCost(p, false);
                                         const afford = (p.currency === 'primary' ? currency1 : currency2) >= cost;
                                         return (
-                                            <div key={p.id} className={`snap-center shrink-0 w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`}
+                                            <div key={p.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`}
                                                 onMouseDown={() => handleHoldStart(p)} onMouseUp={() => handleHoldEnd(p)} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => handleHoldStart(p)} onTouchEnd={() => handleHoldEnd(p)}
                                             >
-                                                <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${p.color} border-4 flex flex-col items-center justify-center gap-2 p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
+                                                {/* HIGH OPACITY GREEK PACKS (Responsive) */}
+                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${p.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
-                                                    <Icon name={p.icon} size={28} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
-                                                    <span className="text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none">{p.name}</span>
-                                                    <div className="flex items-center gap-1 font-black text-xs z-10 bg-black/60 px-2 py-0.5 rounded-full border border-white/20 shadow-inner">
+                                                    <Icon name={p.icon} size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10 sm:scale-110" />
+                                                    <span className="text-[7px] sm:text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
+                                                    <div className="flex items-center gap-1 font-black text-[10px] sm:text-xs z-10 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
                                                         {p.cost > 0 ? ( <><span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? 'text-amber-400' : 'text-cyan-300'} /></> ) : <span className="text-green-400">FREE</span>}
                                                     </div>
                                                 </div>
@@ -643,51 +664,51 @@
                                         );
                                     })}
                                 </div>
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : 'bg-white/5 border-white/10'} flex-1 min-h-[350px] flex items-center justify-center rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
-                                    {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-16 h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : 'bg-cyan-500/20 border-cyan-500'} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : "text-cyan-400"} /></div><span className={`text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Summoning...</span></div>}
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : 'bg-white/5 border-white/10'} flex-1 min-h-[300px] sm:min-h-[350px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
+                                    {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : 'bg-cyan-500/20 border-cyan-500'} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : "text-cyan-400"} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Summoning...</span></div>}
                                     {isSealed && (
-                                        <div className="flex flex-col items-center gap-6 cursor-pointer group" onClick={() => {
+                                        <div className="flex flex-col items-center gap-4 sm:gap-6 cursor-pointer group" onClick={() => {
                                             if(isRipping || isShaking) return; setIsShaking(true);
                                             setTimeout(() => { setIsShaking(false); setIsRipping(true);
                                                 setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
                                             }, pendingLoot.rarity.id === 'trash' ? 400 : 1200);
                                         }}>
-                                            <div className={`w-44 h-60 rounded-2xl border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
-                                                <div className="absolute top-12 left-0 right-0 h-16 flex items-center justify-center z-10">
+                                            <div className={`w-36 h-48 sm:w-44 sm:h-60 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
+                                                <div className="absolute top-8 sm:top-12 left-0 right-0 h-12 sm:h-16 flex items-center justify-center z-10">
                                                     <div className="relative w-full h-full">
-                                                        <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]'} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
+                                                        <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]'} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
                                                         <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
                                                     </div>
                                                 </div>
-                                                <div className="absolute inset-4 border border-white/5 rounded-lg pointer-events-none" />
-                                                <div className="absolute bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto" size={48} /></div>
+                                                <div className="absolute inset-3 sm:inset-4 border border-white/5 rounded-lg pointer-events-none" />
+                                                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={48} /></div>
                                             </div>
-                                            {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20'} px-8 py-4 rounded-full font-black text-sm uppercase shadow-lg animate-pulse ring-4`}>Rip Open</div>}
+                                            {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20'} px-6 py-3 sm:px-8 sm:py-4 rounded-full font-black text-xs sm:text-sm uppercase shadow-lg animate-pulse ring-4`}>Unlock Artifact</div>}
                                         </div>
                                     )}
                                     {lastPull && !isSealed && (
-                                        <div className={`w-full h-full flex flex-col items-center justify-center p-8 text-center animate-in zoom-in-75 ${lastPull.rarity.bg}`}>
-                                            <div className="flex gap-2 mb-4"><span className={`text-[9px] font-black uppercase px-4 py-1.5 rounded-full border bg-white/95 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>{lastPull.mutation !== 'none' && <span className={`text-[9px] font-black uppercase px-4 py-1.5 rounded-full border bg-white/95 ${MUTATIONS[lastPull.mutation].color}`}>{MUTATIONS[lastPull.mutation].label}</span>}</div>
-                                            <div className="text-7xl mb-6 drop-shadow-2xl">{MASTER_ITEM_DB.find(db => db.name === lastPull.name)?.e}</div>
-                                            <h2 className={`text-4xl font-black mb-2 tracking-tighter text-slate-900`}>{lastPull.name}</h2>
-                                            <div className="flex items-center gap-2 bg-slate-950/40 px-4 py-2 rounded-full mb-8 shadow-inner">
+                                        <div className={`w-full h-full flex flex-col items-center justify-center p-6 sm:p-8 text-center animate-in zoom-in-75 ${lastPull.rarity.bg}`}>
+                                            <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-4"><span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>{lastPull.mutation !== 'none' && <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${MUTATIONS[lastPull.mutation].color}`}>{MUTATIONS[lastPull.mutation].label}</span>}</div>
+                                            <div className="text-6xl sm:text-7xl mb-4 sm:mb-6 drop-shadow-2xl">{MASTER_ITEM_DB.find(db => db.name === lastPull.name)?.e}</div>
+                                            <h2 className={`text-2xl sm:text-4xl font-black mb-2 tracking-tighter text-slate-900`}>{lastPull.name}</h2>
+                                            <div className="flex items-center gap-2 bg-slate-950/40 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-6 sm:mb-8 shadow-inner">
                                                 <Icon name={lastPull.currency === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={14} className={lastPull.currency === 'secondary' ? "text-cyan-400" : "text-amber-400"} />
-                                                <span className="text-xs font-black text-white">+{formatNum(lastPull.cps * (MUTATIONS[lastPull.mutation]?.mult || 1))}/s</span>
+                                                <span className="text-[10px] sm:text-xs font-black text-white">+{formatNum(lastPull.cps * (MUTATIONS[lastPull.mutation]?.mult || 1))}/s</span>
                                             </div>
-                                            <div className="flex gap-3 w-full">
+                                            <div className="flex gap-2 sm:gap-3 w-full">
                                                 <button onClick={() => {
                                                     const sellVal = lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1);
                                                     if (lastPull.currency === 'secondary') setCurrency2(p => p + sellVal);
                                                     else setCurrency1(d => d + sellVal);
                                                     setInventory(inv => inv.filter(i => i.id !== lastPull.id));
                                                     setLastPull(null);
-                                                }} className="flex-1 bg-slate-900/40 text-slate-900 border border-slate-900/20 py-3 rounded-2xl font-black text-xs active:scale-95 transition-all hover:bg-slate-900/60 flex flex-col items-center justify-center gap-1">
-                                                    <span>Sell</span>
-                                                    <span className="text-[9px] opacity-80 flex items-center gap-1 font-mono">
+                                                }} className="flex-1 bg-slate-900/40 text-slate-900 border border-slate-900/20 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900/60 flex flex-col items-center justify-center gap-1">
+                                                    <span>Exchange</span>
+                                                    <span className="text-[8px] sm:text-[9px] opacity-80 flex items-center gap-1 font-mono">
                                                         +{formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1))} <Icon name={lastPull.currency === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={10} />
                                                     </span>
                                                 </button>
-                                                <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 text-white py-3 rounded-2xl font-black text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                                <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                             </div>
                                         </div>
                                     )}
@@ -696,23 +717,23 @@
                         )}
 
                         {view === 'realms' && (
-                             <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]'} p-6 rounded-[3rem] text-center relative overflow-hidden mb-4`}>
+                             <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4">
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]'} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 sm:mb-4`}>
                                     <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : 'from-fuchsia-600/10'} to-transparent pointer-events-none`}></div>
-                                    <Icon name="Globe" size={48} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-fuchsia-500'} mx-auto mb-4 relative z-10`} />
-                                    <h2 className={`text-2xl font-black uppercase tracking-tighter mb-2 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
-                                    <p className={`text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-200'}`}>
+                                    <Icon name="Globe" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-fuchsia-500'} mx-auto mb-3 sm:mb-4 relative z-10 sm:scale-110`} />
+                                    <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter mb-1 sm:mb-2 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
+                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-200'}`}>
                                         Travel to alternate realities. Each realm features Escalating Challenges!
                                     </p>
                                 </div>
-                                <div className="space-y-4 px-2">
+                                <div className="space-y-3 sm:space-y-4 px-1 sm:px-2">
                                     {Object.values(THEMES).map(th => (
-                                        <div key={th.id} className={`p-5 rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl') : 'bg-white/5 border-white/10'}`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? 'bg-slate-900 text-white' : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={24} /></div>
-                                                <div><div className={`text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : 'text-white'}`}>{th.name}</div><div className={`text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
+                                        <div key={th.id} className={`p-4 sm:p-5 rounded-[1.5rem] sm:rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl') : 'bg-white/5 border-white/10'}`}>
+                                            <div className="flex items-center gap-3 sm:gap-4">
+                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? 'bg-slate-900 text-white' : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={20} className="sm:scale-110" /></div>
+                                                <div><div className={`text-xs sm:text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : 'text-white'}`}>{th.name}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
                                             </div>
-                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : 'bg-fuchsia-600'}`}>Travel</button>}
+                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : 'bg-fuchsia-600'}`}>Travel</button>}
                                         </div>
                                     ))}
                                 </div>
@@ -720,11 +741,12 @@
                         )}
 
                         {view === 'inventory' && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : 'bg-white/5 border-white/10'} p-6 rounded-[2.5rem] flex flex-col gap-4 border`}>
+                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : 'bg-white/5 border-white/10'} p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col gap-3 sm:gap-4 border`}>
                                     <div className="flex justify-between items-start">
-                                        <div><h3 className={`text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.log}</h3><p className={`text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-white'}`}>{activeInventory.length} items in realm</p></div>
+                                        <div><h3 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.log}</h3><p className={`text-[9px] sm:text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-white'}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
+                                    <p className={`text-[9px] sm:text-[10px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-300'}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
                                     <button onClick={() => {
                                         const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
                                         let dAdded = 0, pAdded = 0;
@@ -737,29 +759,66 @@
                                         });
                                         setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
                                         setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
-                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : 'bg-amber-500/10 text-amber-400'} px-4 py-2.5 rounded-xl text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Sell All Duplicates</button>
+                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : 'bg-amber-500/10 text-amber-400'} px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Exchange All Duplicates</button>
                                 </div>
                                 {RARITIES.map(r => (
-                                    <div key={r.id} className="mb-6 px-2">
-                                        <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
-                                        <div className="grid gap-3">
+                                    <div key={r.id} className="mb-4 sm:mb-6 px-1 sm:px-2">
+                                        <h4 className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-3 sm:mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-3 sm:ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
+                                        
+                                        {/* SET REWARDS BAR */}
+                                        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scroll-smooth snap-x scrollbar-hide">
+                                            {MUTATION_ORDER.map(mut => {
+                                                const setId = `${currentThemeId}_${r.id}_${mut}`;
+                                                const isClaimed = claimedSets.includes(setId);
+                                                const reqItems = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
+                                                const ownedSet = new Set(activeInventory.filter(i => i.rarity.id === r.id && i.mutation === mut).map(i => i.name));
+                                                const progress = ownedSet.size;
+                                                const total = reqItems.length;
+                                                const canClaim = progress >= total && !isClaimed;
+                                                const prizeAmt = r.setPrize.amt * MUTATIONS[mut].mult;
+                                                
+                                                return (
+                                                    <div key={mut} className={`snap-center shrink-0 w-32 sm:w-36 px-2 py-2 rounded-xl sm:rounded-2xl border-2 flex flex-col items-center gap-1 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
+                                                        <div className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${MUTATIONS[mut].color}`}>{MUTATIONS[mut].label || 'Base'} Set</div>
+                                                        <div className={`text-[10px] sm:text-xs font-mono font-black ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{progress}/{total}</div>
+                                                        {isClaimed ? (
+                                                            <span className="text-[8px] font-black text-green-400 uppercase tracking-widest mt-1">Claimed</span>
+                                                        ) : canClaim ? (
+                                                            <button onClick={() => {
+                                                                if(r.setPrize.curr === 'secondary') setCurrency2(v => v + prizeAmt);
+                                                                else setCurrency1(v => v + prizeAmt);
+                                                                setClaimedSets(prev => [...prev, setId]);
+                                                            }} className="mt-1 bg-amber-400 text-amber-950 px-2 sm:px-3 py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse">
+                                                                Claim {formatNum(prizeAmt)}
+                                                            </button>
+                                                        ) : (
+                                                            <div className={`mt-1 flex items-center gap-1 text-[8px] sm:text-[9px] font-black opacity-60 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>
+                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={r.setPrize.curr === 'primary' ? 'text-amber-400' : 'text-cyan-400'} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="grid gap-2 sm:gap-3">
                                             {MASTER_ITEM_DB.filter(m => m.rarityId === r.id).map(dbItem => {
                                                 const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
                                                 if (!owned.length) return (
-                                                    <button key={dbItem.name} onClick={() => { if(currency2 >= r.manifestCost) { setCurrency2(v => v - r.manifestCost); const ni = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: dbItem.name, rarity: r, mutation: 'none', currency: (Math.random() < r.secondaryChance ? 'secondary' : 'primary'), cps: r.incomeBase, value: r.incomeBase * 200 }; setInventory(p => [ni, ...p]); setLastPull(ni); setView('shop'); } }} disabled={currency2 < r.manifestCost} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-80' : 'bg-slate-900/40 border-white/5 opacity-50'} p-4 rounded-3xl border-2 border-dashed hover:opacity-100 flex items-center justify-between transition-all group`}>
-                                                        <div className={`flex items-center gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={16} /><span className="text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
-                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white' : 'bg-cyan-500/20 text-cyan-400'} px-3 py-1.5 rounded-full text-[10px] font-black flex items-center gap-1`}>Manifest: {formatNum(r.manifestCost)} <Icon name={terms.secondaryIcon} size={10} /></div>
-                                                    </button>
+                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-80' : 'bg-slate-900/40 border-white/5 opacity-50'} p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 border-dashed flex items-center justify-between transition-all group`}>
+                                                        <div className={`flex items-center gap-3 sm:gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={14} className="sm:scale-110" /><span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
+                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : 'bg-cyan-500/10 text-cyan-400'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                    </div>
                                                 );
                                                 const best = owned[0];
                                                 return (
-                                                    <div key={best.id} className={`p-4 rounded-3xl border-2 flex items-center justify-between ${MUTATIONS[best.mutation].bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${MUTATIONS[best.mutation].glow}`}>
-                                                        <div className="flex items-center gap-4 truncate"><span className="text-3xl drop-shadow-md">{dbItem.e}</span><div className="text-left truncate">
-                                                            <div className={`flex items-center gap-2 font-black text-xs text-slate-900`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[8px]">x{owned.length}</span>}</div>
-                                                            {best.mutation !== 'none' && <div className={`text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${MUTATIONS[best.mutation].color}`}>Mutation: {MUTATIONS[best.mutation].label}</div>}
-                                                            <div className={`text-[10px] font-black text-teal-700 flex items-center gap-1 mt-0.5`}>+{formatNum(best.cps * (MUTATIONS[best.mutation]?.mult || 1))}/s</div>
+                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex items-center justify-between ${MUTATIONS[best.mutation].bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${MUTATIONS[best.mutation].glow}`}>
+                                                        <div className="flex items-center gap-3 sm:gap-4 truncate"><span className="text-2xl sm:text-3xl drop-shadow-md">{dbItem.e}</span><div className="text-left truncate">
+                                                            <div className={`flex items-center gap-2 font-black text-[10px] sm:text-xs text-slate-900`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px]">x{owned.length}</span>}</div>
+                                                            {best.mutation !== 'none' && <div className={`text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${MUTATIONS[best.mutation].color}`}>Mutation: {MUTATIONS[best.mutation].label}</div>}
+                                                            <div className={`text-[9px] sm:text-[10px] font-black text-teal-700 flex items-center gap-1 mt-0.5`}>+{formatNum(best.cps * (MUTATIONS[best.mutation]?.mult || 1))}/s</div>
                                                         </div></div>
-                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1); if(it.currency === 'secondary') setCurrency2(v => v + val); else setCurrency1(v => v + val); }} className="bg-slate-950 text-amber-400 px-4 py-1.5 rounded-xl text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Sell 1</button>
+                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1); if(it.currency === 'secondary') setCurrency2(v => v + val); else setCurrency1(v => v + val); }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Exchange 1</button>
                                                     </div>
                                                 );
                                             })}
@@ -769,65 +828,138 @@
                             </div>
                         )}
 
-                        {view === 'shrine' && (
-                            <div className="flex-1 flex flex-col gap-10 pb-20 animate-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-4 py-2 rounded-xl mt-2 mx-auto w-fit border shadow-lg`}>
-                                    <p className={`text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-400'}`}>Manifest guaranteed rarities fused with arcane mutations.</p>
+                        {view === 'altar' && (
+                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-right-4">
+                                <div className="flex bg-slate-900/40 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white/10 shrink-0 backdrop-blur">
+                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Ascension</button>
+                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Transfer</button>
                                 </div>
-                                {SHRINE_CATEGORIES.map(cat => (
-                                    <section key={cat.id} className="space-y-4">
-                                        <div className="flex items-center gap-3 px-2">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${cat.color} ${cat.glow} border border-white/20`}><Icon name={cat.icon} size={20} className="text-white" /></div>
-                                            <h3 className={`font-black text-lg uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{cat.name}</h3>
+                                {altarMode === 'ascend' ? (
+                                    <div className="space-y-3 sm:space-y-4">
+                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier.</p>
+                                        {RARITIES.slice(0, -1).map((r, idx) => {
+                                            const dupes = getDuplicatesForRarity(r.id);
+                                            const next = RARITIES[idx + 1];
+                                            const canForge = dupes.length >= 5;
+                                            return (
+                                                <div key={r.id} className={`${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-white/5'} border border-white/5 p-4 sm:p-5 rounded-2xl sm:rounded-3xl flex items-center justify-between transition-all hover:bg-white/10 group`}>
+                                                    <div><div className={`text-[10px] sm:text-xs font-black uppercase ${r.color}`}>{r.label}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-900/40' : 'text-white/30'}`}>{dupes.length} Duplicates Available</div></div>
+                                                    <button disabled={!canForge} onClick={() => {
+                                                        const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
+                                                        const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
+                                                        const isSec = Math.random() < next.secondaryChance;
+                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: MASTER_ITEM_DB.filter(it => it.rarityId === next.id)[0].name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: isSec ? (next.incomeBase * 1.5 * 0.3) : (next.incomeBase * 1.5), value: next.incomeBase * 200 };
+                                                        setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
+                                                        setLastPull(nI); setView('shop');
+                                                    }} className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8.5px] sm:text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-8 sm:gap-10 py-6 sm:py-10">
+                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Transfer a mutation from a source material to a target vessel.</p>
+                                        <div className="flex items-center gap-4 sm:gap-6">
+                                            <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + MUTATIONS[transferSacrifice.mutation].glow : 'border-red-500/20 text-red-400/30'}`}>
+                                                {transferSacrifice ? <span className="text-3xl sm:text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferSacrifice.name)?.e}</span> : <Icon name="Flame" size={24} className="sm:scale-110" />}
+                                                <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferSacrifice ? transferSacrifice.name : 'Material'}</span>
+                                            </button>
+                                            <Icon name="Zap" size={16} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'} rotate-90 sm:scale-125`} />
+                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : 'border-cyan-500/20 text-cyan-400/30'}`}>
+                                                {transferTarget ? <span className="text-3xl sm:text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferTarget.name)?.e}</span> : <Icon name="Box" size={24} className="sm:scale-110" />}
+                                                <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferTarget ? transferTarget.name : 'Target'}</span>
+                                            </button>
                                         </div>
-                                        <div className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth snap-x scrollbar-hide">
-                                            {RARITIES.map(rarity => {
-                                                const baseCost = rarity.manifestCost * cat.multiplier;
-                                                // APPLY 25% SHRINE DISCOUNT
-                                                const pk = { ...cat, targetRarity: rarity.id, mutation: cat.id, cost: baseCost, currency: 'secondary' };
-                                                const discountedCost = getPackCost(pk, true);
-                                                const afford = currency2 >= discountedCost;
-                                                return (
-                                                    <div key={rarity.id} className={`snap-center shrink-0 w-36 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`} onClick={() => { if(afford) { openPack(pk, true); setView('shop'); } }}>
-                                                        <div className={`w-full aspect-[4/5] rounded-3xl bg-gradient-to-br ${cat.color} border-4 flex flex-col items-center justify-center gap-2 p-3 shadow-xl ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950' : 'border-white/20'}`}>
-                                                            <div className={`text-[10px] font-black uppercase ${rarity.color} drop-shadow-[0_1px_2px_black]`}>{rarity.label}</div>
-                                                            <div className="flex items-center gap-1 mt-2 font-black text-xs z-10 bg-black/40 px-2 py-0.5 rounded-full border border-white/20 shadow-inner">
-                                                                <span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                                <Icon name={terms.secondaryIcon} size={10} className="text-cyan-300" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </section>
-                                ))}
+                                        {transferSacrifice && transferTarget && (
+                                            <div className="bg-slate-950/50 border border-cyan-500/30 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-inner">
+                                                <span className="text-[9px] sm:text-[10px] font-black uppercase text-cyan-400">Fusion Cost:</span>
+                                                <span className={`text-xs sm:text-sm font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
+                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={12} className={`sm:scale-110 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-cyan-400' : 'text-red-400'}`} />
+                                                </span>
+                                            </div>
+                                        )}
+                                        <button disabled={!transferSacrifice || !transferTarget || currency2 < getTransferCost(transferSacrifice, transferTarget)} onClick={() => {
+                                            const cost = getTransferCost(transferSacrifice, transferTarget);
+                                            if (currency2 < cost) return;
+                                            setCurrency2(v => v - cost);
+                                            const nt = { ...transferTarget, mutation: transferSacrifice.mutation };
+                                            setInventory(p => [nt, ...p.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id)]);
+                                            setTransferSacrifice(null); setTransferTarget(null); setLastPull(nt); setView('shop');
+                                        }} className={`w-full max-w-xs py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        {view === 'altar' && <div className={`p-8 text-center italic text-xs ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white/40'}`}>Arcane Altar Logic Active...</div>}
+                        {view === 'shrine' && (
+                            <div className="flex-1 flex flex-col gap-8 sm:gap-10 pb-16 sm:pb-20 animate-in slide-in-from-left-4">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mt-1 sm:mt-2 mx-auto w-fit border shadow-lg`}>
+                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-400'}`}>Manifest pure arcane mutations with a perfect 10% chance for any rarity.</p>
+                                </div>
+                                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 px-2 sm:px-4 scroll-smooth snap-x scrollbar-hide items-center justify-start sm:justify-center">
+                                    {SHRINE_CATEGORIES.map(cat => {
+                                        const equalWeights = {};
+                                        RARITIES.forEach(r => equalWeights[r.id] = 10);
+                                        const baseCost = (currentThemeId === 'olympian' ? 5e14 : 5e6) * cat.multiplier;
+                                        
+                                        const pk = { id: `shrine_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
+                                        const discountedCost = getPackCost(pk, true);
+                                        const afford = currency2 >= discountedCost;
+                                        
+                                        return (
+                                            <div key={cat.id} className={`snap-center shrink-0 w-32 sm:w-44 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
+                                                onMouseDown={() => handleHoldStart(pk)} onMouseUp={() => handleHoldEnd(pk)} onMouseLeave={() => clearTimeout(holdTimer.current)}
+                                                onTouchStart={() => handleHoldStart(pk)} onTouchEnd={() => handleHoldEnd(pk)}>
+                                                <div className={`w-full aspect-[3/4] rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-br ${cat.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 shadow-xl ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/40' : 'border-white/20'}`}>
+                                                    <Icon name={cat.icon} size={36} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:scale-125" />
+                                                    <div className={`text-[10px] sm:text-xs font-black uppercase text-white drop-shadow-[0_1px_2px_black] text-center mt-2 leading-tight`}>{cat.name}</div>
+                                                    <div className="flex items-center gap-1 mt-auto font-black text-[10px] sm:text-xs z-10 bg-black/50 px-2 sm:px-3 py-1 rounded-full border border-white/20 shadow-inner">
+                                                        <span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(discountedCost)}</span>
+                                                        <Icon name={terms.secondaryIcon} size={12} className="text-cyan-300" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className={`text-center opacity-50 text-[10px] font-black uppercase tracking-widest mt-2 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                            </div>
+                        )}
                     </main>
 
                     {inspectedPack && (
-                        <div className="fixed inset-0 z-[500] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in zoom-in-95" onClick={() => setInspectedPack(null)}>
-                            <div className="bg-slate-900 w-full max-w-xs rounded-3xl border-2 border-white/20 p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                                <button className="absolute top-4 right-4 text-white/20 hover:text-white transition-colors" onClick={() => setInspectedPack(null)}><Icon name="X" size={24} /></button>
-                                <h3 className="text-sm font-black uppercase mb-6 tracking-widest text-center text-white">{inspectedPack.name} Rates</h3>
-                                <div className="space-y-3">
+                        <div className="fixed inset-0 z-[500] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 sm:p-8 animate-in zoom-in-95" onClick={() => setInspectedPack(null)}>
+                            <div className="bg-slate-900 w-full max-w-xs rounded-[2rem] sm:rounded-3xl border-2 border-white/20 p-5 sm:p-6 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                <button className="absolute top-3 right-3 sm:top-4 sm:right-4 text-white/20 hover:text-white transition-colors" onClick={() => setInspectedPack(null)}><Icon name="X" size={20} className="sm:scale-125" /></button>
+                                <h3 className="text-xs sm:text-sm font-black uppercase mb-4 sm:mb-6 tracking-widest text-center text-white">{inspectedPack.name} Rates</h3>
+                                <div className="space-y-1 sm:space-y-2">
                                     {(() => {
                                         const weights = inspectedPack.weights;
                                         const total = Object.values(weights).reduce((a,b)=>a+b,0);
                                         return RARITIES.map(r => {
                                             const pct = (weights[r.id] || 0) / total * 100;
-                                            return pct > 0 ? ( <div key={r.id} className="flex justify-between items-center text-[11px] font-black uppercase border-b border-white/5 pb-1"><span className={r.color}>{r.label}</span><span className="text-white opacity-40 font-mono">{pct.toFixed(2)}%</span></div> ) : null;
+                                            return pct > 0 ? ( <div key={r.id} className="flex justify-between items-center text-[9px] sm:text-[11px] font-black uppercase border-b border-white/5 pb-1"><span className={r.color}>{r.label}</span><span className="text-white opacity-40 font-mono">{pct.toFixed(1)}%</span></div> ) : null;
                                         }).reverse();
                                     })()}
                                 </div>
                             </div>
                         </div>
                     )}
+
+                    {inventoryModal && (
+                        <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex flex-col p-4 animate-in fade-in" onClick={() => setInventoryModal(null)}>
+                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-6 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
+                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+                                    {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation !== 'none') : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => (
+                                        <div key={item.id} onClick={() => { if (inventoryModal === 'source') setTransferSacrifice(item); else setTransferTarget(item); setInventoryModal(null); }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${MUTATIONS[item.mutation].glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{MASTER_ITEM_DB.find(db => db.name === item.name)?.e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${MUTATIONS[item.mutation].color}`}>{MUTATIONS[item.mutation].label || 'Base'} • {item.rarity.label}</div></div></div></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     
-                    <div className="fixed inset-0 pointer-events-none z-[1000] border-[16px] border-white/5 opacity-20" />
+                    <div className="fixed inset-0 pointer-events-none z-[1000] border-[12px] sm:border-[16px] border-white/5 opacity-20" />
                 </div>
             );
         };
