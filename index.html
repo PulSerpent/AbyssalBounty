@@ -87,6 +87,17 @@
 
         const MUTATION_ORDER = ['none', 'glimmering', 'bioluminescent', 'cursed', 'abyssal', 'void_touched', 'prismatic', 'ethereal'];
         
+        const MUTATIONS = {
+            none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+            glimmering: { label: 'Glimmering', mult: 1.5, bg: 'bg-yellow-50/90', color: 'text-yellow-600', glow: 'shadow-[0_0_15px_rgba(202,138,4,0.6)]' },
+            bioluminescent: { label: 'Bioluminescent', mult: 3, bg: 'bg-lime-50/90', color: 'text-lime-600', glow: 'shadow-[0_0_15px_rgba(101,163,13,0.6)]' },
+            cursed: { label: 'Cursed', mult: 7, bg: 'bg-red-50/90', color: 'text-red-700', glow: 'shadow-[0_0_15px_rgba(185,28,28,0.6)]' },
+            abyssal: { label: 'Abyssal', mult: 15, bg: 'bg-violet-50/90', color: 'text-violet-700', glow: 'shadow-[0_0_15px_rgba(109,40,217,0.6)]' },
+            void_touched: { label: 'Void-Touched', mult: 35, bg: 'bg-slate-800/90', color: 'text-slate-100', glow: 'shadow-[0_0_15px_rgba(241,245,249,0.4)]' },
+            prismatic: { label: 'Prismatic', mult: 100, bg: 'bg-fuchsia-50/90', color: 'text-fuchsia-600', glow: 'shadow-[0_0_15px_rgba(192,38,211,0.6)]' },
+            ethereal: { label: 'Ethereal', mult: 500, bg: 'bg-white/95', color: 'text-cyan-400', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.8)]' }
+        };
+
         const MASTER_ITEM_DB = [
             { name: "Soggy Seaweed", rarityId: "trash", e: "🌿" }, { name: "Empty Can", rarityId: "trash", e: "🥫" }, { name: "Waterlogged Boot", rarityId: "trash", e: "👢" },
             { name: "Rusty Nail", rarityId: "trash", e: "🔩" }, { name: "Muck Pile", rarityId: "trash", e: "💩" }, { name: "Plastic Bag", rarityId: "trash", e: "🛍️" },
@@ -145,7 +156,7 @@
             const [pos, setPos] = useState({ x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 });
             const [dir, setDir] = useState(Math.random() > 0.5 ? 1 : -1);
             useEffect(() => {
-                const interval = setInterval(() => {
+                const timer = setInterval(() => {
                     setPos(p => {
                         let nx = p.x + (Math.random() - 0.5) * 5;
                         let ny = p.y + (Math.random() - 0.5) * 5;
@@ -153,7 +164,7 @@
                         return { x: Math.max(10, Math.min(90, nx)), y: Math.max(10, Math.min(90, ny)) };
                     });
                 }, 3000);
-                return () => clearInterval(interval);
+                return () => clearInterval(timer);
             }, []);
             return (
                 <div className={`absolute transition-all duration-[3000ms] ease-in-out pointer-events-none drop-shadow-2xl flex flex-col items-center ${MUTATIONS[item.mutation]?.glow || ''}`} style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: `scale(${dir}, 1)` }}>
@@ -288,8 +299,8 @@
             const getDuplicatesForRarity = (rId) => {
                 const owned = inventory.filter(i => i.rarity.id === rId);
                 const grp = {}; owned.forEach(i => { if(!grp[i.name]) grp[i.name] = []; grp[i.name].push(i); });
-                const dupes = []; Object.values(grp).forEach(g => { if(g.length > 1) dupes.push(...g.slice(1)); });
-                return dupes;
+                const d = []; Object.values(grp).forEach(g => { if(g.length > 1) d.push(...g.slice(1)); });
+                return d;
             };
 
             const buyUpgrade = (type) => {
@@ -404,7 +415,7 @@
                                     })}
                                 </div>
                                 <div className="flex-1 min-h-[350px] flex items-center justify-center bg-white/5 rounded-[3rem] border border-white/10 relative overflow-hidden transition-all">
-                                    {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-500 flex items-center justify-center animate-spin"><Icon name="Anchor" className="text-cyan-400" /></div><span className="text-xs font-black uppercase text-cyan-400 uppercase">Diving...</span></div>}
+                                    {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-500 flex items-center justify-center animate-spin"><Icon name="Anchor" className="text-cyan-400" /></div><span className="text-xs font-black uppercase text-cyan-400">Diving...</span></div>}
                                     {isSealed && (
                                         <div className="flex flex-col items-center gap-6 cursor-pointer group" onClick={() => {
                                             if(isRipping || isShaking) return; setIsShaking(true);
@@ -465,7 +476,7 @@
                                             const canForge = dupes.length >= 5;
                                             return (
                                                 <div key={r.id} className="bg-white/5 border border-white/5 p-5 rounded-3xl flex items-center justify-between transition-all hover:bg-white/10 group">
-                                                    <div><div className={`text-xs font-black uppercase ${r.color}`}>{r.label}</div><div className="text-[9px] font-black text-white/30 uppercase mt-1">{dupes.length} Duplicates Available</div></div>
+                                                    <div><div className={`text-xs font-black uppercase ${r.color}`}>{r.label}</div><div className="text-[9px] font-black text-white/30 uppercase">{dupes.length} Duplicates Available</div></div>
                                                     <button disabled={!canForge} onClick={() => {
                                                         const sacList = dupes.sort(sortItems).reverse().slice(0, 5);
                                                         const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
@@ -530,13 +541,22 @@
                                         </div>
                                     </section>
                                 ))}
+                                <section className="px-2">
+                                    <h3 className="text-[10px] font-black uppercase opacity-30 mb-4 tracking-[0.4em] flex items-center gap-2"><Icon name="Compass" size={14} /> Fleet Upgrades</h3>
+                                    <div className="space-y-3">
+                                        {[ { id: 'luck', name: "Siren's Grace", icon: 'Wand2', desc: "+20% Luck", lvl: upgrades.luck }, { id: 'discount', name: "Black Market", icon: 'Percent', desc: "-5% Cost", lvl: upgrades.discount }, { id: 'multiplier', name: "Tidal Surge", icon: 'Calculator', desc: "Global Multiplier", lvl: Math.floor(upgrades.multiplier * 2 - 1) } ].map(u => {
+                                            const cost = u.id === 'luck' ? (upgrades.luck + 1) * 500 : u.id === 'discount' ? (upgrades.discount + 1) * 1000 : (upgrades.multiplier * 2) * 1250;
+                                            return ( <button key={u.id} disabled={pearls < cost} onClick={() => buyUpgrade(u.id)} className="w-full bg-white/5 border border-white/5 p-4 rounded-3xl flex items-center justify-between group active:scale-95 transition-all disabled:opacity-20 text-left"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center"><Icon name={u.icon} size={24} className="text-teal-400" /></div><div><div className="flex items-center gap-2 font-black text-sm"><span>{u.name}</span><span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded uppercase">Lvl {u.lvl}</span></div><p className="text-[10px] opacity-50 uppercase tracking-widest">{u.desc}</p></div></div><div className="bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-xl text-xs font-black">{formatNum(cost)} <Icon name="Droplet" size={12} /></div></button> );
+                                        })}
+                                    </div>
+                                </section>
                             </div>
                         )}
 
                         {view === 'inventory' && (
                             <div className="flex-1 flex flex-col gap-6 animate-in fade-in">
-                                <div className="bg-white/5 border border-white/10 p-6 rounded-[2.5rem] flex items-center justify-between">
-                                    <div><h3 className="text-2xl font-black uppercase tracking-tighter">Captain's Log</h3><p className="text-[10px] opacity-40 uppercase tracking-widest">{inventory.length} Entries Found</p></div>
+                                <div className="bg-white/5 border border-white/10 p-6 rounded-[2.5rem] flex items-center justify-between shadow-xl">
+                                    <div><h3 className="text-2xl font-black uppercase tracking-tighter">Captain's Log</h3><p className="text-[10px] opacity-40 uppercase tracking-widest">{inventory.length} items logged</p></div>
                                     <button onClick={() => {
                                         const ni = []; const g = {}; inventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
                                         Object.values(g).forEach(list => { list.sort(sortItems); ni.push(list[0]); list.slice(1).forEach(dup => { const val = dup.value * (MUTATIONS[dup.mutation || 'none']?.mult || 1); if(dup.currency === 'pearl') setPearls(p => p + val); else setDubloons(d => d + val); }); });
@@ -580,7 +600,8 @@
                                 <h3 className="text-sm font-black uppercase mb-6 tracking-widest text-center">{inspectedPack.name} Rates</h3>
                                 <div className="space-y-2">
                                     {(() => {
-                                        const weights = getDynamicWeights(inspectedPack, upgrades.luck);
+                                        const luckB = 1 + (upgrades.luck * 0.2);
+                                        const weights = {}; Object.keys(inspectedPack.weights).forEach((k, idx) => { weights[k] = inspectedPack.weights[k] * (k === 'trash' ? 1 : Math.pow(luckB, idx)); });
                                         const total = Object.values(weights).reduce((a,b)=>a+b,0);
                                         return RARITIES.map(r => {
                                             const pct = (weights[r.id] || 0) / total * 100;
