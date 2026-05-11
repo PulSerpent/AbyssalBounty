@@ -86,10 +86,6 @@
             );
         };
 
-        // ---------------------------------------------------------
-        // THEME DATABASES
-        // ---------------------------------------------------------
-
         const THEMES = {
             abyssal: {
                 id: 'abyssal',
@@ -99,7 +95,7 @@
                 terms: {
                     primary: 'Dubloons', primaryIcon: 'Coins',
                     secondary: 'Pearls', secondaryIcon: 'Droplet',
-                    packMenu: 'Dive', display: 'Trench', log: 'Log', beast: '🦑'
+                    packMenu: 'Dive', log: 'Log', beast: '🦑'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.05, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 20 },
@@ -164,7 +160,7 @@
                 terms: {
                     primary: 'Drachma', primaryIcon: 'Coins',
                     secondary: 'Ambrosia', secondaryIcon: 'Star',
-                    packMenu: 'Summon', display: 'Olympus', log: 'Fates', beast: '🐂'
+                    packMenu: 'Summon', log: 'Fates', beast: '🐂'
                 },
                 RARITIES: [
                     { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.05, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' }, manifestCost: 100000000000 },
@@ -222,36 +218,10 @@
             }
         };
 
-        const AquariumEntity = ({ item }) => {
-            const tData = THEMES[item.themeId || 'abyssal'];
-            if (!tData) return null;
-            const dbItem = tData.MASTER_ITEM_DB.find(db => db.name === item.name);
-            const mutData = tData.MUTATIONS[item.mutation || 'none'];
-            const [pos, setPos] = useState({ x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 });
-            const [dir, setDir] = useState(Math.random() > 0.5 ? 1 : -1);
-            
-            useEffect(() => {
-                const timer = setInterval(() => {
-                    setPos(p => {
-                        let nx = p.x + (Math.random() - 0.5) * 5;
-                        let ny = p.y + (Math.random() - 0.5) * 5;
-                        if (nx < 10 || nx > 90) setDir(d => -d);
-                        return { x: Math.max(10, Math.min(90, nx)), y: Math.max(10, Math.min(90, ny)) };
-                    });
-                }, 3000);
-                return () => clearInterval(timer);
-            }, []);
-            
-            return (
-                <div className={`absolute transition-all duration-[3000ms] ease-in-out pointer-events-none drop-shadow-2xl flex flex-col items-center ${mutData?.glow || ''}`} style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: `scale(${dir}, 1)` }}>
-                    <span className="text-4xl animate-[drift_8s_ease-in-out_infinite]">{dbItem?.e || '✨'}</span>
-                </div>
-            );
-        };
-
         const App = () => {
             // Save state & Theme
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
+            // UPDATED: Olympian Peak is now unlocked by default
             const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian']);
             
             // Core currencies & global inventory
@@ -335,10 +305,8 @@
                 };
             }, [inventory, currentThemeId]);
 
-            // Determine active multiplier
-            const frenzyMultiplier = (frenzyTimer > 0 ? 5 : 1);
-            const realmMultiplier = Math.pow(2, unlockedThemes.length - 1);
-            const activeMultiplier = frenzyMultiplier * realmMultiplier;
+            // Single base yield
+            const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
                 const saved = localStorage.getItem('abyssal_v19_realms');
@@ -367,7 +335,6 @@
                 return () => clearInterval(timer);
             }, [incomeFlow.income, activeMultiplier]);
 
-            // Global Event Spawner
             useEffect(() => {
                 const tick = setInterval(() => {
                     if (!merchantVisible && !merchantSaleActive && Math.random() < 0.03) {
@@ -385,6 +352,31 @@
                 }, 5000);
                 return () => clearInterval(tick);
             }, [merchantVisible, merchantSaleActive, krakenEvent, anomalyVisible, frenzyTimer]);
+
+            useEffect(() => {
+                let interval;
+                if (frenzyTimer > 0) {
+                    interval = setInterval(() => setFrenzyTimer(t => Math.max(0, t - 1)), 1000);
+                }
+                return () => clearInterval(interval);
+            }, [frenzyTimer]);
+
+            useEffect(() => {
+                let interval;
+                if (krakenEvent && krakenTimer > 0 && !krakenFeedback) {
+                    interval = setInterval(() => {
+                        setKrakenTimer(t => {
+                            if (t <= 0.1) {
+                                setKrakenFeedback("Defeat...");
+                                setTimeout(() => setKrakenEvent(false), 2000);
+                                return 0;
+                            }
+                            return t - 0.1;
+                        });
+                    }, 100);
+                }
+                return () => clearInterval(interval);
+            }, [krakenEvent, krakenTimer, krakenFeedback]);
 
             const getPackCost = (p) => { return merchantSaleActive ? Math.floor(p.cost * 0.25) : p.cost; };
 
@@ -449,7 +441,6 @@
             return (
                 <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
-                    {/* Theme-Specific Ambience */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                         {[...Array(25)].map((_, i) => (
                             <div 
@@ -467,7 +458,6 @@
                         ))}
                     </div>
 
-                    {/* Frenzy Surge */}
                     {anomalyVisible && (
                         <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(30); }}>
                             <div className="flex flex-col items-center">
@@ -479,7 +469,6 @@
                         </div>
                     )}
 
-                    {/* Merchant Event */}
                     {merchantVisible && (
                         <div className="fixed top-0 left-0 z-[60] cursor-pointer animate-[ghost-drift_6s_linear_forwards]" style={merchantPath} onClick={() => { setMerchantVisible(false); setMerchantSaleActive(true); setMerchantSaleTimer(20); }}>
                             <div className="flex flex-col items-center">
@@ -489,7 +478,6 @@
                         </div>
                     )}
 
-                    {/* Beast Attack Event */}
                     {krakenEvent && (
                         <div className="fixed inset-0 z-[100] bg-red-950/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in">
                             <div className="relative z-10 flex flex-col items-center">
@@ -538,14 +526,15 @@
                                     SURGE x{activeMultiplier.toFixed(1)} <span className="opacity-80">({frenzyTimer}s)</span>
                                 </div>
                             ) : (
-                                <div className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>x{activeMultiplier.toFixed(1)} Yield</div>
+                                <div className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Standard Yield</div>
                             )}
                         </div>
                     </nav>
 
                     <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-4 flex flex-col z-10 scrollbar-hide pb-32">
                         <div className="flex gap-1 sm:gap-2 mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
-                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'aquarium', icon: 'Fish', label: terms.display }, { id: 'altar', icon: 'Flame', label: 'Altar' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
+                            {/* UPDATED: "Trench" (Display) button has been removed from navigation */}
+                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Altar' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[50px] flex flex-col items-center justify-center py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]') : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
                         </div>
@@ -557,16 +546,15 @@
                                     <Icon name="Globe" size={48} className={`${currentThemeId === 'olympian' ? 'text-amber-500 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'text-fuchsia-500 drop-shadow-[0_0_15px_rgba(192,38,211,0.6)]'} mx-auto mb-4 relative z-10`} />
                                     <h2 className="text-2xl font-black uppercase tracking-tighter text-white mb-2 relative z-10">Realms of Power</h2>
                                     <p className={`text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-200' : 'text-fuchsia-200'}`}>
-                                        Travel to alternate realities. Your wealth transfers seamlessly. Each new realm features escalating challenges and distinct relics, providing a permanent global multiplier for discovering it!
+                                        Travel to alternate realities. Your wealth transfers seamlessly. Each realm features escalating challenges and distinct relics!
                                     </p>
                                 </div>
 
                                 <div className="space-y-4 px-2">
                                     {Object.values(THEMES).map(th => {
-                                        const isUnlocked = unlockedThemes.includes(th.id);
                                         const isActive = currentThemeId === th.id;
                                         return (
-                                            <div key={th.id} className={`p-5 rounded-3xl border-2 flex items-center justify-between transition-all ${isActive ? 'bg-white/10 border-white/50 shadow-xl' : isUnlocked ? 'bg-white/5 border-white/10' : 'bg-black/50 border-white/5 opacity-70'}`}>
+                                            <div key={th.id} className={`p-5 rounded-3xl border-2 flex items-center justify-between transition-all ${isActive ? 'bg-white/10 border-white/50 shadow-xl' : 'bg-white/5 border-white/10'}`}>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white text-slate-900' : 'bg-slate-800 text-white/50'}`}>
                                                         <Icon name={th.icon} size={24} />
@@ -574,19 +562,14 @@
                                                     <div>
                                                         <div className="text-sm font-black uppercase tracking-wider text-white">{th.name}</div>
                                                         <div className="text-[9px] font-black uppercase opacity-50 mt-1">
-                                                            {isActive ? 'Current Reality' : isUnlocked ? 'Discovered' : 'Unknown Dimension'}
+                                                            {isActive ? 'Current Reality' : 'Unlocked Dimension'}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 {isActive ? (
                                                     <div className="text-[10px] font-black uppercase bg-white/20 px-4 py-2 rounded-xl text-white">Active</div>
-                                                ) : isUnlocked ? (
-                                                    <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-transform shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-fuchsia-600'}`}>Travel</button>
                                                 ) : (
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <div className="text-[10px] font-black uppercase text-red-400">Locked</div>
-                                                        <div className="text-[8px] font-black uppercase opacity-50 text-right">Requires 100 {terms.primary}</div>
-                                                    </div>
+                                                    <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-transform shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-fuchsia-600'}`}>Travel</button>
                                                 )}
                                             </div>
                                         );
@@ -668,15 +651,6 @@
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
-
-                        {view === 'aquarium' && (
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-100/30' : 'bg-slate-900/30'} flex-1 min-h-[500px] flex flex-col relative rounded-[3rem] border border-white/5 overflow-hidden animate-in fade-in shadow-inner`}>
-                                <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-start z-20 pointer-events-none">
-                                    <div><h3 className={`text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.display}</h3><p className={`text-[10px] font-black uppercase opacity-70 ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-cyan-400'}`}>{incomeFlow.bestItemsList.length} Active Relics</p></div>
-                                </div>
-                                <div className="flex-1 relative w-full h-full">{incomeFlow.bestItemsList.map(item => <AquariumEntity key={item.id} item={item} />)}</div>
                             </div>
                         )}
 
@@ -809,32 +783,9 @@
                                 </div>
                                 {RARITIES.map(r => {
                                     const dbItemsForRarity = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
-                                    const totalItems = dbItemsForRarity.length;
                                     return (
                                         <div key={r.id} className="mb-6 px-2">
                                             <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-900/10' : 'bg-white/5'}`}></div></h4>
-                                            <div className="flex gap-3 overflow-x-auto pb-4 mb-2 scrollbar-hide snap-x">
-                                                {MUTATION_ORDER.map(mut => {
-                                                    const mutData = MUTATIONS[mut];
-                                                    const setId = `${currentThemeId}-${r.id}-${mut}`;
-                                                    const ownedUnique = new Set(activeInventory.filter(i => i.rarity.id === r.id && (i.mutation || 'none') === mut).map(i => i.name)).size;
-                                                    const isCompleted = ownedUnique >= totalItems;
-                                                    const isClaimed = claimedSets.includes(setId);
-                                                    const rewardAmt = r.setPrize.amt * mutData.mult;
-                                                    const rewardCurr = r.setPrize.curr;
-                                                    return (
-                                                        <div key={mut} className={`snap-start shrink-0 w-36 ${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-slate-900/50'} rounded-2xl border ${isClaimed ? 'opacity-50 border-white/5' : isCompleted ? 'border-green-500/50 shadow-lg' : 'border-white/10'} p-3 flex flex-col justify-between`}>
-                                                            <div>
-                                                                <div className={`text-[9px] font-black uppercase truncate ${mutData.color || 'text-white'}`}>{mutData.label || 'Base'} Set</div>
-                                                                <div className={`text-[10px] font-mono mt-1 ${currentThemeId === 'olympian' ? 'text-amber-900/60' : 'text-white/50'}`}>{ownedUnique} / {totalItems}</div>
-                                                            </div>
-                                                            <button disabled={!isCompleted || isClaimed} onClick={() => { if(rewardCurr === 'secondary') setCurrency2(p => p + rewardAmt); else setCurrency1(d => d + rewardAmt); setClaimedSets(prev => [...prev, setId]); }} className={`mt-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all w-full flex items-center justify-center gap-1 ${isClaimed ? 'bg-stone-200 text-stone-500' : isCompleted ? 'bg-green-600 text-white active:scale-95' : (currentThemeId === 'olympian' ? 'bg-amber-100 text-amber-800/40' : 'bg-white/5 text-white/30')}`}>
-                                                                {isClaimed ? 'Claimed' : <>{formatNum(rewardAmt)} <Icon name={rewardCurr === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={10} /></>}
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
                                             <div className="grid gap-3">
                                                 {dbItemsForRarity.map(dbItem => {
                                                     const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
