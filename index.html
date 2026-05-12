@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Abyssal Bounty: Realms</title>
-    <!-- Dependencies -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -423,7 +422,7 @@
             const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
-                const saved = localStorage.getItem('abyssal_v28_realms_safe');
+                const saved = localStorage.getItem('abyssal_v29_realms_safe');
                 if (saved) {
                     try {
                         const d = JSON.parse(saved);
@@ -438,7 +437,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('abyssal_v28_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
+                localStorage.setItem('abyssal_v29_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
             }, [currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets]);
 
             useEffect(() => {
@@ -588,6 +587,7 @@
                 setTransferSacrifice(null); 
                 setTransferTarget(null);
                 setLastPull(null);
+                setActivePack(null);
                 setView('shop');
             };
 
@@ -653,13 +653,17 @@
                                         if (lastPull.currency === 'secondary') setCurrency2(p => p + (sellVal * 0.3));
                                         setInventory(inv => inv.filter(i => i.id !== lastPull.id));
                                         setLastPull(null);
+                                        setActivePack(null);
                                     }} className={`flex-1 border py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all flex flex-col items-center justify-center gap-1 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
                                         <span>Exchange</span>
                                         <span className="text-[8px] sm:text-[9px] opacity-80 flex items-center gap-1 font-mono">
                                             +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={10} />
                                         </span>
                                     </button>
-                                    <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 border border-white/10 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                    <button onClick={() => {
+                                        setLastPull(null);
+                                        setActivePack(null);
+                                    }} className="flex-1 bg-slate-950 border border-white/10 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                 </div>
                             </div>
                         )}
