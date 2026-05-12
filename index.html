@@ -70,6 +70,7 @@
 
         const formatNum = (n) => {
             if (n === undefined || n === null || isNaN(n)) return "0";
+            if (n > 0 && n < 1) return Number(n.toFixed(2)).toString();
             if (n < 1000) return Math.floor(n).toString();
             const power = Math.floor(Math.log10(n));
             const suffixIndex = Math.floor(power / 3);
@@ -542,12 +543,39 @@
                 return true;
             };
 
-            const getDuplicatesForRarity = (rId) => {
+            const getDuplicatesForRarity = useCallback((rId) => {
                 const owned = activeInventory.filter(i => i.rarity?.id === rId);
                 const grp = {}; owned.forEach(i => { if(!grp[i.name]) grp[i.name] = []; grp[i.name].push(i); });
                 const d = []; Object.values(grp).forEach(g => { if(g.length > 1) d.push(...g.slice(1)); });
                 return d;
-            };
+            }, [activeInventory]);
+
+            const activeNotifications = useMemo(() => {
+                const notifs = [];
+                // Check Ascensions
+                RARITIES.slice(0, -1).forEach(r => {
+                    const dupes = getDuplicatesForRarity(r.id);
+                    if (dupes.length >= 5) {
+                        notifs.push({ id: `ascend_${r.id}`, type: 'ascend', label: `${r.label} Forge Ready`, icon: 'Flame', color: r.color, onClick: () => { setView('altar'); setAltarMode('ascend'); } });
+                    }
+                });
+
+                // Check Sets
+                RARITIES.forEach(r => {
+                    MUTATION_ORDER.forEach(mut => {
+                        const setId = `${currentThemeId}_${r.id}_${mut}`;
+                        if (!claimedSets.includes(setId)) {
+                            const reqItems = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
+                            const ownedSet = new Set(activeInventory.filter(i => i.rarity?.id === r.id && i.mutation === mut).map(i => i.name));
+                            if (ownedSet.size >= reqItems.length && reqItems.length > 0) {
+                                const mData = getMutData(currentThemeId, mut);
+                                notifs.push({ id: `set_${setId}`, type: 'set', label: `${mData.label || 'Base'} ${r.label} Set`, icon: 'Sparkles', color: r.color, onClick: () => setView('inventory') });
+                            }
+                        }
+                    });
+                });
+                return notifs;
+            }, [activeInventory, claimedSets, currentThemeId, RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, getMutData, getDuplicatesForRarity]);
 
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
@@ -557,6 +585,33 @@
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
                 return Math.floor(baseCost * mutMult);
+            };
+
+            const getDirectBuyCost = useCallback((rarityId) => {
+                const rIdx = RARITIES.findIndex(x => x.id === rarityId);
+                let basePackCost = STANDARD_PACKS[rIdx]?.cost;
+                if (!basePackCost || basePackCost === 0) {
+                    basePackCost = currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50);
+                }
+                // The Dilemma: 5x the equivalent Pack price, AND must be paid in the rarer Secondary Currency!
+                return basePackCost * 5; 
+            }, [currentThemeId, RARITIES, STANDARD_PACKS]);
+
+            const handleDirectBuy = (dbItem, rarity, cost) => {
+                if (currency2 < cost) return;
+                setCurrency2(c => c - cost);
+                const cpsBase = rarity.incomeBase;
+                const newItem = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    themeId: currentThemeId,
+                    name: dbItem.name,
+                    rarity: rarity,
+                    mutation: 'none',
+                    currency: 'primary',
+                    cps: cpsBase,
+                    value: Math.floor(rarity.incomeBase * 200)
+                };
+                setInventory(prev => [newItem, ...prev]);
             };
 
             const handleHoldStart = (p) => { 
@@ -711,10 +766,10 @@
                         </div>
                     )}
 
-                    {/* Active Event Banner with slim descriptive messaging */}
-                    {(merchantSaleActive || frenzyTimer > 0) && (
-                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] whitespace-nowrap">
-                            <div className={`px-4 sm:px-6 py-2 rounded-full border border-white/20 flex items-center gap-3 sm:gap-4 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
+                    {/* Active Event Banner and Action Notifications */}
+                    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
+                        {(merchantSaleActive || frenzyTimer > 0) && (
+                            <div className={`pointer-events-auto px-4 sm:px-6 py-2 rounded-full border border-white/20 flex items-center gap-3 sm:gap-4 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
                                 <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={16} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
                                 <span className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
                                     {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
@@ -723,8 +778,25 @@
                                     {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                        
+                        {activeNotifications.slice(0, 3).map((notif, i) => (
+                            <div key={notif.id} className="pointer-events-auto px-4 sm:px-5 py-1.5 rounded-full border border-white/20 shadow-lg backdrop-blur-md bg-slate-900/90 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in slide-in-from-top-4" onClick={notif.onClick} style={{animationDelay: `${i * 0.1}s`}}>
+                                <div className="flex items-center gap-2">
+                                    <Icon name={notif.icon} size={12} className={notif.color} />
+                                    <span className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-widest ${notif.color}`}>
+                                        {notif.label}
+                                    </span>
+                                    <span className="text-[7px] opacity-60 ml-1 text-white">Tap to Claim</span>
+                                </div>
+                            </div>
+                        ))}
+                        {activeNotifications.length > 3 && (
+                            <div className="text-[8px] font-black uppercase opacity-60 bg-black/80 px-2 py-0.5 rounded-full text-white pointer-events-auto">
+                                +{activeNotifications.length - 3} More Ready
+                            </div>
+                        )}
+                    </div>
 
                     {krakenEvent && (
                         <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : 'bg-red-950/80')} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
@@ -964,17 +1036,25 @@
                                         <div className="grid gap-2 sm:gap-3">
                                             {MASTER_ITEM_DB.filter(m => m.rarityId === r.id).map(dbItem => {
                                                 const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
+                                                const directCost = getDirectBuyCost(r.id);
+                                                const canAffordBuy = currency2 >= directCost;
+                                                
                                                 if (!owned.length) return (
-                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-80' : 'bg-slate-900/40 border-white/5 opacity-50'} p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 border-dashed flex items-center justify-between transition-all group`}>
+                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-90' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 border-dashed flex flex-col sm:flex-row sm:items-center justify-between transition-all group gap-2 sm:gap-0`}>
                                                         <div className={`flex items-center gap-3 sm:gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={14} className="sm:scale-110" /><span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
-                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                        <div className="flex items-center gap-2 justify-between w-full sm:w-auto mt-2 sm:mt-0">
+                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={10} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 );
                                                 const best = owned[0];
                                                 const mData = getMutData(currentThemeId, best.mutation);
                                                 const isDarkMut = best.mutation === 'void_touched' || best.mutation === 'underworld' || best.mutation === 'overgrown' || best.mutation === 'feral' || best.mutation === 'shamanic';
                                                 return (
-                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex items-center justify-between ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
+                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
                                                         <div className="flex items-center gap-3 sm:gap-4 truncate"><span className="text-2xl sm:text-3xl drop-shadow-md">{getDbItem(best.name).e}</span><div className="text-left truncate">
                                                             <div className={`flex items-center gap-2 font-black text-[10px] sm:text-xs ${isDarkMut ? 'text-white' : 'text-slate-900'}`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px]">x{owned.length}</span>}</div>
                                                             {best.mutation !== 'none' && <div className={`text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${mData.color}`}>Mutation: {mData.label}</div>}
@@ -987,7 +1067,12 @@
                                                                 <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5 mt-1`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
                                                             )}
                                                         </div></div>
-                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Exchange 1</button>
+                                                        <div className="flex items-center gap-2 justify-end w-full sm:w-auto shrink-0 mt-2 sm:mt-0">
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={10} />
+                                                            </button>
+                                                            <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md">Exchange 1</button>
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -1017,7 +1102,9 @@
                                                         const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
                                                         const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
                                                         const isSec = Math.random() < next.secondaryChance;
-                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: MASTER_ITEM_DB.filter(it => it.rarityId === next.id)[0].name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
+                                                        const nextItems = MASTER_ITEM_DB.filter(it => it.rarityId === next.id);
+                                                        const randomItem = nextItems[Math.floor(Math.random() * nextItems.length)];
+                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
                                                     }} className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8.5px] sm:text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
