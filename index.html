@@ -57,24 +57,35 @@
             background-size: 400% 400%;
             animation: heavenly-sky 25s ease-in-out infinite;
         }
+        .bg-theme-canopy {
+            background: linear-gradient(135deg, #022c22, #064e3b, #14532d, #022c22);
+            background-size: 400% 400%;
+            animation: heavenly-sky 30s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
         const formatNum = (n) => {
             if (n === undefined || n === null || isNaN(n)) return "0";
             if (n < 1000) return Math.floor(n).toString();
-            if (n < 1e6) return (n / 1e3).toFixed(1) + 'k';
-            if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
-            if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
-            if (n < 1e15) return (n / 1e12).toFixed(2) + 'T';
-            if (n < 1e18) return (n / 1e15).toFixed(2) + 'Qu';
-            if (n < 1e21) return (n / 1e18).toFixed(2) + 'Qi';
-            if (n < 1e24) return (n / 1e21).toFixed(2) + 'Sx';
-            return (n / 1e24).toFixed(2) + 'Sp';
+            const power = Math.floor(Math.log10(n));
+            const suffixIndex = Math.floor(power / 3);
+            const suffixes = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No'];
+            
+            // Standard formatting up to Nonillion
+            if (suffixIndex < suffixes.length) {
+                return (n / Math.pow(10, suffixIndex * 3)).toFixed(2) + suffixes[suffixIndex];
+            }
+            
+            // Infinite formatting past Decillion: aa, bb, cc... zz, aaa...
+            const aaIndex = suffixIndex - suffixes.length;
+            const letter = String.fromCharCode(97 + (aaIndex % 26)); // 'a' = 97
+            const repeat = Math.floor(aaIndex / 26) + 2; // starts at 2 ('aa')
+            return (n / Math.pow(10, suffixIndex * 3)).toFixed(2) + letter.repeat(repeat);
         };
 
         const Icon = ({ name, size = 24, className = "" }) => {
@@ -101,7 +112,10 @@
                 Globe: <React.Fragment><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></React.Fragment>,
                 Castle: <path d="M2 20h20 M4 20V4h2v16 M18 20V4h2v16 M10 20V8h4v12 M12 4v4 M12 4l-2 2 M12 4l2 2"/>,
                 Sun: <React.Fragment><circle cx="12" cy="12" r="4"/><path d="M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M4.93 19.07l1.41-1.41 M17.66 6.34l1.41-1.41"/></React.Fragment>,
-                ZapFast: <path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/>
+                ZapFast: <path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/>,
+                Infinity: <path d="M12 12c-2-2.5-6-2.5-8 0s-2 6 0 8 6 2.5 8 0c2 2.5 6 2.5 8 0s2-6 0-8-6-2.5-8 0z" />,
+                Leaf: <React.Fragment><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></React.Fragment>,
+                Hexagon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -122,16 +136,16 @@
                     packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken', merchant: 'Ghost Ship'
                 },
                 RARITIES: [
-                    { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.01, setPrize: { amt: 10000, curr: 'primary' }, transferCost: { amt: 2500, curr: 'primary' }, manifestCost: 200 },
-                    { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 3.0, secondaryChance: 0.02, setPrize: { amt: 75000, curr: 'primary' }, transferCost: { amt: 25000, curr: 'primary' }, manifestCost: 1000 },
-                    { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 15.0, secondaryChance: 0.05, setPrize: { amt: 500000, curr: 'primary' }, transferCost: { amt: 250000, curr: 'primary' }, manifestCost: 5000 },
-                    { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 80.0, secondaryChance: 0.10, setPrize: { amt: 3000000, curr: 'primary' }, transferCost: { amt: 2500000, curr: 'primary' }, manifestCost: 40000 },
-                    { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 450.0, secondaryChance: 0.15, setPrize: { amt: 25000000, curr: 'primary' }, transferCost: { amt: 50000000, curr: 'primary' }, manifestCost: 250000 },
-                    { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 3000.0, secondaryChance: 0.25, setPrize: { amt: 200000000, curr: 'primary' }, transferCost: { amt: 1500000000, curr: 'primary' }, manifestCost: 3000000 },
-                    { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 25000.0, secondaryChance: 0.40, setPrize: { amt: 5000000000, curr: 'primary' }, transferCost: { amt: 75000000000, curr: 'primary' }, manifestCost: 25000000 },
-                    { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 250000.0, secondaryChance: 0.60, setPrize: { amt: 1000000, curr: 'secondary' }, transferCost: { amt: 250000, curr: 'secondary' }, manifestCost: 250000000 },
-                    { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 3000000.0, secondaryChance: 0.80, setPrize: { amt: 50000000, curr: 'secondary' }, transferCost: { amt: 15000000, curr: 'secondary' }, manifestCost: 2500000000 },
-                    { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 50000000.0, secondaryChance: 1.0, setPrize: { amt: 5000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' }, manifestCost: 25000000000 },
+                    { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.01, setPrize: { amt: 5000, curr: 'primary' } },
+                    { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 3.0, secondaryChance: 0.02, setPrize: { amt: 50000, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Uncommon', color: 'text-teal-400', bg: 'bg-teal-900/90', multiplier: 3, incomeBase: 15.0, secondaryChance: 0.05, setPrize: { amt: 500000, curr: 'primary' } },
+                    { id: 'rare', label: 'Rare', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 80.0, secondaryChance: 0.10, setPrize: { amt: 5000000, curr: 'primary' } },
+                    { id: 'epic', label: 'Epic', color: 'text-indigo-400', bg: 'bg-indigo-900/90', multiplier: 20, incomeBase: 450.0, secondaryChance: 0.15, setPrize: { amt: 50000000, curr: 'primary' } },
+                    { id: 'legendary', label: 'Legendary', color: 'text-amber-400', bg: 'bg-amber-900/90', multiplier: 60, incomeBase: 3000.0, secondaryChance: 0.25, setPrize: { amt: 1500000000, curr: 'primary' } },
+                    { id: 'mythic', label: 'Mythic', color: 'text-rose-400', bg: 'bg-rose-900/90', multiplier: 200, incomeBase: 25000.0, secondaryChance: 0.40, setPrize: { amt: 50000000000, curr: 'primary' } },
+                    { id: 'celestial', label: 'Celestial', color: 'text-cyan-300', bg: 'bg-cyan-900/90', multiplier: 800, incomeBase: 250000.0, secondaryChance: 0.60, setPrize: { amt: 500000, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Primordial', color: 'text-fuchsia-500', bg: 'bg-fuchsia-900/90', multiplier: 3500, incomeBase: 3000000.0, secondaryChance: 0.80, setPrize: { amt: 50000000, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Transcendent', color: 'text-yellow-300', bg: 'bg-slate-900/90', multiplier: 15000, incomeBase: 50000000.0, secondaryChance: 1.0, setPrize: { amt: 5000000000, curr: 'secondary' } },
                 ],
                 MUTATION_ORDER: ['none', 'glimmering', 'bioluminescent', 'cursed', 'abyssal', 'void_touched', 'prismatic', 'ethereal'],
                 MUTATIONS: {
@@ -147,34 +161,35 @@
                 MASTER_ITEM_DB: [
                     { name: "Soggy Seaweed", rarityId: "trash", e: "🌿" }, { name: "Empty Can", rarityId: "trash", e: "🥫" }, { name: "Waterlogged Boot", rarityId: "trash", e: "👢" }, { name: "Rusty Nail", rarityId: "trash", e: "🔩" }, { name: "Muck Pile", rarityId: "trash", e: "💩" }, { name: "Plastic Bag", rarityId: "trash", e: "🛍️" }, { name: "Old Tire", rarityId: "trash", e: "🛞" }, { name: "Broken Fishing Rod", rarityId: "trash", e: "🎣" }, { name: "Driftwood", rarityId: "trash", e: "🪵" }, { name: "Torn Net", rarityId: "trash", e: "🕸️" },
                     { name: "Barnacle Shell", rarityId: "common", e: "🐚" }, { name: "Kelp Frond", rarityId: "common", e: "🍃" }, { name: "Sea Glass", rarityId: "common", e: "🪞" }, { name: "Starfish", rarityId: "common", e: "⭐" }, { name: "Sea Cucumber", rarityId: "common", e: "🥒" }, { name: "Anchovy", rarityId: "common", e: "🐟" }, { name: "Sardine", rarityId: "common", e: "🐠" }, { name: "Rusty Anchor Link", rarityId: "common", e: "⛓️" }, { name: "Sailor's Flask", rarityId: "common", e: "🫙" }, { name: "Coral Branch", rarityId: "common", e: "🪸" },
-                    { name: "Shark Tooth", rarityId: "uncommon", e: "🦷" }, { name: "Pearl Oyster", rarityId: "uncommon", e: "🦪" }, { name: "Sunken Compass", rarityId: "uncommon", e: "🧭" }, { name: "Lanternfish", rarityId: "uncommon", e: "🏮" }, { name: "Pufferfish", rarityId: "uncommon", e: "🐡" }, { name: "Stingray", rarityId: "uncommon", e: "🪁" }, { name: "Moray Eel", rarityId: "uncommon", e: "🐍" }, { name: "Pirate Medallion", rarityId: "uncommon", e: "🪙" }, { name: "Iron Harpoon", rarityId: "uncommon", e: "🪝" }, { name: "Message in a Bottle", rarityId: "uncommon", e: "🍾" },
+                    { name: "Shark Tooth", rarityId: "uncommon", e: "🦷" }, { name: "Pearl Oyster", rarityId: "uncommon", e: "🦪" }, { name: "Sunken Compass", rarityId: "uncommon", e: "🧭" }, { name: "Lanternfish", rarityId: "uncommon", e: "🏮" }, { name: "Pufferfish", rarityId: "uncommon", e: "🐡" }, { name: "Abyssal Kite", rarityId: "uncommon", e: "🪁" }, { name: "Moray Eel", rarityId: "uncommon", e: "🐍" }, { name: "Pirate Medallion", rarityId: "uncommon", e: "🪙" }, { name: "Iron Harpoon", rarityId: "uncommon", e: "🪝" }, { name: "Message in a Bottle", rarityId: "uncommon", e: "🍾" },
                     { name: "Glowing Urchin", rarityId: "rare", e: "🦔" }, { name: "Angler Lure", rarityId: "rare", e: "💡" }, { name: "Swordfish", rarityId: "rare", e: "🗡️" }, { name: "Hammerhead Shark", rarityId: "rare", e: "🦈" }, { name: "Merfolk Dagger", rarityId: "rare", e: "🔱" }, { name: "Aquamarine Shard", rarityId: "rare", e: "💎" }, { name: "Shipwheel Spoke", rarityId: "rare", e: "🎡" }, { name: "Octopus", rarityId: "rare", e: "🐙" }, { name: "Sea Turtle", rarityId: "rare", e: "🐢" }, { name: "Bio-Jellyfish", rarityId: "rare", e: "🪼" },
-                    { name: "Kraken Tentacle", rarityId: "epic", e: "🦑" }, { name: "Triton Conch", rarityId: "epic", e: "📯" }, { name: "Whirlpool Core", rarityId: "epic", e: "🌀" }, { name: "Great White Shark", rarityId: "epic", e: "🦈" }, { name: "Giant Squid", rarityId: "epic", e: "🦑" }, { name: "Oarfish", rarityId: "epic", e: "🎏" }, { name: "Captain's Logbook", rarityId: "epic", e: "📓" }, { name: "Siren Feather", rarityId: "epic", e: "🪶" }, { name: "Abyssal Lantern", rarityId: "epic", e: "🏮" }, { name: "Manta Ray", rarityId: "epic", e: "🪁" },
+                    { name: "Kraken Tentacle", rarityId: "epic", e: "🦑" }, { name: "Triton Conch", rarityId: "epic", e: "📯" }, { name: "Whirlpool Core", rarityId: "epic", e: "🌀" }, { name: "Great White Shark", rarityId: "epic", e: "🦈" }, { name: "Giant Squid", rarityId: "epic", e: "🦑" }, { name: "Oarfish", rarityId: "epic", e: "🎏" }, { name: "Captain's Logbook", rarityId: "epic", e: "📓" }, { name: "Siren Feather", rarityId: "epic", e: "🪶" }, { name: "Abyssal Lantern", rarityId: "epic", e: "🏮" }, { name: "Gliding Ray", rarityId: "epic", e: "🪁" },
                     { name: "Heart of Ocean", rarityId: "legendary", e: "💙" }, { name: "Poseidon Trident", rarityId: "legendary", e: "🔱" }, { name: "Megalodon Fang", rarityId: "legendary", e: "🦷" }, { name: "Siren's Tear", rarityId: "legendary", e: "💧" }, { name: "Tidal Anchor", rarityId: "legendary", e: "⚓" }, { name: "Sea Dragon Scale", rarityId: "legendary", e: "🐉" }, { name: "Orca", rarityId: "legendary", e: "🐋" }, { name: "Whale Shark", rarityId: "legendary", e: "🦈" }, { name: "Coelacanth", rarityId: "legendary", e: "🐟" }, { name: "Deep Sea Behemoth", rarityId: "legendary", e: "🦕" },
-                    { name: "Leviathan Engine", rarityId: "mythic", e: "⚙️" }, { name: "Ocean Singularity", rarityId: "mythic", e: "🕳️" }, { name: "Breath of Sea", rarityId: "mythic", e: "💨" }, { name: "Abyssal Pulse", rarityId: "mythic", e: "🫀" }, { name: "Trench Core", rarityId: "mythic", e: "🌋" }, { name: "Blue Whale", rarityId: "mythic", e: "🐳" }, { name: "Giant Isopod", rarityId: "mythic", e: "🪲" }, { name: "Kraken Eye", rarityId: "mythic", e: "👁️" }, { name: "Abyssal Worm", rarityId: "mythic", e: "🪱" }, { name: "Sunken Crown", rarityId: "mythic", e: "👑" },
+                    { name: "Leviathan Engine", rarityId: "mythic", e: "⚙️" }, { name: "Ocean Singularity", rarityId: "mythic", e: "🕳️" }, { name: "Breath of Sea", rarityId: "mythic", e: "💨" }, { name: "Abyssal Pulse", rarityId: "mythic", e: "🫀" }, { name: "Trench Core", rarityId: "mythic", e: "🌋" }, { name: "Blue Whale", rarityId: "mythic", e: "🐳" }, { name: "Deep Sea Beetle", rarityId: "mythic", e: "🪲" }, { name: "Kraken Eye", rarityId: "mythic", e: "👁️" }, { name: "Abyssal Worm", rarityId: "mythic", e: "🪱" }, { name: "Sunken Crown", rarityId: "mythic", e: "👑" },
                     { name: "Stardust Coral", rarityId: "celestial", e: "✨" }, { name: "Astral Pearl", rarityId: "celestial", e: "🔮" }, { name: "Moon-Tide Amulet", rarityId: "celestial", e: "🧿" }, { name: "Zodiac Compass", rarityId: "celestial", e: "🧭" }, { name: "Solar Relic", rarityId: "celestial", e: "☀️" }, { name: "Celestial Ray", rarityId: "celestial", e: "☄️" }, { name: "Star-Eater Shark", rarityId: "celestial", e: "🌌" }, { name: "Nebula Jelly", rarityId: "celestial", e: "🪼" }, { name: "Lunar Whale", rarityId: "celestial", e: "🐋" }, { name: "Comet Fragment", rarityId: "celestial", e: "☄️" },
                     { name: "Genesis Drop", rarityId: "primordial", e: "🩸" }, { name: "Yggdrasil Root", rarityId: "primordial", e: "🌳" }, { name: "The First Tear", rarityId: "primordial", e: "💧" }, { name: "Earth Core", rarityId: "primordial", e: "🌍" }, { name: "Precursor Shard", rarityId: "primordial", e: "🧩" }, { name: "Primordial Leviathan", rarityId: "primordial", e: "🦕" }, { name: "Ancestral Kraken", rarityId: "primordial", e: "🦑" }, { name: "Ocean Droplet", rarityId: "primordial", e: "🌊" }, { name: "Earth-Shaker Crab", rarityId: "primordial", e: "🦀" }, { name: "Time-Lost Fossil", rarityId: "primordial", e: "🦴" },
-                    { name: "Time Anchor", rarityId: "transcendent", e: "⏳" }, { name: "Reality Shard", rarityId: "transcendent", e: "🪞" }, { name: "Infinite Ocean", rarityId: "transcendent", e: "🌌" }, { name: "Cosmos Whisper", rarityId: "transcendent", e: "🗣️" }, { name: "Eternity Prism", rarityId: "transcendent", e: "⏏️" }, { name: "Cosmic Whale", rarityId: "transcendent", e: "🐋" }, { name: "Astral Serpent", rarityId: "transcendent", e: "🐉" }, { name: "Void-Swimmer", rarityId: "transcendent", e: "🏊" }, { name: "Dimension Rift", rarityId: "transcendent", e: "🌌" }, { name: "Creator's Pearl", rarityId: "transcendent", e: "⚪" }
+                    { name: "Time Anchor", rarityId: "transcendent", e: "⏳" }, { name: "Mirror of Reality", rarityId: "transcendent", e: "🪞" }, { name: "Infinite Ocean", rarityId: "transcendent", e: "🌌" }, { name: "Cosmos Whisper", rarityId: "transcendent", e: "🗣️" }, { name: "Eternity Prism", rarityId: "transcendent", e: "⏏️" }, { name: "Cosmic Whale", rarityId: "transcendent", e: "🐋" }, { name: "Astral Serpent", rarityId: "transcendent", e: "🐉" }, { name: "Void-Swimmer", rarityId: "transcendent", e: "🏊" }, { name: "Dimension Rift", rarityId: "transcendent", e: "🌌" }, { name: "Creator's Pearl", rarityId: "transcendent", e: "⚪" }
                 ],
                 STANDARD_PACKS: [
                     { id: 'pack1', name: 'Flotsam Crate', cost: 0, currency: 'primary', icon: 'Waves', color: 'from-stone-700 to-stone-900', glow: 'shadow-stone-500/20', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
-                    { id: 'pack2', name: 'Driftwood Box', cost: 250, currency: 'primary', icon: 'Box', color: 'from-amber-800 to-amber-950', glow: 'shadow-amber-500/20', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
-                    { id: 'pack3', name: 'Sunken Chest', cost: 2500, currency: 'primary', icon: 'Anchor', color: 'from-blue-800 to-blue-950', glow: 'shadow-blue-500/20', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
-                    { id: 'pack4', name: 'Coral Strongbox', cost: 25000, currency: 'primary', icon: 'Compass', color: 'from-teal-700 to-teal-900', glow: 'shadow-teal-500/20', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
-                    { id: 'pack5', name: 'Trench Cache', cost: 500000, currency: 'primary', icon: 'Fish', color: 'from-indigo-800 to-indigo-950', glow: 'shadow-indigo-500/20', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
-                    { id: 'pack6', name: 'Galleon Vault', cost: 15000000, currency: 'primary', icon: 'Ship', color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-300/20', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
-                    { id: 'pack7', name: 'Leviathan Hoard', cost: 500000000, currency: 'primary', icon: 'Star', color: 'from-zinc-800 to-black', glow: 'shadow-white/10', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
-                    { id: 'pack8', name: 'Abyssal Reliquary', cost: 25000000000, currency: 'primary', icon: 'Zap', color: 'from-violet-800 to-black', glow: 'shadow-violet-500/30', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
-                    { id: 'pack9', name: 'Atlantis Core', cost: 1500000000000, currency: 'primary', icon: 'Boxes', color: 'from-blue-600 to-black', glow: 'shadow-cyan-400/40', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack2', name: 'Driftwood Box', cost: 250, currency: 'primary', icon: 'Box', color: 'from-amber-800 to-amber-950', glow: 'shadow-amber-500/20', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Sunken Chest', cost: 2500, currency: 'primary', icon: 'Anchor', color: 'from-blue-800 to-blue-950', glow: 'shadow-blue-500/20', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Coral Strongbox', cost: 25000, currency: 'primary', icon: 'Compass', color: 'from-teal-700 to-teal-900', glow: 'shadow-teal-500/20', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Trench Cache', cost: 500000, currency: 'primary', icon: 'Fish', color: 'from-indigo-800 to-indigo-950', glow: 'shadow-indigo-500/20', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Galleon Vault', cost: 15000000, currency: 'primary', icon: 'Ship', color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-300/20', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'Leviathan Hoard', cost: 500000000, currency: 'primary', icon: 'Star', color: 'from-zinc-800 to-black', glow: 'shadow-white/10', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Abyssal Reliquary', cost: 25000000000, currency: 'primary', icon: 'Zap', color: 'from-violet-800 to-black', glow: 'shadow-violet-500/30', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Atlantis Core', cost: 1500000000000, currency: 'primary', icon: 'Boxes', color: 'from-blue-600 to-black', glow: 'shadow-cyan-400/40', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Abyssal Singularity', cost: 1500000000000000, currency: 'primary', icon: 'Infinity', color: 'from-fuchsia-900 to-black', glow: 'shadow-fuchsia-500/50', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
                 ],
                 SHRINE_CATEGORIES: [
-                    { id: 'glimmering', name: 'Glimmer Shards', icon: 'Sparkles', multiplier: 1, color: 'from-yellow-600 to-yellow-900', glow: 'shadow-yellow-500/20' },
-                    { id: 'bioluminescent', name: 'Bioluminescence', icon: 'Zap', multiplier: 3, color: 'from-lime-600 to-lime-900', glow: 'shadow-lime-500/20' },
-                    { id: 'cursed', name: 'Cursed Relics', icon: 'Flame', multiplier: 8, color: 'from-red-600 to-red-900', glow: 'shadow-red-500/20' },
-                    { id: 'abyssal', name: 'Abyssal Depths', icon: 'Anchor', multiplier: 25, color: 'from-violet-700 to-indigo-950', glow: 'shadow-violet-500/20' },
-                    { id: 'void_touched', name: 'Void Essence', icon: 'Globe', multiplier: 75, color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-500/20' },
-                    { id: 'prismatic', name: 'Prismatic Tide', icon: 'Sparkles', multiplier: 250, color: 'from-fuchsia-600 to-rose-950', glow: 'shadow-fuchsia-500/20' },
-                    { id: 'ethereal', name: 'Ethereal Ascension', icon: 'Waves', multiplier: 1000, color: 'from-cyan-400 to-blue-900', glow: 'shadow-cyan-400/20' }
+                    { id: 'glimmering', name: 'Glimmering', icon: 'Sparkles', color: 'from-yellow-600 to-yellow-900', glow: 'shadow-yellow-500/20' },
+                    { id: 'bioluminescent', name: 'Bioluminescent', icon: 'Zap', color: 'from-lime-600 to-lime-900', glow: 'shadow-lime-500/20' },
+                    { id: 'cursed', name: 'Cursed', icon: 'Flame', color: 'from-red-600 to-red-900', glow: 'shadow-red-500/20' },
+                    { id: 'abyssal', name: 'Abyssal', icon: 'Anchor', color: 'from-violet-700 to-indigo-950', glow: 'shadow-violet-500/20' },
+                    { id: 'void_touched', name: 'Void-Touched', icon: 'Globe', color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-500/20' },
+                    { id: 'prismatic', name: 'Prismatic', icon: 'Sparkles', color: 'from-fuchsia-600 to-rose-950', glow: 'shadow-fuchsia-500/20' },
+                    { id: 'ethereal', name: 'Ethereal', icon: 'Waves', color: 'from-cyan-400 to-blue-900', glow: 'shadow-cyan-400/20' }
                 ]
             },
             
@@ -189,16 +204,16 @@
                     packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur', merchant: 'Celestial Chariot'
                 },
                 RARITIES: [
-                    { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 100000000.0, secondaryChance: 0.01, setPrize: { amt: 50000000000000, curr: 'primary' }, transferCost: { amt: 10000000000, curr: 'primary' } },
-                    { id: 'common', label: 'Common', color: 'text-amber-600', bg: 'bg-amber-50/90', multiplier: 1, incomeBase: 500000000.0, secondaryChance: 0.02, setPrize: { amt: 250000000000000, curr: 'primary' }, transferCost: { amt: 100000000000, curr: 'primary' } },
-                    { id: 'uncommon', label: 'Uncommon', color: 'text-orange-600', bg: 'bg-orange-50/90', multiplier: 3, incomeBase: 2500000000.0, secondaryChance: 0.05, setPrize: { amt: 1500000000000000, curr: 'primary' }, transferCost: { amt: 1000000000000, curr: 'primary' } },
-                    { id: 'rare', label: 'Heroic', color: 'text-sky-600', bg: 'bg-sky-50/90', multiplier: 8, incomeBase: 15000000000.0, secondaryChance: 0.10, setPrize: { amt: 10000000000000000, curr: 'primary' }, transferCost: { amt: 10000000000000, curr: 'primary' } },
-                    { id: 'epic', label: 'Epic', color: 'text-indigo-600', bg: 'bg-indigo-50/90', multiplier: 20, incomeBase: 100000000000.0, secondaryChance: 0.15, setPrize: { amt: 80000000000000000, curr: 'primary' }, transferCost: { amt: 200000000000000, curr: 'primary' } },
-                    { id: 'legendary', label: 'Legendary', color: 'text-yellow-700', bg: 'bg-yellow-50/95', multiplier: 60, incomeBase: 800000000000.0, secondaryChance: 0.25, setPrize: { amt: 500000000000000000, curr: 'primary' }, transferCost: { amt: 5000000000000000, curr: 'primary' } },
-                    { id: 'mythic', label: 'Mythic', color: 'text-rose-600', bg: 'bg-rose-50/90', multiplier: 200, incomeBase: 5000000000000.0, secondaryChance: 0.40, setPrize: { amt: 4000000000000000000, curr: 'primary' }, transferCost: { amt: 250000000000000000, curr: 'primary' } },
-                    { id: 'celestial', label: 'Divine', color: 'text-cyan-600', bg: 'bg-white/95', multiplier: 800, incomeBase: 50000000000000.0, secondaryChance: 0.60, setPrize: { amt: 5000000000000, curr: 'secondary' }, transferCost: { amt: 1000000000, curr: 'secondary' } },
-                    { id: 'primordial', label: 'Titan', color: 'text-fuchsia-600', bg: 'bg-slate-50/95', multiplier: 3500, incomeBase: 500000000000000.0, secondaryChance: 0.80, setPrize: { amt: 50000000, curr: 'secondary' }, transferCost: { amt: 50000000000, curr: 'secondary' } },
-                    { id: 'transcendent', label: 'Olympian', color: 'text-yellow-600', bg: 'bg-white/95', multiplier: 15000, incomeBase: 5000000000000000.0, secondaryChance: 1.0, setPrize: { amt: 500000000000000, curr: 'secondary' }, transferCost: { amt: 5000000000000, curr: 'secondary' } },
+                    { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 1e11, secondaryChance: 0.01, setPrize: { amt: 2.5e17, curr: 'primary' } },
+                    { id: 'common', label: 'Common', color: 'text-amber-600', bg: 'bg-amber-50/90', multiplier: 1, incomeBase: 5e11, secondaryChance: 0.02, setPrize: { amt: 2.5e18, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Uncommon', color: 'text-orange-600', bg: 'bg-orange-50/90', multiplier: 3, incomeBase: 2.5e12, secondaryChance: 0.05, setPrize: { amt: 2.5e19, curr: 'primary' } },
+                    { id: 'rare', label: 'Heroic', color: 'text-sky-600', bg: 'bg-sky-50/90', multiplier: 8, incomeBase: 1.5e13, secondaryChance: 0.10, setPrize: { amt: 2.5e20, curr: 'primary' } },
+                    { id: 'epic', label: 'Epic', color: 'text-indigo-600', bg: 'bg-indigo-50/90', multiplier: 20, incomeBase: 1e14, secondaryChance: 0.15, setPrize: { amt: 2.5e21, curr: 'primary' } },
+                    { id: 'legendary', label: 'Legendary', color: 'text-yellow-700', bg: 'bg-yellow-50/95', multiplier: 60, incomeBase: 8e14, secondaryChance: 0.25, setPrize: { amt: 2.5e22, curr: 'primary' } },
+                    { id: 'mythic', label: 'Mythic', color: 'text-rose-600', bg: 'bg-rose-50/90', multiplier: 200, incomeBase: 5e15, secondaryChance: 0.40, setPrize: { amt: 2.5e23, curr: 'primary' } },
+                    { id: 'celestial', label: 'Divine', color: 'text-cyan-600', bg: 'bg-white/95', multiplier: 800, incomeBase: 5e16, secondaryChance: 0.60, setPrize: { amt: 5e16, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Titan', color: 'text-fuchsia-600', bg: 'bg-slate-50/95', multiplier: 3500, incomeBase: 5e17, secondaryChance: 0.80, setPrize: { amt: 5e18, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Olympian', color: 'text-yellow-600', bg: 'bg-white/95', multiplier: 15000, incomeBase: 5e18, secondaryChance: 1.0, setPrize: { amt: 5e20, curr: 'secondary' } },
                 ],
                 MUTATION_ORDER: ['none', 'blessed', 'glowing', 'mythic', 'titanic', 'underworld', 'elysian', 'pantheon'],
                 MUTATIONS: {
@@ -212,43 +227,112 @@
                     pantheon: { label: 'Pantheon', mult: 500, bg: 'bg-white/95', color: 'text-amber-500', glow: 'shadow-[0_0_20px_rgba(251,191,36,0.8)]' }
                 },
                 MASTER_ITEM_DB: [
-                    { name: "Broken Pottery", rarityId: "trash", e: "🏺" }, { name: "Withered Olive", rarityId: "trash", e: "🌿" }, { name: "Torn Toga", rarityId: "trash", e: "🥻" }, { name: "Dull Bronze", rarityId: "trash", e: "🥉" }, { name: "Cracked Marble", rarityId: "trash", e: "🪨" }, { name: "Spoiled Wine", rarityId: "trash", e: "🍷" }, { name: "Chipped Flute", rarityId: "trash", e: "🪈" }, { name: "Dry Fig", rarityId: "trash", e: "🍇" }, { name: "Dusty Scroll", rarityId: "trash", e: "📜" }, { name: "Rusty Strigil", rarityId: "trash", e: "🥄" },
+                    { name: "Broken Pottery", rarityId: "trash", e: "🏺" }, { name: "Withered Olive", rarityId: "trash", e: "🌿" }, { name: "Torn Toga", rarityId: "trash", e: "🥻" }, { name: "Dull Bronze", rarityId: "trash", e: "🥉" }, { name: "Cracked Marble", rarityId: "trash", e: "🪨" }, { name: "Spoiled Wine", rarityId: "trash", e: "🍷" }, { name: "Chipped Flute", rarityId: "trash", e: "🪈" }, { name: "Dry Grapes", rarityId: "trash", e: "🍇" }, { name: "Dusty Scroll", rarityId: "trash", e: "📜" }, { name: "Rusty Strigil", rarityId: "trash", e: "🥄" },
                     { name: "Bronze Drachma", rarityId: "common", e: "🪙" }, { name: "Fresh Olive", rarityId: "common", e: "🫒" }, { name: "Woven Basket", rarityId: "common", e: "🧺" }, { name: "Temple Candle", rarityId: "common", e: "🕯️" }, { name: "Clay Amphora", rarityId: "common", e: "🏺" }, { name: "Goat Cheese", rarityId: "common", e: "🧀" }, { name: "Honey Jar", rarityId: "common", e: "🍯" }, { name: "Shepherd Crook", rarityId: "common", e: "🦯" }, { name: "Linen Tunic", rarityId: "common", e: "👕" }, { name: "Iron Dagger", rarityId: "common", e: "🗡️" },
-                    { name: "Silver Coin", rarityId: "uncommon", e: "🪙" }, { name: "Spartan Helmet", rarityId: "uncommon", e: "🪖" }, { name: "Laurel Wreath", rarityId: "uncommon", e: "🍃" }, { name: "Pomegranate", rarityId: "uncommon", e: "🍎" }, { name: "Oracle Bone", rarityId: "uncommon", e: "🦴" }, { name: "Hoplite Shield", rarityId: "uncommon", e: "🛡️" }, { name: "Swift Arrow", rarityId: "uncommon", e: "🏹" }, { name: "Chariot Wheel", rarityId: "uncommon", e: "🛞" }, { name: "Lyre String", rarityId: "uncommon", e: "🧶" }, { name: "Nymph Veil", rarityId: "uncommon", e: "🕸️" },
-                    { name: "Pegasus Feather", rarityId: "rare", e: "🪶" }, { name: "Centaur Hoof", rarityId: "rare", e: "🧲" }, { name: "Gold Drachma", rarityId: "rare", e: "🪙" }, { name: "Hero's Sword", rarityId: "rare", e: "🗡️" }, { name: "Minotaur Horn", rarityId: "rare", e: "🐂" }, { name: "Siren Scale", rarityId: "rare", e: "🧜‍♀️" }, { name: "Chimera Fang", rarityId: "rare", e: "🦷" }, { name: "Gorgon Snake", rarityId: "rare", e: "🐍" }, { name: "Harpy Talon", rarityId: "rare", e: "🦅" }, { name: "Cyclops Eye", rarityId: "rare", e: "👁️" },
-                    { name: "Aegis Shard", rarityId: "epic", e: "🛡️" }, { name: "Caduceus Rod", rarityId: "epic", e: "⚕️" }, { name: "Medusa's Gaze", rarityId: "epic", e: "👁️" }, { name: "Golden Fleece", rarityId: "epic", e: "🧥" }, { name: "Cerberus Collar", rarityId: "epic", e: "🐕" }, { name: "River Styx Vial", rarityId: "epic", e: "🧪" }, { name: "Elysian Bloom", rarityId: "epic", e: "🌸" }, { name: "Hydra Scale", rarityId: "epic", e: "🐉" }, { name: "Nemean Pelt", rarityId: "epic", e: "🦁" }, { name: "Ambrosia Drop", rarityId: "epic", e: "🍯" },
-                    { name: "Apollo's Lyre", rarityId: "legendary", e: "🎻" }, { name: "Artemis' Bow", rarityId: "legendary", e: "🏹" }, { name: "Ares' Spear", rarityId: "legendary", e: "☄️" }, { name: "Hermes' Sandal", rarityId: "legendary", e: "🪽" }, { name: "Athena's Owl", rarityId: "legendary", e: "🦉" }, { name: "Hephaestus Hammer", rarityId: "legendary", e: "🔨" }, { name: "Aphrodite's Mirror", rarityId: "legendary", e: "🪞" }, { name: "Dionysus' Chalice", rarityId: "legendary", e: "🍷" }, { name: "Hades' Helm", rarityId: "legendary", e: "🪖" }, { name: "Poseidon's Pearl", rarityId: "legendary", e: "⚪" },
+                    { name: "Silver Coin", rarityId: "uncommon", e: "🪙" }, { name: "Spartan Helmet", rarityId: "uncommon", e: "🪖" }, { name: "Laurel Wreath", rarityId: "uncommon", e: "🍃" }, { name: "Pomegranate", rarityId: "uncommon", e: "🍎" }, { name: "Oracle Bone", rarityId: "uncommon", e: "🦴" }, { name: "Hoplite Shield", rarityId: "uncommon", e: "🛡️" }, { name: "Swift Arrow", rarityId: "uncommon", e: "🏹" }, { name: "Chariot Wheel", rarityId: "uncommon", e: "🛞" }, { name: "Golden Yarn", rarityId: "uncommon", e: "🧶" }, { name: "Arachne's Web", rarityId: "uncommon", e: "🕸️" },
+                    { name: "Pegasus Feather", rarityId: "rare", e: "🪶" }, { name: "Magnetic Iron", rarityId: "rare", e: "🧲" }, { name: "Gold Drachma", rarityId: "rare", e: "🪙" }, { name: "Hero's Sword", rarityId: "rare", e: "🗡️" }, { name: "Minotaur Horn", rarityId: "rare", e: "🐂" }, { name: "Siren Scale", rarityId: "rare", e: "🧜‍♀️" }, { name: "Chimera Fang", rarityId: "rare", e: "🦷" }, { name: "Gorgon Snake", rarityId: "rare", e: "🐍" }, { name: "Harpy Talon", rarityId: "rare", e: "🦅" }, { name: "Cyclops Eye", rarityId: "rare", e: "👁️" },
+                    { name: "Aegis Shard", rarityId: "epic", e: "🛡️" }, { name: "Caduceus Rod", rarityId: "epic", e: "⚕️" }, { name: "Medusa's Gaze", rarityId: "epic", e: "👁️" }, { name: "Golden Fleece", rarityId: "epic", e: "🧥" }, { name: "Cerberus Hound", rarityId: "epic", e: "🐕" }, { name: "River Styx Vial", rarityId: "epic", e: "🧪" }, { name: "Elysian Bloom", rarityId: "epic", e: "🌸" }, { name: "Hydra Scale", rarityId: "epic", e: "🐉" }, { name: "Nemean Lion", rarityId: "epic", e: "🦁" }, { name: "Ambrosia Drop", rarityId: "epic", e: "🍯" },
+                    { name: "Apollo's Lyre", rarityId: "legendary", e: "🎻" }, { name: "Artemis' Bow", rarityId: "legendary", e: "🏹" }, { name: "Ares' Meteor", rarityId: "legendary", e: "☄️" }, { name: "Hermes' Sandal", rarityId: "legendary", e: "🪽" }, { name: "Athena's Owl", rarityId: "legendary", e: "🦉" }, { name: "Hephaestus Hammer", rarityId: "legendary", e: "🔨" }, { name: "Aphrodite's Mirror", rarityId: "legendary", e: "🪞" }, { name: "Dionysus' Chalice", rarityId: "legendary", e: "🍷" }, { name: "Hades' Helm", rarityId: "legendary", e: "🪖" }, { name: "Poseidon's Pearl", rarityId: "legendary", e: "⚪" },
                     { name: "Trident of Oceans", rarityId: "mythic", e: "🔱" }, { name: "Zeus' Lightning", rarityId: "mythic", e: "⚡" }, { name: "Helm of Darkness", rarityId: "mythic", e: "🌑" }, { name: "Pandora's Box", rarityId: "mythic", e: "📦" }, { name: "Prometheus' Flame", rarityId: "mythic", e: "🔥" }, { name: "Atlas' Chain", rarityId: "mythic", e: "⛓️" }, { name: "Chronos' Hourglass", rarityId: "mythic", e: "⏳" }, { name: "Tartarus Core", rarityId: "mythic", e: "🌋" }, { name: "Thread of Atropos", rarityId: "mythic", e: "✂️" }, { name: "Eye of the Fates", rarityId: "mythic", e: "👁️" },
                     { name: "Constellation Core", rarityId: "celestial", e: "🌌" }, { name: "Tear of Uranus", rarityId: "celestial", e: "☄️" }, { name: "Helios' Chariot", rarityId: "celestial", e: "☀️" }, { name: "Selene's Crescent", rarityId: "celestial", e: "🌙" }, { name: "Star of Olympus", rarityId: "celestial", e: "✨" }, { name: "Zodiac Wheel", rarityId: "celestial", e: "🎡" }, { name: "Astral Ambrosia", rarityId: "celestial", e: "🍯" }, { name: "Nyx's Veil", rarityId: "celestial", e: "🌌" }, { name: "Erebus Shadow", rarityId: "celestial", e: "🌑" }, { name: "Aether Spark", rarityId: "celestial", e: "✨" },
                     { name: "Gaia's Heart", rarityId: "primordial", e: "🌍" }, { name: "Kronos' Scythe", rarityId: "primordial", e: "🗡️" }, { name: "Rhea's Blessing", rarityId: "primordial", e: "🤱" }, { name: "Oceanus' Tide", rarityId: "primordial", e: "🌊" }, { name: "Hyperion's Glare", rarityId: "primordial", e: "☀️" }, { name: "Iapetus' Pillar", rarityId: "primordial", e: "🏛️" }, { name: "Mnemosyne's Memory", rarityId: "primordial", e: "🧠" }, { name: "The First Word", rarityId: "primordial", e: "🗣️" }, { name: "Tethys' Stream", rarityId: "primordial", e: "💧" }, { name: "Coeus' Intellect", rarityId: "primordial", e: "👁️" },
                     { name: "Mount Olympus Core", rarityId: "transcendent", e: "⛰️" }, { name: "Absolute Nectar", rarityId: "transcendent", e: "🍯" }, { name: "Chaos Origin", rarityId: "transcendent", e: "🌌" }, { name: "Loom of Destiny", rarityId: "transcendent", e: "🧵" }, { name: "Eternal Flame", rarityId: "transcendent", e: "🔥" }, { name: "Omnipotence Shard", rarityId: "transcendent", e: "💎" }, { name: "Crown of the Gods", rarityId: "transcendent", e: "👑" }, { name: "Axis Mundi", rarityId: "transcendent", e: "📍" }, { name: "Creation Breath", rarityId: "transcendent", e: "💨" }, { name: "The First Tear", rarityId: "transcendent", e: "💧" }
                 ],
                 STANDARD_PACKS: [
-                    { id: 'pack1', name: 'Peasant Offering', cost: 5000000000000, currency: 'primary', icon: 'Flame', color: 'from-orange-400 to-yellow-600', glow: 'shadow-orange-200/50', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
-                    { id: 'pack2', name: 'Merchant Pouch', cost: 25000000000000, currency: 'primary', icon: 'Coins', color: 'from-amber-300 to-yellow-500', glow: 'shadow-amber-200/50', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
-                    { id: 'pack3', name: 'Hero\'s Spoils', cost: 250000000000000, currency: 'primary', icon: 'Box', color: 'from-sky-300 to-blue-500', glow: 'shadow-sky-200/50', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
-                    { id: 'pack4', name: 'Temple Chest', cost: 2500000000000000, currency: 'primary', icon: 'Castle', color: 'from-white to-stone-300', glow: 'shadow-white/50', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
-                    { id: 'pack5', name: 'Oracle Bounty', cost: 50000000000000000, currency: 'primary', icon: 'Sparkles', color: 'from-yellow-200 to-amber-400', glow: 'shadow-amber-300/50', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
-                    { id: 'pack6', name: 'Demigod Hoard', cost: 1500000000000000000, currency: 'primary', icon: 'Zap', color: 'from-amber-400 to-orange-600', glow: 'shadow-amber-500/50', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
-                    { id: 'pack7', name: 'Titan Vault', cost: 50000000000000000000, currency: 'primary', icon: 'Star', color: 'from-slate-700 to-black', glow: 'shadow-white/20', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
-                    { id: 'pack8', name: 'Divine Reliquary', cost: 2500000000000000000000, currency: 'primary', icon: 'Sun', color: 'from-yellow-100 to-white', glow: 'shadow-yellow-200/80', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
-                    { id: 'pack9', name: 'Olympus Core', cost: 150000000000000000000000, currency: 'primary', icon: 'Globe', color: 'from-amber-200 to-yellow-600', glow: 'shadow-yellow-400/80', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack1', name: 'Peasant Offering', cost: 5e15, currency: 'primary', icon: 'Flame', color: 'from-orange-400 to-yellow-600', glow: 'shadow-orange-200/50', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+                    { id: 'pack2', name: 'Merchant Pouch', cost: 5e16, currency: 'primary', icon: 'Coins', color: 'from-amber-300 to-yellow-500', glow: 'shadow-amber-200/50', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Hero\'s Spoils', cost: 5e17, currency: 'primary', icon: 'Box', color: 'from-sky-300 to-blue-500', glow: 'shadow-sky-200/50', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Temple Chest', cost: 5e18, currency: 'primary', icon: 'Castle', color: 'from-white to-stone-300', glow: 'shadow-white/50', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Oracle Bounty', cost: 5e19, currency: 'primary', icon: 'Sparkles', color: 'from-yellow-200 to-amber-400', glow: 'shadow-amber-300/50', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Demigod Hoard', cost: 5e20, currency: 'primary', icon: 'Zap', color: 'from-amber-400 to-orange-600', glow: 'shadow-amber-500/50', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'Titan Vault', cost: 5e21, currency: 'primary', icon: 'Star', color: 'from-slate-700 to-black', glow: 'shadow-white/20', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Divine Reliquary', cost: 5e22, currency: 'primary', icon: 'Sun', color: 'from-yellow-100 to-white', glow: 'shadow-yellow-200/80', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Olympus Core', cost: 5e23, currency: 'primary', icon: 'Globe', color: 'from-amber-200 to-yellow-600', glow: 'shadow-yellow-400/80', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Olympus Prime', cost: 5e24, currency: 'primary', icon: 'Infinity', color: 'from-amber-100 to-white', glow: 'shadow-amber-200/80', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
                 ],
                 SHRINE_CATEGORIES: [
-                    { id: 'blessed', name: 'Blessed Sparks', icon: 'Sparkles', multiplier: 1, color: 'from-yellow-500 to-yellow-700', glow: 'shadow-yellow-500/20' },
-                    { id: 'glowing', name: 'Golden Ichor', icon: 'Droplet', multiplier: 3, color: 'from-orange-400 to-orange-600', glow: 'shadow-orange-500/20' },
-                    { id: 'mythic', name: 'Mythic Echoes', icon: 'Star', multiplier: 8, color: 'from-red-500 to-red-700', glow: 'shadow-red-500/20' },
-                    { id: 'titanic', name: 'Titan Force', icon: 'Compass', multiplier: 25, color: 'from-rose-600 to-rose-900', glow: 'shadow-rose-500/20' },
-                    { id: 'underworld', name: 'Chthonic Embers', icon: 'Flame', multiplier: 75, color: 'from-stone-700 to-stone-900', glow: 'shadow-stone-500/20' },
-                    { id: 'elysian', name: 'Elysian Light', icon: 'Sun', multiplier: 250, color: 'from-teal-400 to-teal-600', glow: 'shadow-teal-500/20' },
-                    { id: 'pantheon', name: 'Olympian Glory', icon: 'Castle', multiplier: 1000, color: 'from-amber-300 to-amber-500', glow: 'shadow-amber-400/30' }
+                    { id: 'blessed', name: 'Blessed', icon: 'Sparkles', color: 'from-yellow-500 to-yellow-700', glow: 'shadow-yellow-500/20' },
+                    { id: 'glowing', name: 'Glowing', icon: 'Droplet', color: 'from-orange-400 to-orange-600', glow: 'shadow-orange-500/20' },
+                    { id: 'mythic', name: 'Mythic', icon: 'Star', color: 'from-red-500 to-red-700', glow: 'shadow-red-500/20' },
+                    { id: 'titanic', name: 'Titanic', icon: 'Compass', color: 'from-rose-600 to-rose-900', glow: 'shadow-rose-500/20' },
+                    { id: 'underworld', name: 'Chthonic', icon: 'Flame', color: 'from-stone-700 to-stone-900', glow: 'shadow-stone-500/20' },
+                    { id: 'elysian', name: 'Elysian', icon: 'Sun', color: 'from-teal-400 to-teal-600', glow: 'shadow-teal-500/20' },
+                    { id: 'pantheon', name: 'Pantheon', icon: 'Castle', color: 'from-amber-300 to-amber-500', glow: 'shadow-amber-400/30' }
+                ]
+            },
+
+            canopy: {
+                id: 'canopy',
+                name: 'Verdant Canopy',
+                bgClass: 'bg-theme-canopy',
+                icon: 'Leaf',
+                terms: {
+                    primary: 'Amber', primaryIcon: 'Hexagon',
+                    secondary: 'Essence', secondaryIcon: 'Leaf',
+                    packMenu: 'Forage', log: 'Bestiary', beast: '🐍', beastName: 'Elder Anaconda', merchant: 'Wandering Shaman'
+                },
+                RARITIES: [
+                    { id: 'trash', label: 'Overgrowth', color: 'text-green-600', bg: 'bg-green-50/90', multiplier: 0.5, incomeBase: 1e20, secondaryChance: 0.01, setPrize: { amt: 2.5e26, curr: 'primary' } },
+                    { id: 'common', label: 'Foliage', color: 'text-lime-600', bg: 'bg-lime-50/90', multiplier: 1, incomeBase: 5e20, secondaryChance: 0.02, setPrize: { amt: 2.5e27, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Vibrant', color: 'text-emerald-600', bg: 'bg-emerald-50/90', multiplier: 3, incomeBase: 2.5e21, secondaryChance: 0.05, setPrize: { amt: 2.5e28, curr: 'primary' } },
+                    { id: 'rare', label: 'Fierce', color: 'text-teal-600', bg: 'bg-teal-50/90', multiplier: 8, incomeBase: 1.5e22, secondaryChance: 0.10, setPrize: { amt: 2.5e29, curr: 'primary' } },
+                    { id: 'epic', label: 'Apex', color: 'text-cyan-600', bg: 'bg-cyan-50/90', multiplier: 20, incomeBase: 1e23, secondaryChance: 0.15, setPrize: { amt: 2.5e30, curr: 'primary' } },
+                    { id: 'legendary', label: 'Ancient', color: 'text-amber-700', bg: 'bg-yellow-50/95', multiplier: 60, incomeBase: 8e23, secondaryChance: 0.25, setPrize: { amt: 2.5e31, curr: 'primary' } },
+                    { id: 'mythic', label: 'Primeval', color: 'text-rose-600', bg: 'bg-rose-50/90', multiplier: 200, incomeBase: 5e24, secondaryChance: 0.40, setPrize: { amt: 2.5e32, curr: 'primary' } },
+                    { id: 'celestial', label: 'Spirit', color: 'text-indigo-600', bg: 'bg-white/95', multiplier: 800, incomeBase: 5e25, secondaryChance: 0.60, setPrize: { amt: 5e25, curr: 'secondary' } },
+                    { id: 'primordial', label: 'World-Tree', color: 'text-fuchsia-600', bg: 'bg-slate-50/95', multiplier: 3500, incomeBase: 5e26, secondaryChance: 0.80, setPrize: { amt: 5e27, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Gaia', color: 'text-green-600', bg: 'bg-white/95', multiplier: 15000, incomeBase: 5e27, secondaryChance: 1.0, setPrize: { amt: 5e29, curr: 'secondary' } },
+                ],
+                MUTATION_ORDER: ['none', 'sunlit', 'venomous', 'overgrown', 'feral', 'shamanic', 'spirit_bound', 'gaia_touched'],
+                MUTATIONS: {
+                    none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+                    sunlit: { label: 'Sunlit', mult: 1.5, bg: 'bg-yellow-100/90', color: 'text-yellow-700', glow: 'shadow-[0_0_15px_rgba(253,224,71,0.6)]' },
+                    venomous: { label: 'Venomous', mult: 3, bg: 'bg-lime-200/90', color: 'text-lime-800', glow: 'shadow-[0_0_15px_rgba(163,230,53,0.6)]' },
+                    overgrown: { label: 'Overgrown', mult: 7, bg: 'bg-green-800/90', color: 'text-green-100', glow: 'shadow-[0_0_15px_rgba(22,101,52,0.6)]' },
+                    feral: { label: 'Feral', mult: 15, bg: 'bg-red-800/90', color: 'text-red-100', glow: 'shadow-[0_0_15px_rgba(153,27,27,0.6)]' },
+                    shamanic: { label: 'Shamanic', mult: 35, bg: 'bg-cyan-800/90', color: 'text-cyan-100', glow: 'shadow-[0_0_15px_rgba(22,78,99,0.4)]' },
+                    spirit_bound: { label: 'Spirit-Bound', mult: 100, bg: 'bg-indigo-200/90', color: 'text-indigo-800', glow: 'shadow-[0_0_15px_rgba(165,180,252,0.6)]' },
+                    gaia_touched: { label: 'Gaia-Touched', mult: 500, bg: 'bg-emerald-400/90', color: 'text-emerald-950', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.8)]' }
+                },
+                MASTER_ITEM_DB: [
+                    { name: "Dry Leaf", rarityId: "trash", e: "🍂" }, { name: "Twist Branch", rarityId: "trash", e: "🌿" }, { name: "Mud Clod", rarityId: "trash", e: "🪨" }, { name: "Rotten Fruit", rarityId: "trash", e: "🍎" }, { name: "Shed Skin", rarityId: "trash", e: "🐍" }, { name: "Broken Dart", rarityId: "trash", e: "🪡" }, { name: "Crushed Bug", rarityId: "trash", e: "🪲" }, { name: "Dead Vine", rarityId: "trash", e: "🥀" }, { name: "Dull Pebble", rarityId: "trash", e: "🪨" }, { name: "Fungus Cap", rarityId: "trash", e: "🍄" },
+                    { name: "Fern Frond", rarityId: "common", e: "🌿" }, { name: "Green Moss", rarityId: "common", e: "🦠" }, { name: "Balsa Bark", rarityId: "common", e: "🪵" }, { name: "River Stone", rarityId: "common", e: "🪨" }, { name: "Jungle Berry", rarityId: "common", e: "🫐" }, { name: "Tree Frog", rarityId: "common", e: "🐸" }, { name: "Tarantula", rarityId: "common", e: "🕷️" }, { name: "Liana Vine", rarityId: "common", e: "🌿" }, { name: "Dew Drop", rarityId: "common", e: "💧" }, { name: "Macaw Feather", rarityId: "common", e: "🪶" },
+                    { name: "Wild Orchid", rarityId: "uncommon", e: "🌸" }, { name: "Pitcher Plant", rarityId: "uncommon", e: "🌺" }, { name: "Poison Dart Frog", rarityId: "uncommon", e: "🐸" }, { name: "Toucan Beak", rarityId: "uncommon", e: "🪶" }, { name: "Chameleon", rarityId: "uncommon", e: "🦎" }, { name: "Morpho Butterfly", rarityId: "uncommon", e: "🦋" }, { name: "Mahogany Branch", rarityId: "uncommon", e: "🪵" }, { name: "Bioluminescent Shroom", rarityId: "uncommon", e: "🍄" }, { name: "Green Iguana", rarityId: "uncommon", e: "🦎" }, { name: "Parrot", rarityId: "uncommon", e: "🦜" },
+                    { name: "Panther Claw", rarityId: "rare", e: "🐾" }, { name: "Anaconda Scale", rarityId: "rare", e: "🐍" }, { name: "Jade Idol", rarityId: "rare", e: "🗿" }, { name: "Shaman Mask", rarityId: "rare", e: "🎭" }, { name: "Sun-Stone", rarityId: "rare", e: "🪨" }, { name: "Cacao Pod", rarityId: "rare", e: "🍫" }, { name: "Scarlet Macaw", rarityId: "rare", e: "🦜" }, { name: "Three-Toed Sloth", rarityId: "rare", e: "🦥" }, { name: "Giant Centipede", rarityId: "rare", e: "🐛" }, { name: "Harpy Eagle", rarityId: "rare", e: "🦅" },
+                    { name: "Jaguar Pelt", rarityId: "epic", e: "🐆" }, { name: "Golden Totem", rarityId: "epic", e: "🗿" }, { name: "Tribal Spear", rarityId: "epic", e: "🏹" }, { name: "Piranha Swarm", rarityId: "epic", e: "🐟" }, { name: "Goliath Birdeater", rarityId: "epic", e: "🕷️" }, { name: "Pink River Dolphin", rarityId: "epic", e: "🐬" }, { name: "Black Caiman", rarityId: "epic", e: "🐊" }, { name: "Poison Extract", rarityId: "epic", e: "🧪" }, { name: "Rafflesia Flower", rarityId: "epic", e: "🌺" }, { name: "Canopy Crown", rarityId: "epic", e: "👑" },
+                    { name: "Spirit Totem", rarityId: "legendary", e: "🗿" }, { name: "Emerald Eye", rarityId: "legendary", e: "👁️" }, { name: "Heart of the Jungle", rarityId: "legendary", e: "💚" }, { name: "Silverback Gorilla", rarityId: "legendary", e: "🦍" }, { name: "Shadow Panther", rarityId: "legendary", e: "🐆" }, { name: "Titan Boa", rarityId: "legendary", e: "🐍" }, { name: "Resplendent Quetzal", rarityId: "legendary", e: "🦚" }, { name: "El Dorado Map", rarityId: "legendary", e: "🗺️" }, { name: "Sun God Talisman", rarityId: "legendary", e: "☀️" }, { name: "Moon God Relic", rarityId: "legendary", e: "🌙" },
+                    { name: "Tree of Life Seed", rarityId: "mythic", e: "🌱" }, { name: "Earth Shaker", rarityId: "mythic", e: "🦍" }, { name: "River Serpent", rarityId: "mythic", e: "🐉" }, { name: "Jungle Behemoth", rarityId: "mythic", e: "🦕" }, { name: "Shaman's Soul", rarityId: "mythic", e: "👻" }, { name: "Nature's Wrath", rarityId: "mythic", e: "🌪️" }, { name: "Verdant Crystal", rarityId: "mythic", e: "💎" }, { name: "Lost City Gold", rarityId: "mythic", e: "🪙" }, { name: "Apex Predator", rarityId: "mythic", e: "🐅" }, { name: "World Root", rarityId: "mythic", e: "🌳" },
+                    { name: "Star-lit Orchid", rarityId: "celestial", e: "🌸" }, { name: "Celestial Macaw", rarityId: "celestial", e: "🦜" }, { name: "Moon-lit Canopy", rarityId: "celestial", e: "🌌" }, { name: "Solar Panther", rarityId: "celestial", e: "🐆" }, { name: "Astral Vine", rarityId: "celestial", e: "🌿" }, { name: "Nebula Spores", rarityId: "celestial", e: "🍄" }, { name: "Spirit Jaguar", rarityId: "celestial", e: "🐅" }, { name: "Sky Serpent", rarityId: "celestial", e: "🐉" }, { name: "Aether Bark", rarityId: "celestial", e: "🪵" }, { name: "Cosmic Dew", rarityId: "celestial", e: "💧" },
+                    { name: "The First Seed", rarityId: "primordial", e: "🌱" }, { name: "Gaia's Breath", rarityId: "primordial", e: "💨" }, { name: "Pangaea Root", rarityId: "primordial", e: "🌍" }, { name: "Ancient Ent", rarityId: "primordial", e: "🌳" }, { name: "Primordial Ooze", rarityId: "primordial", e: "🦠" }, { name: "Origin Fossil", rarityId: "primordial", e: "🦴" }, { name: "The First Leaf", rarityId: "primordial", e: "🍃" }, { name: "Earth's Blood", rarityId: "primordial", e: "🩸" }, { name: "Dawn Panther", rarityId: "primordial", e: "🐅" }, { name: "Titan of the Woods", rarityId: "primordial", e: "🦍" },
+                    { name: "Heart of Gaia", rarityId: "transcendent", e: "💚" }, { name: "World Tree Essence", rarityId: "transcendent", e: "🌳" }, { name: "Eternal Bloom", rarityId: "transcendent", e: "🌸" }, { name: "Nature's Singularity", rarityId: "transcendent", e: "🕳️" }, { name: "Absolute Life", rarityId: "transcendent", e: "✨" }, { name: "Creator's Breath", rarityId: "transcendent", e: "💨" }, { name: "Omnipotent Spore", rarityId: "transcendent", e: "🍄" }, { name: "The Endless Canopy", rarityId: "transcendent", e: "🌌" }, { name: "Green Dimension", rarityId: "transcendent", e: "🌀" }, { name: "Genesis Wood", rarityId: "transcendent", e: "🪵" }
+                ],
+                STANDARD_PACKS: [
+                    { id: 'pack1', name: 'Mossy Log', cost: 5e24, currency: 'primary', icon: 'Leaf', color: 'from-green-900 to-green-950', glow: 'shadow-green-500/20', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+                    { id: 'pack2', name: 'Forager Satchel', cost: 5e25, currency: 'primary', icon: 'Box', color: 'from-amber-900 to-amber-950', glow: 'shadow-amber-500/20', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Hunter Cache', cost: 5e26, currency: 'primary', icon: 'Compass', color: 'from-emerald-700 to-emerald-900', glow: 'shadow-emerald-500/20', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Tribal Hoard', cost: 5e27, currency: 'primary', icon: 'Castle', color: 'from-orange-800 to-red-900', glow: 'shadow-red-500/50', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Canopy Trove', cost: 5e28, currency: 'primary', icon: 'Sparkles', color: 'from-lime-600 to-green-800', glow: 'shadow-lime-300/50', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Temple Reliquary', cost: 5e29, currency: 'primary', icon: 'Zap', color: 'from-yellow-600 to-amber-800', glow: 'shadow-yellow-500/50', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'Elder Tree Core', cost: 5e30, currency: 'primary', icon: 'Star', color: 'from-green-500 to-emerald-700', glow: 'shadow-emerald-300/50', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Spirit Vessel', cost: 5e31, currency: 'primary', icon: 'Sun', color: 'from-teal-400 to-cyan-600', glow: 'shadow-cyan-200/80', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Heart of Gaia', cost: 5e32, currency: 'primary', icon: 'Globe', color: 'from-fuchsia-600 to-purple-800', glow: 'shadow-fuchsia-400/80', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Verdant Singularity', cost: 5e33, currency: 'primary', icon: 'Infinity', color: 'from-lime-300 to-emerald-400', glow: 'shadow-lime-200/80', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
+                ],
+                SHRINE_CATEGORIES: [
+                    { id: 'sunlit', name: 'Sunlit', icon: 'Sun', color: 'from-yellow-400 to-yellow-600', glow: 'shadow-yellow-500/20' },
+                    { id: 'venomous', name: 'Venomous', icon: 'Droplet', color: 'from-lime-400 to-lime-600', glow: 'shadow-lime-500/20' },
+                    { id: 'overgrown', name: 'Overgrown', icon: 'Leaf', color: 'from-green-600 to-green-800', glow: 'shadow-green-500/20' },
+                    { id: 'feral', name: 'Feral', icon: 'Flame', color: 'from-red-600 to-red-800', glow: 'shadow-red-500/20' },
+                    { id: 'shamanic', name: 'Shamanic', icon: 'Star', color: 'from-cyan-600 to-cyan-800', glow: 'shadow-cyan-500/20' },
+                    { id: 'spirit_bound', name: 'Spirit-Bound', icon: 'Sparkles', color: 'from-indigo-400 to-indigo-600', glow: 'shadow-indigo-500/20' },
+                    { id: 'gaia_touched', name: 'Gaia-Touched', icon: 'Globe', color: 'from-emerald-300 to-emerald-500', glow: 'shadow-emerald-400/30' }
                 ]
             }
         };
 
         const App = () => {
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
-            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian']);
+            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy']);
             const [currency1, setCurrency1] = useState(100);
             const [currency2, setCurrency2] = useState(0);
             const [inventory, setInventory] = useState([]);
@@ -282,20 +366,30 @@
             const isSwiping = useRef(false);
 
             const activeTheme = THEMES[currentThemeId];
-            const { RARITIES, MUTATION_ORDER, MUTATIONS, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
+            const { RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
+
+            // Safe Lookups for Legacy/Renamed Items & Mutations
+            const getMutData = useCallback((tId, mId) => {
+                const t = THEMES[tId] || THEMES['abyssal'];
+                return t.MUTATIONS[mId] || t.MUTATIONS['none'];
+            }, []);
+
+            const getDbItem = useCallback((name) => {
+                return MASTER_ITEM_DB.find(db => db.name === name) || { name: name || 'Unknown', e: '❓', rarityId: 'trash' };
+            }, [MASTER_ITEM_DB]);
 
             const activeInventory = inventory.filter(i => (i.themeId || 'abyssal') === currentThemeId);
 
-            const sortItemsThemeAware = (a, b) => {
+            const sortItemsThemeAware = useCallback((a, b) => {
                 const tA = THEMES[a.themeId || 'abyssal'];
                 if (a.themeId !== b.themeId) return (a.themeId || 'abyssal').localeCompare(b.themeId || 'abyssal');
                 const mutA = tA.MUTATION_ORDER.indexOf(a.mutation || 'none');
                 const mutB = tA.MUTATION_ORDER.indexOf(b.mutation || 'none');
                 if (mutA !== mutB) return mutB - mutA;
-                const rarA = tA.RARITIES.findIndex(r => r.id === a.rarity.id);
-                const rarB = tA.RARITIES.findIndex(r => r.id === b.rarity.id);
+                const rarA = tA.RARITIES.findIndex(r => r.id === a.rarity?.id);
+                const rarB = tA.RARITIES.findIndex(r => r.id === b.rarity?.id);
                 return rarB - rarA || a.name.localeCompare(b.name);
-            };
+            }, []);
 
             const incomeFlow = useMemo(() => {
                 const best = {};
@@ -313,19 +407,23 @@
                 return { 
                     bestItemsList: list, 
                     income: list.reduce((acc, i) => {
-                        const tData = THEMES[i.themeId || 'abyssal'];
-                        const mutData = tData.MUTATIONS[i.mutation || 'none'];
-                        const val = (i.cps || 0) * (mutData?.mult || 1);
-                        if(i.currency === 'secondary') acc.c2 += val; else acc.c1 += val;
+                        const mutData = getMutData(i.themeId, i.mutation);
+                        const val = (i.cps || 0) * (mutData.mult || 1);
+                        if(i.currency === 'secondary') {
+                            acc.c2 += val * 0.3;
+                            acc.c1 += val;
+                        } else {
+                            acc.c1 += val;
+                        }
                         return acc;
                     }, { c1: 0, c2: 0 })
                 };
-            }, [inventory]);
+            }, [inventory, getMutData]);
 
             const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
-                const saved = localStorage.getItem('abyssal_v22_realms_safe');
+                const saved = localStorage.getItem('abyssal_v28_realms_safe');
                 if (saved) {
                     try {
                         const d = JSON.parse(saved);
@@ -340,7 +438,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('abyssal_v22_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
+                localStorage.setItem('abyssal_v28_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
             }, [currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets]);
 
             useEffect(() => {
@@ -405,14 +503,14 @@
                 return () => clearInterval(interval);
             }, [krakenEvent, krakenTimer, krakenFeedback]);
 
-            // UPDATED DISCOUNT LOGIC: 50% for Packs, 25% for Shrines
             const getPackCost = (p, isShrine = false) => { 
                 if (!merchantSaleActive) return p.cost;
-                const discount = isShrine ? 0.75 : 0.5; // 25% off vs 50% off
+                const discount = isShrine ? 0.75 : 0.5;
                 return Math.floor(p.cost * discount); 
             };
 
             const openPack = (p, isShrine = false) => {
+                if (isOpening || isSealed || isRipping || isShaking || activePack) return false;
                 const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return false;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
@@ -427,8 +525,6 @@
                     const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
                     const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
                     
-                    // MIDDLE GROUND: Secondary currency items generate 30% of the base CPS.
-                    // If from a Shrine, ALWAYS make it secondary. If from a pack, roll the chance.
                     const isSec = isShrine || Math.random() < (rarity.secondaryChance || 0);
                     const cpsBase = rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3));
                     
@@ -439,7 +535,7 @@
                         rarity, 
                         mutation: p.mutation || 'none', 
                         currency: isSec ? 'secondary' : 'primary', 
-                        cps: isSec ? cpsBase * 0.3 : cpsBase, 
+                        cps: cpsBase,
                         value: Math.floor(rarity.incomeBase * 200) 
                     });
                     setIsOpening(false); setIsSealed(true);
@@ -448,7 +544,7 @@
             };
 
             const getDuplicatesForRarity = (rId) => {
-                const owned = activeInventory.filter(i => i.rarity.id === rId);
+                const owned = activeInventory.filter(i => i.rarity?.id === rId);
                 const grp = {}; owned.forEach(i => { if(!grp[i.name]) grp[i.name] = []; grp[i.name].push(i); });
                 const d = []; Object.values(grp).forEach(g => { if(g.length > 1) d.push(...g.slice(1)); });
                 return d;
@@ -456,8 +552,9 @@
 
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
-                const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity.id));
-                const baseCost = Math.pow(5, tgtRarityIdx) * 50; 
+                const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
+                const realmMultiplier = currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1); 
+                const baseCost = Math.pow(5, tgtRarityIdx) * 50 * realmMultiplier; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
                 return Math.floor(baseCost * mutMult);
@@ -467,7 +564,7 @@
                 isSwiping.current = false; 
                 isHolding.current = false; 
                 holdTimer.current = setTimeout(() => { 
-                    if (!isSwiping.current) {
+                    if (!isSwiping.current && !isOpening && !isSealed && !activePack) {
                         isHolding.current = true; 
                         setInspectedPack(p); 
                     }
@@ -479,10 +576,9 @@
             };
             const handleHoldEnd = (p) => { 
                 clearTimeout(holdTimer.current); 
-                if (isSwiping.current) return; 
+                if (isSwiping.current || inspectedPack) return; 
                 if(!isHolding.current) {
-                    const success = openPack(p, p.isShrine);
-                    if (success && p.isShrine) setView('shop');
+                    openPack(p, p.isShrine);
                 }
             };
 
@@ -495,6 +591,82 @@
                 setView('shop');
             };
 
+            const renderUnboxingArea = () => {
+                let isLight = false;
+                if (lastPull) {
+                    isLight = !!(lastPull.rarity?.bg || '').match(/white|50|100|200/);
+                }
+                const textColor = isLight ? 'text-slate-900 drop-shadow-none' : 'text-white drop-shadow-md';
+                const mutData = lastPull ? getMutData(lastPull.themeId, lastPull.mutation) : null;
+                const hasMutation = lastPull && lastPull.mutation && lastPull.mutation !== 'none';
+
+                return (
+                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : 'bg-white/5 border-white/10')} flex-1 min-h-[300px] sm:min-h-[350px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
+                        {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : 'bg-cyan-500/20 border-cyan-500')} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : "text-cyan-400")} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>Summoning...</span></div>}
+                        {isSealed && (
+                            <div className="flex flex-col items-center gap-4 sm:gap-6 cursor-pointer group" onClick={() => {
+                                if(isRipping || isShaking) return; setIsShaking(true);
+                                setTimeout(() => { setIsShaking(false); setIsRipping(true);
+                                    setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
+                                }, pendingLoot.rarity?.id === 'trash' ? 400 : 1200);
+                            }}>
+                                <div className={`w-36 h-48 sm:w-44 sm:h-60 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
+                                    <div className="absolute top-8 sm:top-12 left-0 right-0 h-12 sm:h-16 flex items-center justify-center z-10">
+                                        <div className="relative w-full h-full">
+                                            <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (currentThemeId === 'canopy' ? 'bg-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]')} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
+                                            <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
+                                        </div>
+                                    </div>
+                                    <div className="absolute inset-3 sm:inset-4 border border-white/5 rounded-lg pointer-events-none" />
+                                    <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={48} /></div>
+                                </div>
+                                {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-500 shadow-lime-500/40 ring-green-900/20 text-lime-950' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20')} px-6 py-3 sm:px-8 sm:py-4 rounded-full font-black text-xs sm:text-sm uppercase shadow-lg animate-pulse ring-4`}>Unlock Artifact</div>}
+                            </div>
+                        )}
+                        {lastPull && !isSealed && (
+                            <div className={`w-full h-full flex flex-col items-center justify-center p-6 sm:p-8 text-center animate-in zoom-in-75 ${lastPull.rarity?.bg || 'bg-slate-900'}`}>
+                                <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+                                    <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${lastPull.rarity?.color || 'text-slate-900'}`}>{lastPull.rarity?.label || 'Artifact'}</span>
+                                    {hasMutation && (
+                                        <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-slate-950/80 border-white/20 ${mutData.color}`}>
+                                            {mutData.label}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-6xl sm:text-7xl mb-4 sm:mb-6 drop-shadow-2xl">{getDbItem(lastPull.name).e}</div>
+                                <h2 className={`text-2xl sm:text-4xl font-black mb-2 tracking-tighter ${textColor}`}>{lastPull.name}</h2>
+                                <div className="flex flex-col items-center gap-1.5 sm:gap-2 bg-slate-950/40 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 shadow-inner w-full max-w-[250px] border border-white/5">
+                                    {lastPull.currency === 'secondary' ? (
+                                        <React.Fragment>
+                                            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={14} /></div>
+                                            <div className="h-[1px] w-1/2 bg-white/10 rounded-full" />
+                                            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-cyan-400">+{formatNum(lastPull.cps * (mutData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={14} /></div>
+                                        </React.Fragment>
+                                    ) : (
+                                        <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={14} /></div>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 sm:gap-3 w-full">
+                                    <button onClick={() => {
+                                        const sellVal = (lastPull.value || 0) * (mutData.mult || 1);
+                                        setCurrency1(d => d + sellVal);
+                                        if (lastPull.currency === 'secondary') setCurrency2(p => p + (sellVal * 0.3));
+                                        setInventory(inv => inv.filter(i => i.id !== lastPull.id));
+                                        setLastPull(null);
+                                    }} className={`flex-1 border py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all flex flex-col items-center justify-center gap-1 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
+                                        <span>Exchange</span>
+                                        <span className="text-[8px] sm:text-[9px] opacity-80 flex items-center gap-1 font-mono">
+                                            +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={10} />
+                                        </span>
+                                    </button>
+                                    <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 border border-white/10 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
             return (
                 <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
@@ -502,14 +674,14 @@
                         {[...Array(25)].map((_, i) => (
                             <div 
                                 key={i} 
-                                className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : 'bg-white/10 rounded-full'} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]'}`} 
+                                className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : 'bg-white/10 rounded-full')} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]')}`} 
                                 style={{ 
                                     left: `${Math.random() * 100}vw`, 
-                                    width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : `${Math.random() * 10 + 2}px`, 
-                                    height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : `${Math.random() * 10 + 2}px`, 
+                                    width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), 
+                                    height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), 
                                     animationDuration: `${Math.random() * 10 + 10}s`, 
                                     animationDelay: `${Math.random() * 10}s`, 
-                                    clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : 'none'
+                                    clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none')
                                 }} 
                             />
                         ))}
@@ -518,8 +690,8 @@
                     {anomalyVisible && (
                         <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
                             <div className="flex flex-col items-center">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500/30 border-amber-300 text-amber-100' : 'bg-fuchsia-600/30 border-fuchsia-400 text-fuchsia-100'} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Frenzy Surge!</div>
-                                <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${currentThemeId === 'olympian' ? 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200' : 'from-fuchsia-800 to-indigo-500 shadow-[0_0_30px_rgba(192,38,211,0.8)] border-fuchsia-300'} animate-[void-pulse_2s_ease-in-out_infinite] flex items-center justify-center border-2`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500/30 border-amber-300 text-amber-100' : (currentThemeId === 'canopy' ? 'bg-lime-500/30 border-lime-300 text-lime-100' : 'bg-fuchsia-600/30 border-fuchsia-400 text-fuchsia-100')} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Frenzy Surge!</div>
+                                <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${currentThemeId === 'olympian' ? 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200' : (currentThemeId === 'canopy' ? 'from-lime-600 to-green-300 shadow-[0_0_30px_rgba(163,230,53,0.8)] border-lime-200' : 'from-fuchsia-800 to-indigo-500 shadow-[0_0_30px_rgba(192,38,211,0.8)] border-fuchsia-300')} animate-[void-pulse_2s_ease-in-out_infinite] flex items-center justify-center border-2`}>
                                     <Icon name="ZapFast" className="text-white drop-shadow-[0_0_5px_white]" size={32} />
                                 </div>
                             </div>
@@ -529,34 +701,29 @@
                     {merchantVisible && (
                         <div className="fixed top-0 left-0 z-[60] cursor-pointer animate-[ghost-drift_6s_linear_forwards]" style={merchantPath} onClick={() => { setMerchantVisible(false); setMerchantSaleActive(true); setMerchantSaleTimer(20); }}>
                             <div className="flex flex-col items-center">
-                                <div className="bg-cyan-400/20 backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border border-cyan-400/40 animate-pulse text-cyan-300">Tap Fast!</div>
-                                <Icon name={currentThemeId === 'olympian' ? 'Sun' : 'Ship'} size={64} className="text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
+                                <div className={`${currentThemeId === 'canopy' ? 'bg-emerald-400/20 border-emerald-400/40 text-emerald-300' : 'bg-cyan-400/20 border-cyan-400/40 text-cyan-300'} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Tap Fast!</div>
+                                <Icon name={currentThemeId === 'olympian' ? 'Sun' : (currentThemeId === 'canopy' ? 'Star' : 'Ship')} size={64} className={`${currentThemeId === 'canopy' ? 'text-emerald-200/40 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]' : 'text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]'}`} />
                             </div>
                         </div>
                     )}
 
-                    {/* Active Event Banner with descriptive messaging */}
+                    {/* Active Event Banner with slim descriptive messaging */}
                     {(merchantSaleActive || frenzyTimer > 0) && (
-                        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-sm">
-                            <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 flex flex-col gap-1 items-center shadow-2xl animate-in slide-in-from-top-4 duration-500 ${merchantSaleActive ? 'bg-cyan-900 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.4)]' : 'bg-fuchsia-900 border-fuchsia-400 shadow-[0_0_30px_rgba(192,38,211,0.4)]'}`}>
-                                <div className="flex items-center gap-3 text-white">
-                                    <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={20} className="animate-pulse" />
-                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">
-                                        {merchantSaleActive ? `${terms.merchant} Sale!` : 'Dimensional Surge!'}
-                                    </span>
-                                    <div className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-black/40 font-mono text-[9px] sm:text-[10px] font-black">
-                                        {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
-                                    </div>
-                                </div>
-                                <div className="text-[8.5px] sm:text-[10px] font-black uppercase text-white drop-shadow-md text-center mt-1">
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] whitespace-nowrap">
+                            <div className={`px-4 sm:px-6 py-2 rounded-full border border-white/20 flex items-center gap-3 sm:gap-4 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
+                                <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={16} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
+                                <span className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
                                     {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
+                                </span>
+                                <div className="px-2.5 py-0.5 rounded-full bg-black/60 font-mono text-[9px] sm:text-[10px] font-black text-white">
+                                    {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {krakenEvent && (
-                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : 'bg-red-950/80'} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId === 'olympian' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : 'bg-red-950/80')} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
                             
                             {/* Detailed Kraken Visuals */}
                             {currentThemeId === 'abyssal' && !krakenFeedback && (
@@ -595,6 +762,24 @@
                                 </div>
                             )}
 
+                            {/* Cinematic Canopy Visuals */}
+                            {currentThemeId === 'canopy' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    <div className="absolute inset-0 bg-green-950/50" />
+                                    {[...Array(6)].map((_, i) => {
+                                        const angle = (i * 73) % 360;
+                                        return (
+                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
+                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
+                                                    <div className="absolute top-1/2 left-0 w-full h-8 bg-lime-500 shadow-[0_0_40px_rgba(132,204,22,1)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-green-300 shadow-[0_0_30px_rgba(134,239,172,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
                                     <div className="bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
@@ -604,17 +789,17 @@
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 sm:gap-10">
                                         <div className="bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
-                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : 'text-orange-500 drop-shadow-[0_0_15px_red]')} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
                                             <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
                                             <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
-                                                <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
+                                                <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300')}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
                                             </div>
                                             <div className="mt-4 sm:mt-6 text-white text-2xl sm:text-3xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
                                         </div>
                                         <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
                                             const jackpot = Math.max(50, Math.floor(incomeFlow.income.c2 * 40 + 50 * activeMultiplier));
                                             setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'}`}>
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : (currentThemeId === 'canopy' ? 'bg-lime-600/40 border-lime-400 shadow-lime-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40')}`}>
                                             <span className="text-3xl sm:text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Defend!</span>
                                         </button>
                                     </div>
@@ -623,27 +808,27 @@
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : 'bg-slate-950/60 border-white/10'} p-3 sm:p-4 pt-8 sm:pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
-                        <div className="flex flex-col gap-1">
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : 'bg-slate-900/80 border-white/5'} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border w-36 sm:w-48 shadow-inner`}>
-                                <Icon name={terms.primaryIcon} size={14} className="text-amber-500 shrink-0" />
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : 'bg-slate-950/60 border-white/10')} p-3 sm:p-4 pt-10 sm:pt-8 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
+                        <div className="flex flex-col gap-1.5 sm:gap-2">
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full border w-36 sm:w-48 shadow-inner`}>
+                                <Icon name={terms.primaryIcon} size={14} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : 'text-amber-500 shrink-0'} />
                                 <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
-                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-amber-400/60'}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
                             </div>
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : 'bg-slate-900/80 border-white/5'} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border w-36 sm:w-48 shadow-inner`}>
-                                <Icon name={terms.secondaryIcon} size={14} className="text-cyan-500 shrink-0" />
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full border w-36 sm:w-48 shadow-inner`}>
+                                <Icon name={terms.secondaryIcon} size={14} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : 'text-cyan-500 shrink-0'} />
                                 <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
-                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : 'text-cyan-400/60'}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <h1 className={`text-[9px] sm:text-[10px] font-black uppercase opacity-60 mb-1 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{activeTheme.name}</h1>
+                            <h1 className={`text-[9px] sm:text-[10px] font-black uppercase opacity-60 mb-1 sm:mb-2 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-white')}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
-                                <div className={`text-[8.5px] sm:text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'}`}>
+                                <div className={`text-[8.5px] sm:text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
                                     SURGE x{activeMultiplier.toFixed(1)}
                                 </div>
                             ) : (
-                                <div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Standard Yield</div>
+                                <div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')}`}>Standard Yield</div>
                             )}
                         </div>
                     </nav>
@@ -651,104 +836,58 @@
                     <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 sm:p-4 flex flex-col z-10 scrollbar-hide pb-24 sm:pb-32">
                         <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1.5 sm:py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
                             {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
-                                <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]') : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
+                                <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-[0_0_15px_rgba(101,163,13,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]')) : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
                         </div>
 
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-1 sm:px-2 scrollbar-hide">
-                                    {STANDARD_PACKS.map(p => {
+                                    {STANDARD_PACKS.map((p, idx) => {
+                                        const isUnlocked = idx === 0 || claimedSets.includes(`${currentThemeId}_${RARITIES[idx-1]?.id}_none`);
                                         const cost = getPackCost(p, false);
-                                        const afford = (p.currency === 'primary' ? currency1 : currency2) >= cost;
+                                        const afford = isUnlocked && (p.currency === 'primary' ? currency1 : currency2) >= cost;
                                         return (
-                                            <div key={p.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-30' : ''}`}
-                                                onMouseDown={() => handleHoldStart(p)} onMouseUp={() => handleHoldEnd(p)} onMouseLeave={() => clearTimeout(holdTimer.current)}
-                                                onTouchStart={() => handleHoldStart(p)} onTouchMove={handleHoldMove} onTouchEnd={() => handleHoldEnd(p)}
+                                            <div key={p.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
+                                                onMouseDown={() => { if(isUnlocked) handleHoldStart(p); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(p); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
+                                                onTouchStart={() => { if(isUnlocked) handleHoldStart(p); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(p); }}
                                             >
-                                                {/* HIGH OPACITY GREEK PACKS (Responsive) */}
-                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${p.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
-                                                    <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
+                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${p.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : (currentThemeId === 'canopy' ? 'border-lime-950 shadow-lime-900/60' : 'border-white/20')}`}>
+                                                    <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : (currentThemeId === 'canopy' ? 'bg-white opacity-10' : 'bg-transparent')} pointer-events-none`} />
+                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={16} /><span className="text-[7px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {RARITIES[idx-1]?.label} Base Set</span></div>}
                                                     <Icon name={p.icon} size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10 sm:scale-110" />
                                                     <span className="text-[7px] sm:text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
                                                     <div className="flex items-center gap-1 font-black text-[10px] sm:text-xs z-10 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? 'text-amber-400' : 'text-cyan-300'} /></> ) : <span className="text-green-400">FREE</span>}
+                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-300')} /></> ) : <span className="text-green-400">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : 'bg-white/5 border-white/10'} flex-1 min-h-[300px] sm:min-h-[350px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
-                                    {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : 'bg-cyan-500/20 border-cyan-500'} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : "text-cyan-400"} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-cyan-400'}`}>Summoning...</span></div>}
-                                    {isSealed && (
-                                        <div className="flex flex-col items-center gap-4 sm:gap-6 cursor-pointer group" onClick={() => {
-                                            if(isRipping || isShaking) return; setIsShaking(true);
-                                            setTimeout(() => { setIsShaking(false); setIsRipping(true);
-                                                setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
-                                            }, pendingLoot.rarity.id === 'trash' ? 400 : 1200);
-                                        }}>
-                                            <div className={`w-36 h-48 sm:w-44 sm:h-60 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
-                                                <div className="absolute top-8 sm:top-12 left-0 right-0 h-12 sm:h-16 flex items-center justify-center z-10">
-                                                    <div className="relative w-full h-full">
-                                                        <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]'} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
-                                                        <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
-                                                    </div>
-                                                </div>
-                                                <div className="absolute inset-3 sm:inset-4 border border-white/5 rounded-lg pointer-events-none" />
-                                                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={48} /></div>
-                                            </div>
-                                            {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20'} px-6 py-3 sm:px-8 sm:py-4 rounded-full font-black text-xs sm:text-sm uppercase shadow-lg animate-pulse ring-4`}>Unlock Artifact</div>}
-                                        </div>
-                                    )}
-                                    {lastPull && !isSealed && (
-                                        <div className={`w-full h-full flex flex-col items-center justify-center p-6 sm:p-8 text-center animate-in zoom-in-75 ${lastPull.rarity.bg}`}>
-                                            <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-4"><span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${lastPull.rarity.color}`}>{lastPull.rarity.label}</span>{lastPull.mutation !== 'none' && <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${MUTATIONS[lastPull.mutation].color}`}>{MUTATIONS[lastPull.mutation].label}</span>}</div>
-                                            <div className="text-6xl sm:text-7xl mb-4 sm:mb-6 drop-shadow-2xl">{MASTER_ITEM_DB.find(db => db.name === lastPull.name)?.e}</div>
-                                            <h2 className={`text-2xl sm:text-4xl font-black mb-2 tracking-tighter text-slate-900`}>{lastPull.name}</h2>
-                                            <div className="flex items-center gap-2 bg-slate-950/40 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-6 sm:mb-8 shadow-inner">
-                                                <Icon name={lastPull.currency === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={14} className={lastPull.currency === 'secondary' ? "text-cyan-400" : "text-amber-400"} />
-                                                <span className="text-[10px] sm:text-xs font-black text-white">+{formatNum(lastPull.cps * (MUTATIONS[lastPull.mutation]?.mult || 1))}/s</span>
-                                            </div>
-                                            <div className="flex gap-2 sm:gap-3 w-full">
-                                                <button onClick={() => {
-                                                    const sellVal = lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1);
-                                                    if (lastPull.currency === 'secondary') setCurrency2(p => p + sellVal);
-                                                    else setCurrency1(d => d + sellVal);
-                                                    setInventory(inv => inv.filter(i => i.id !== lastPull.id));
-                                                    setLastPull(null);
-                                                }} className="flex-1 bg-slate-900/40 text-slate-900 border border-slate-900/20 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900/60 flex flex-col items-center justify-center gap-1">
-                                                    <span>Exchange</span>
-                                                    <span className="text-[8px] sm:text-[9px] opacity-80 flex items-center gap-1 font-mono">
-                                                        +{formatNum(lastPull.value * (MUTATIONS[lastPull.mutation || 'none']?.mult || 1))} <Icon name={lastPull.currency === 'secondary' ? terms.secondaryIcon : terms.primaryIcon} size={10} />
-                                                    </span>
-                                                </button>
-                                                <button onClick={() => setLastPull(null)} className="flex-1 bg-slate-950 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                <div className={`text-center opacity-50 text-[9px] sm:text-[10px] font-black uppercase tracking-widest -mt-2 shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                {renderUnboxingArea()}
                             </div>
                         )}
 
                         {view === 'realms' && (
                              <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]'} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 sm:mb-4`}>
-                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : 'from-fuchsia-600/10'} to-transparent pointer-events-none`}></div>
-                                    <Icon name="Globe" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-fuchsia-500'} mx-auto mb-3 sm:mb-4 relative z-10 sm:scale-110`} />
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 sm:mb-4`}>
+                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : 'from-fuchsia-600/10')} to-transparent pointer-events-none`}></div>
+                                    <Icon name="Globe" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-fuchsia-500')} mx-auto mb-3 sm:mb-4 relative z-10 sm:scale-110`} />
                                     <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter mb-1 sm:mb-2 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
-                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-200'}`}>
+                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-fuchsia-200')}`}>
                                         Travel to alternate realities. Each realm features Escalating Challenges!
                                     </p>
                                 </div>
                                 <div className="space-y-3 sm:space-y-4 px-1 sm:px-2">
                                     {Object.values(THEMES).map(th => (
-                                        <div key={th.id} className={`p-4 sm:p-5 rounded-[1.5rem] sm:rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl') : 'bg-white/5 border-white/10'}`}>
+                                        <div key={th.id} className={`p-4 sm:p-5 rounded-[1.5rem] sm:rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl')) : 'bg-white/5 border-white/10'}`}>
                                             <div className="flex items-center gap-3 sm:gap-4">
-                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? 'bg-slate-900 text-white' : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={20} className="sm:scale-110" /></div>
-                                                <div><div className={`text-xs sm:text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : 'text-white'}`}>{th.name}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
+                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : 'bg-slate-900 text-white') : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={20} className="sm:scale-110" /></div>
+                                                <div><div className={`text-xs sm:text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{th.name}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
                                             </div>
-                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : 'bg-fuchsia-600'}`}>Travel</button>}
+                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : (currentThemeId === 'canopy' ? 'bg-lime-600' : 'bg-fuchsia-600')}`}>Travel</button>}
                                         </div>
                                     ))}
                                 </div>
@@ -757,24 +896,25 @@
 
                         {view === 'inventory' && (
                             <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : 'bg-white/5 border-white/10'} p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col gap-3 sm:gap-4 border`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : 'bg-white/5 border-white/10')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col gap-3 sm:gap-4 border`}>
                                     <div className="flex justify-between items-start">
-                                        <div><h3 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>{terms.log}</h3><p className={`text-[9px] sm:text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : 'text-white'}`}>{activeInventory.length} items in realm</p></div>
+                                        <div><h3 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{terms.log}</h3><p className={`text-[9px] sm:text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : 'text-white')}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
-                                    <p className={`text-[9px] sm:text-[10px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-300'}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
+                                    <p className={`text-[9px] sm:text-[10px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-cyan-300')}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
                                     <button onClick={() => {
                                         const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
                                         let dAdded = 0, pAdded = 0;
                                         Object.values(g).forEach(list => { 
                                             list.sort(sortItemsThemeAware); ni.push(list[0]); 
                                             list.slice(1).forEach(dup => { 
-                                                const val = dup.value * (MUTATIONS[dup.mutation || 'none']?.mult || 1); 
-                                                if(dup.currency === 'secondary') pAdded += val; else dAdded += val; 
+                                                const mData = getMutData(currentThemeId, dup.mutation);
+                                                const val = (dup.value || 0) * (mData.mult || 1); 
+                                                if(dup.currency === 'secondary') { pAdded += val * 0.3; dAdded += val; } else { dAdded += val; }
                                             }); 
                                         });
                                         setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
                                         setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
-                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : 'bg-amber-500/10 text-amber-400'} px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Exchange All Duplicates</button>
+                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-600/20 text-lime-400' : 'bg-amber-500/10 text-amber-400')} px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Exchange All Duplicates</button>
                                 </div>
                                 {RARITIES.map(r => (
                                     <div key={r.id} className="mb-4 sm:mb-6 px-1 sm:px-2">
@@ -786,15 +926,16 @@
                                                 const setId = `${currentThemeId}_${r.id}_${mut}`;
                                                 const isClaimed = claimedSets.includes(setId);
                                                 const reqItems = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
-                                                const ownedSet = new Set(activeInventory.filter(i => i.rarity.id === r.id && i.mutation === mut).map(i => i.name));
+                                                const ownedSet = new Set(activeInventory.filter(i => i.rarity?.id === r.id && i.mutation === mut).map(i => i.name));
                                                 const progress = ownedSet.size;
                                                 const total = reqItems.length;
                                                 const canClaim = progress >= total && !isClaimed;
-                                                const prizeAmt = r.setPrize.amt * MUTATIONS[mut].mult;
+                                                const mData = getMutData(currentThemeId, mut);
+                                                const prizeAmt = r.setPrize.amt * mData.mult;
                                                 
                                                 return (
-                                                    <div key={mut} className={`snap-center shrink-0 w-32 sm:w-36 px-2 py-2 rounded-xl sm:rounded-2xl border-2 flex flex-col items-center gap-1 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
-                                                        <div className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${MUTATIONS[mut].color}`}>{MUTATIONS[mut].label || 'Base'} Set</div>
+                                                    <div key={mut} className={`snap-center shrink-0 w-32 sm:w-36 px-2 py-2 rounded-xl sm:rounded-2xl border-2 flex flex-col items-center gap-1 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]') : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
+                                                        <div className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mut === 'none' ? (currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white') : mData.color}`}>{mData.label || 'Base'} Set</div>
                                                         <div className={`text-[10px] sm:text-xs font-mono font-black ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{progress}/{total}</div>
                                                         {isClaimed ? (
                                                             <span className="text-[8px] font-black text-green-400 uppercase tracking-widest mt-1">Claimed</span>
@@ -803,12 +944,12 @@
                                                                 if(r.setPrize.curr === 'secondary') setCurrency2(v => v + prizeAmt);
                                                                 else setCurrency1(v => v + prizeAmt);
                                                                 setClaimedSets(prev => [...prev, setId]);
-                                                            }} className="mt-1 bg-amber-400 text-amber-950 px-2 sm:px-3 py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse">
+                                                            }} className={`mt-1 ${currentThemeId === 'canopy' ? 'bg-lime-400 text-lime-950' : 'bg-amber-400 text-amber-950'} px-2 sm:px-3 py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse`}>
                                                                 Claim {formatNum(prizeAmt)}
                                                             </button>
                                                         ) : (
                                                             <div className={`mt-1 flex items-center gap-1 text-[8px] sm:text-[9px] font-black opacity-60 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>
-                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={r.setPrize.curr === 'primary' ? 'text-amber-400' : 'text-cyan-400'} />
+                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={r.setPrize.curr === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')} />
                                                             </div>
                                                         )}
                                                     </div>
@@ -822,18 +963,27 @@
                                                 if (!owned.length) return (
                                                     <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-80' : 'bg-slate-900/40 border-white/5 opacity-50'} p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 border-dashed flex items-center justify-between transition-all group`}>
                                                         <div className={`flex items-center gap-3 sm:gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={14} className="sm:scale-110" /><span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
-                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : 'bg-cyan-500/10 text-cyan-400'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                        <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
                                                     </div>
                                                 );
                                                 const best = owned[0];
+                                                const mData = getMutData(currentThemeId, best.mutation);
+                                                const isDarkMut = best.mutation === 'void_touched' || best.mutation === 'underworld' || best.mutation === 'overgrown' || best.mutation === 'feral' || best.mutation === 'shamanic';
                                                 return (
-                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex items-center justify-between ${MUTATIONS[best.mutation].bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${MUTATIONS[best.mutation].glow}`}>
-                                                        <div className="flex items-center gap-3 sm:gap-4 truncate"><span className="text-2xl sm:text-3xl drop-shadow-md">{dbItem.e}</span><div className="text-left truncate">
-                                                            <div className={`flex items-center gap-2 font-black text-[10px] sm:text-xs text-slate-900`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px]">x{owned.length}</span>}</div>
-                                                            {best.mutation !== 'none' && <div className={`text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${MUTATIONS[best.mutation].color}`}>Mutation: {MUTATIONS[best.mutation].label}</div>}
-                                                            <div className={`text-[9px] sm:text-[10px] font-black text-teal-700 flex items-center gap-1 mt-0.5`}>+{formatNum(best.cps * (MUTATIONS[best.mutation]?.mult || 1))}/s</div>
+                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex items-center justify-between ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
+                                                        <div className="flex items-center gap-3 sm:gap-4 truncate"><span className="text-2xl sm:text-3xl drop-shadow-md">{getDbItem(best.name).e}</span><div className="text-left truncate">
+                                                            <div className={`flex items-center gap-2 font-black text-[10px] sm:text-xs ${isDarkMut ? 'text-white' : 'text-slate-900'}`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px]">x{owned.length}</span>}</div>
+                                                            {best.mutation !== 'none' && <div className={`text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${mData.color}`}>Mutation: {mData.label}</div>}
+                                                            {best.currency === 'secondary' ? (
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
+                                                                    <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-emerald-700' : 'text-teal-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={10} /></div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5 mt-1`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
+                                                            )}
                                                         </div></div>
-                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = it.value * (MUTATIONS[it.mutation || 'none']?.mult || 1); if(it.currency === 'secondary') setCurrency2(v => v + val); else setCurrency1(v => v + val); }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Exchange 1</button>
+                                                        <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90">Exchange 1</button>
                                                     </div>
                                                 );
                                             })}
@@ -846,12 +996,12 @@
                         {view === 'altar' && (
                             <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-right-4">
                                 <div className="flex bg-slate-900/40 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white/10 shrink-0 backdrop-blur">
-                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Ascension</button>
-                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg') : 'text-white/40'}`}>Transfer</button>
+                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Ascension</button>
+                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Transfer</button>
                                 </div>
                                 {altarMode === 'ascend' ? (
                                     <div className="space-y-3 sm:space-y-4">
-                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier.</p>
+                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier.</p>
                                         {RARITIES.slice(0, -1).map((r, idx) => {
                                             const dupes = getDuplicatesForRarity(r.id);
                                             const next = RARITIES[idx + 1];
@@ -863,33 +1013,33 @@
                                                         const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
                                                         const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
                                                         const isSec = Math.random() < next.secondaryChance;
-                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: MASTER_ITEM_DB.filter(it => it.rarityId === next.id)[0].name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: isSec ? (next.incomeBase * 1.5 * 0.3) : (next.incomeBase * 1.5), value: next.incomeBase * 200 };
+                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: MASTER_ITEM_DB.filter(it => it.rarityId === next.id)[0].name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
-                                                    }} className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8.5px] sm:text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
+                                                    }} className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8.5px] sm:text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center gap-8 sm:gap-10 py-6 sm:py-10">
-                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-fuchsia-300'}`}>Transfer a mutation from a source material to a target vessel.</p>
+                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Transfer a mutation from a source material to a target vessel.</p>
                                         <div className="flex items-center gap-4 sm:gap-6">
-                                            <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + MUTATIONS[transferSacrifice.mutation].glow : 'border-red-500/20 text-red-400/30'}`}>
-                                                {transferSacrifice ? <span className="text-3xl sm:text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferSacrifice.name)?.e}</span> : <Icon name="Flame" size={24} className="sm:scale-110" />}
+                                            <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + getMutData(currentThemeId, transferSacrifice.mutation).glow : 'border-red-500/20 text-red-400/30'}`}>
+                                                {transferSacrifice ? <span className="text-3xl sm:text-4xl">{getDbItem(transferSacrifice.name).e}</span> : <Icon name="Flame" size={24} className="sm:scale-110" />}
                                                 <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferSacrifice ? transferSacrifice.name : 'Material'}</span>
                                             </button>
-                                            <Icon name="Zap" size={16} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : 'text-fuchsia-400'} rotate-90 sm:scale-125`} />
-                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : 'border-cyan-500/20 text-cyan-400/30'}`}>
-                                                {transferTarget ? <span className="text-3xl sm:text-4xl">{MASTER_ITEM_DB.find(db => db.name === transferTarget.name)?.e}</span> : <Icon name="Box" size={24} className="sm:scale-110" />}
+                                            <Icon name="Zap" size={16} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')} rotate-90 sm:scale-125`} />
+                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : (currentThemeId === 'canopy' ? 'border-emerald-500/20 text-emerald-400/30' : 'border-cyan-500/20 text-cyan-400/30')}`}>
+                                                {transferTarget ? <span className="text-3xl sm:text-4xl">{getDbItem(transferTarget.name).e}</span> : <Icon name="Box" size={24} className="sm:scale-110" />}
                                                 <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferTarget ? transferTarget.name : 'Target'}</span>
                                             </button>
                                         </div>
                                         {transferSacrifice && transferTarget && (
                                             <div className="bg-slate-950/50 border border-cyan-500/30 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-inner">
-                                                <span className="text-[9px] sm:text-[10px] font-black uppercase text-cyan-400">Fusion Cost:</span>
+                                                <span className={`text-[9px] sm:text-[10px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>Fusion Cost:</span>
                                                 <span className={`text-xs sm:text-sm font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
-                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={12} className={`sm:scale-110 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-cyan-400' : 'text-red-400'}`} />
+                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={12} className={`sm:scale-110 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : 'text-red-400'}`} />
                                                 </span>
                                             </div>
                                         )}
@@ -900,44 +1050,48 @@
                                             const nt = { ...transferTarget, mutation: transferSacrifice.mutation };
                                             setInventory(p => [nt, ...p.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id)]);
                                             setTransferSacrifice(null); setTransferTarget(null); setLastPull(nt); setView('shop');
-                                        }} className={`w-full max-w-xs py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95') : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
+                                        }} className={`w-full max-w-xs py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
                                     </div>
                                 )}
                             </div>
                         )}
 
                         {view === 'shrine' && (
-                            <div className="flex-1 flex flex-col gap-8 sm:gap-10 pb-16 sm:pb-20 animate-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mt-1 sm:mt-2 mx-auto w-fit border shadow-lg`}>
-                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-400'}`}>Manifest pure arcane mutations with a perfect 10% chance for any rarity.</p>
+                            <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mx-auto w-fit border shadow-lg shrink-0`}>
+                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations with a perfect 10% chance for any rarity.</p>
                                 </div>
-                                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-8 pt-2 px-6 sm:px-8 scroll-smooth snap-x scrollbar-hide items-center justify-start w-full">
-                                    {SHRINE_CATEGORIES.map(cat => {
+                                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 sm:px-2 scrollbar-hide">
+                                    {SHRINE_CATEGORIES.map((cat, idx) => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
-                                        const baseCost = (currentThemeId === 'olympian' ? 5e14 : 5e6) * cat.multiplier;
+                                        const baseCost = (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000)) * Math.pow(50, idx); 
                                         
                                         const pk = { id: `shrine_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
                                         const discountedCost = getPackCost(pk, true);
-                                        const afford = currency2 >= discountedCost;
+                                        const isUnlocked = idx === 0 || claimedSets.some(s => s.startsWith(currentThemeId + '_') && s.endsWith('_' + MUTATION_ORDER[idx]));
+                                        const afford = isUnlocked && currency2 >= discountedCost;
                                         
                                         return (
-                                            <div key={cat.id} className={`snap-center shrink-0 w-32 sm:w-44 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
-                                                onMouseDown={() => handleHoldStart(pk)} onMouseUp={() => handleHoldEnd(pk)} onMouseLeave={() => clearTimeout(holdTimer.current)}
-                                                onTouchStart={() => handleHoldStart(pk)} onTouchMove={handleHoldMove} onTouchEnd={() => handleHoldEnd(pk)}>
-                                                <div className={`w-full aspect-[3/4] rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-br ${cat.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 shadow-xl ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/40' : 'border-white/20'}`}>
-                                                    <Icon name={cat.icon} size={36} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:scale-125" />
-                                                    <div className={`text-[10px] sm:text-xs font-black uppercase text-white drop-shadow-[0_1px_2px_black] text-center mt-2 leading-tight`}>{cat.name}</div>
-                                                    <div className="flex items-center gap-1 mt-auto font-black text-[10px] sm:text-xs z-10 bg-black/50 px-2 sm:px-3 py-1 rounded-full border border-white/20 shadow-inner">
-                                                        <span className={merchantSaleActive ? 'text-cyan-300 animate-pulse' : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                        <Icon name={terms.secondaryIcon} size={12} className="text-cyan-300" />
+                                            <div key={cat.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
+                                                onMouseDown={() => { if(isUnlocked) handleHoldStart(pk); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(pk); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
+                                                onTouchStart={() => { if(isUnlocked) handleHoldStart(pk); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(pk); }}>
+                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${cat.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
+                                                    <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
+                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={16} /><span className="text-[7px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {MUTATION_ORDER[idx]} Set</span></div>}
+                                                    <Icon name={cat.icon} size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10 sm:scale-110" />
+                                                    <span className="text-[7px] sm:text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
+                                                    <div className="flex items-center gap-1 font-black text-[10px] sm:text-xs z-10 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
+                                                        <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(discountedCost)}</span>
+                                                        <Icon name={terms.secondaryIcon} size={10} className={currentThemeId === 'canopy' ? "text-emerald-400" : "text-cyan-300"} />
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className={`text-center opacity-50 text-[10px] font-black uppercase tracking-widest mt-2 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                <div className={`text-center opacity-50 text-[9px] sm:text-[10px] font-black uppercase tracking-widest -mt-2 shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                {renderUnboxingArea()}
                             </div>
                         )}
                     </main>
@@ -966,9 +1120,12 @@
                             <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-6 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                                 <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                                    {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation !== 'none') : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => (
-                                        <div key={item.id} onClick={() => { if (inventoryModal === 'source') setTransferSacrifice(item); else setTransferTarget(item); setInventoryModal(null); }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${MUTATIONS[item.mutation].glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{MASTER_ITEM_DB.find(db => db.name === item.name)?.e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${MUTATIONS[item.mutation].color}`}>{MUTATIONS[item.mutation].label || 'Base'} • {item.rarity.label}</div></div></div></div>
-                                    ))}
+                                    {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation && i.mutation !== 'none') : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => {
+                                        const mData = getMutData(currentThemeId, item.mutation);
+                                        return (
+                                            <div key={item.id} onClick={() => { if (inventoryModal === 'source') setTransferSacrifice(item); else setTransferTarget(item); setInventoryModal(null); }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${mData.glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{getDbItem(item.name).e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div></div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
