@@ -423,25 +423,6 @@
             const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
 
             useEffect(() => {
-                const saved = localStorage.getItem('abyssal_v29_realms_safe');
-                if (saved) {
-                    try {
-                        const d = JSON.parse(saved);
-                        if(d.currentThemeId) setCurrentThemeId(d.currentThemeId);
-                        if(d.unlockedThemes) setUnlockedThemes(d.unlockedThemes);
-                        if(d.currency1 !== undefined) setCurrency1(d.currency1);
-                        if(d.currency2 !== undefined) setCurrency2(d.currency2);
-                        if(d.inventory) setInventory(d.inventory);
-                        if(d.claimedSets) setClaimedSets(d.claimedSets);
-                    } catch(e) {}
-                }
-            }, []);
-
-            useEffect(() => {
-                localStorage.setItem('abyssal_v29_realms_safe', JSON.stringify({ currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets }));
-            }, [currentThemeId, unlockedThemes, currency1, currency2, inventory, claimedSets]);
-
-            useEffect(() => {
                 const timer = setInterval(() => {
                     setCurrency1(d => d + (incomeFlow.income.c1 * activeMultiplier / 10));
                     setCurrency2(p => p + (incomeFlow.income.c2 * activeMultiplier / 10));
@@ -503,6 +484,18 @@
                 return () => clearInterval(interval);
             }, [krakenEvent, krakenTimer, krakenFeedback]);
 
+            const highestClaimedRarityIdx = useMemo(() => {
+                let maxIdx = -1;
+                RARITIES.forEach((r, rIdx) => {
+                    MUTATION_ORDER.forEach(m => {
+                        if (claimedSets.includes(`${currentThemeId}_${r.id}_${m}`)) {
+                            maxIdx = Math.max(maxIdx, rIdx);
+                        }
+                    });
+                });
+                return maxIdx;
+            }, [claimedSets, currentThemeId, RARITIES, MUTATION_ORDER]);
+
             const getPackCost = (p, isShrine = false) => { 
                 if (!merchantSaleActive) return p.cost;
                 const discount = isShrine ? 0.75 : 0.5;
@@ -513,17 +506,32 @@
                 if (isOpening || isSealed || isRipping || isShaking || activePack) return false;
                 const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return false;
+                
+                // Extra safety check for shrines: make sure they own at least one item
+                if (isShrine) {
+                    const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
+                    if (ownedItemNames.length === 0) return false;
+                }
+
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
                 setTimeout(() => {
-                    let rarity;
-                    const weights = p.weights;
-                    const total = Object.values(weights).reduce((a,b) => a+b, 0);
-                    let rand = Math.random() * total; rarity = RARITIES[0];
-                    for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
+                    let rarity, item;
                     
-                    const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
-                    const item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
+                    if (isShrine) {
+                        const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
+                        const randomName = ownedItemNames[Math.floor(Math.random() * ownedItemNames.length)];
+                        item = MASTER_ITEM_DB.find(db => db.name === randomName);
+                        rarity = RARITIES.find(r => r.id === item.rarityId) || RARITIES[0];
+                    } else {
+                        const weights = p.weights;
+                        const total = Object.values(weights).reduce((a,b) => a+b, 0);
+                        let rand = Math.random() * total; rarity = RARITIES[0];
+                        for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
+                        
+                        const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
+                        item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
+                    }
                     
                     const isSec = isShrine || Math.random() < (rarity.secondaryChance || 0);
                     const cpsBase = rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3));
@@ -918,9 +926,12 @@
 
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mx-auto w-fit border shadow-lg shrink-0 mb-2`}>
+                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
+                                </div>
                                 <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-1 sm:px-2 scrollbar-hide">
                                     {STANDARD_PACKS.map((p, idx) => {
-                                        const isUnlocked = idx === 0 || claimedSets.includes(`${currentThemeId}_${RARITIES[idx-1]?.id}_none`);
+                                        const isUnlocked = idx === 0 || highestClaimedRarityIdx >= (idx - 1);
                                         const cost = getPackCost(p, false);
                                         const afford = isUnlocked && (p.currency === 'primary' ? currency1 : currency2) >= cost;
                                         return (
@@ -1090,7 +1101,7 @@
                                 </div>
                                 {altarMode === 'ascend' ? (
                                     <div className="space-y-3 sm:space-y-4">
-                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier.</p>
+                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier. You are guaranteed a new, undiscovered item unless you have found them all!</p>
                                         {RARITIES.slice(0, -1).map((r, idx) => {
                                             const dupes = getDuplicatesForRarity(r.id);
                                             const next = RARITIES[idx + 1];
@@ -1102,8 +1113,15 @@
                                                         const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
                                                         const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
                                                         const isSec = Math.random() < next.secondaryChance;
+                                                        
                                                         const nextItems = MASTER_ITEM_DB.filter(it => it.rarityId === next.id);
-                                                        const randomItem = nextItems[Math.floor(Math.random() * nextItems.length)];
+                                                        const ownedNextItemNames = new Set(activeInventory.filter(i => i.rarity?.id === next.id).map(i => i.name));
+                                                        const unownedNextItems = nextItems.filter(it => !ownedNextItemNames.has(it.name));
+                                                        
+                                                        const randomItem = unownedNextItems.length > 0 
+                                                            ? unownedNextItems[Math.floor(Math.random() * unownedNextItems.length)] 
+                                                            : nextItems[Math.floor(Math.random() * nextItems.length)];
+
                                                         const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
@@ -1150,7 +1168,7 @@
                         {view === 'shrine' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4">
                                 <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mx-auto w-fit border shadow-lg shrink-0`}>
-                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations with a perfect 10% chance for any rarity.</p>
+                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations. You will receive a random item that you already own, imbued with the chosen mutation.</p>
                                 </div>
                                 <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 sm:px-2 scrollbar-hide">
                                     {SHRINE_CATEGORIES.map((cat, idx) => {
@@ -1161,7 +1179,10 @@
                                         const pk = { id: `shrine_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
                                         const discountedCost = getPackCost(pk, true);
                                         const isUnlocked = idx === 0 || claimedSets.some(s => s.startsWith(currentThemeId + '_') && s.endsWith('_' + MUTATION_ORDER[idx]));
-                                        const afford = isUnlocked && currency2 >= discountedCost;
+                                        
+                                        // The player must own at least one item to use a shrine
+                                        const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
+                                        const afford = isUnlocked && currency2 >= discountedCost && ownedItemNames.length > 0;
                                         
                                         return (
                                             <div key={cat.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
@@ -1193,7 +1214,11 @@
                                 <button className="absolute top-3 right-3 sm:top-4 sm:right-4 text-white/20 hover:text-white transition-colors" onClick={() => setInspectedPack(null)}><Icon name="X" size={20} className="sm:scale-125" /></button>
                                 <h3 className="text-xs sm:text-sm font-black uppercase mb-4 sm:mb-6 tracking-widest text-center text-white">{inspectedPack.name} Rates</h3>
                                 <div className="space-y-1 sm:space-y-2">
-                                    {(() => {
+                                    {inspectedPack.isShrine ? (
+                                        <div className="flex justify-center items-center py-4 opacity-60 text-[10px] sm:text-xs font-black uppercase text-center text-white">
+                                            Grants a random item you<br/>have already discovered.
+                                        </div>
+                                    ) : (() => {
                                         const weights = inspectedPack.weights;
                                         const total = Object.values(weights).reduce((a,b)=>a+b,0);
                                         return RARITIES.map(r => {
