@@ -397,8 +397,7 @@
             const [anomalyVisible, setAnomalyVisible] = useState(false);
             const [frenzyTimer, setFrenzyTimer] = useState(0);
             
-            // Data Loading & Firebase
-            const [firebaseReady, setFirebaseReady] = useState(!!window.FirebaseAPI);
+            // Data Loading
             const [isDataLoaded, setIsDataLoaded] = useState(false);
             const [user, setUser] = useState(null);
             
@@ -427,7 +426,7 @@
             const isSwiping = useRef(false);
             const gameStateRef = useRef({});
 
-            // Robust Firebase Synchronization & Race Condition Fixes
+            // Robust Firebase Auth Initialization (for Leaderboards ONLY)
             useEffect(() => {
                 const init = async () => {
                     if (!window.FirebaseAPI) return;
@@ -455,7 +454,7 @@
 
                     onAuthStateChanged(auth, (u) => {
                         if (u) setUser(u);
-                        else setUser({ uid: 'offline_user' }); // Fallback
+                        else setUser({ uid: 'offline_user' });
                     });
                 };
 
@@ -467,37 +466,26 @@
                 }
             }, []);
             
-            // Load Private Game Data exactly ONCE when User exists
+            // Load Private Game Data from LocalStorage! (Bulletproof)
             useEffect(() => {
-                if (!user) return;
-                const { db, doc, getDoc } = window.FirebaseAPI || {};
-                
-                if (!db || user.uid === 'offline_user') {
-                    setIsDataLoaded(true);
-                    setIsLeaderboardLoading(false);
-                    return; 
+                try {
+                    const saved = localStorage.getItem('abyssal_bounty_save');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        if (data.currency1 !== undefined) setCurrency1(data.currency1);
+                        if (data.currency2 !== undefined) setCurrency2(data.currency2);
+                        if (data.inventory) setInventory(data.inventory);
+                        if (data.claimedSets) setClaimedSets(data.claimedSets);
+                        if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
+                        if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
+                        console.log("Save loaded from LocalStorage!");
+                    }
+                } catch(e) { 
+                    console.error("Local save load error", e); 
                 }
                 
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                
-                const loadData = async () => {
-                    try {
-                        const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'));
-                        if (snap.exists()) {
-                            const data = snap.data();
-                            if (data.currency1 !== undefined) setCurrency1(data.currency1);
-                            if (data.currency2 !== undefined) setCurrency2(data.currency2);
-                            if (data.inventory) setInventory(data.inventory);
-                            if (data.claimedSets) setClaimedSets(data.claimedSets);
-                            if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
-                            if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
-                        }
-                    } catch(e) { console.error("Save load error", e); }
-                    
-                    setIsDataLoaded(true);
-                };
-                loadData();
-            }, [user]);
+                setIsDataLoaded(true);
+            }, []);
 
             // Keep the ref updated with latest state values
             useEffect(() => {
@@ -507,27 +495,27 @@
                 };
             });
 
-            // Periodic Private Game Data Sync
+            // Periodic Game Data Sync to LocalStorage
             useEffect(() => {
-                if (!user || !isDataLoaded) return;
-                const { db, doc, setDoc } = window.FirebaseAPI || {};
-                if (!db || user.uid === 'offline_user') return;
-
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                if (!isDataLoaded) return;
                 
-                const saveToCloud = () => {
+                const saveToLocal = () => {
                     const state = gameStateRef.current;
-                    setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                        currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                    localStorage.setItem('abyssal_bounty_save', JSON.stringify({
+                        currency1: state.currency1, 
+                        currency2: state.currency2, 
+                        inventory: state.inventory, 
+                        claimedSets: state.claimedSets, 
+                        unlockedThemes: state.unlockedThemes, 
+                        currentThemeId: state.currentThemeId,
                         lastActive: new Date().toISOString()
-                    }, { merge: true }).catch(console.error);
+                    }));
                 };
 
-                const syncInterval = setInterval(saveToCloud, 2000); 
+                const syncInterval = setInterval(saveToLocal, 2000); 
                 
-                const handleVisibilityChange = () => { if (document.visibilityState === 'hidden') saveToCloud(); };
-                const handleBeforeUnload = () => { saveToCloud(); };
+                const handleVisibilityChange = () => { if (document.visibilityState === 'hidden') saveToLocal(); };
+                const handleBeforeUnload = () => { saveToLocal(); };
 
                 document.addEventListener('visibilitychange', handleVisibilityChange);
                 window.addEventListener('beforeunload', handleBeforeUnload);
@@ -537,28 +525,23 @@
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
                     window.removeEventListener('beforeunload', handleBeforeUnload);
                 };
-            }, [user, isDataLoaded]);
+            }, [isDataLoaded]);
 
-            // Instant Save Trigger for Important Actions (Inventory, Forge, Set Claims)
+            // Instant Save Trigger
             useEffect(() => {
-                if (!user || !isDataLoaded) return;
-                const { db, doc, setDoc } = window.FirebaseAPI || {};
-                if (!db || user.uid === 'offline_user') return;
-                
+                if (!isDataLoaded) return;
                 const saveTimer = setTimeout(() => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     const state = gameStateRef.current;
-                    setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                    localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
                         claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
                         lastActive: new Date().toISOString()
-                    }, { merge: true }).catch(console.error);
+                    }));
                 }, 1000);
-                
                 return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, user, isDataLoaded]);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, isDataLoaded]);
 
-            // Public Leaderboard Listener
+            // Public Leaderboard Listener (Firebase)
             useEffect(() => {
                 if (!user) return;
                 const { db, collection, onSnapshot } = window.FirebaseAPI || {};
@@ -594,7 +577,7 @@
                 return () => unsubscribe();
             }, [user]);
 
-            // Public Clubs Listener
+            // Public Clubs Listener (Firebase)
             useEffect(() => {
                 if (!user) return;
                 const { db, collection, onSnapshot } = window.FirebaseAPI || {};
@@ -614,7 +597,7 @@
                 return () => unsubscribe();
             }, [user]);
 
-            // Periodic Profile Push Sync
+            // Periodic Profile Push Sync (Firebase)
             useEffect(() => {
                 if (!user || !username) return;
                 const { db, doc, setDoc } = window.FirebaseAPI || {};
@@ -839,7 +822,7 @@
                         }
 
                         if (Object.keys(updateData).length > 0) {
-                            setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true });
+                            setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
                         }
                     }
 
