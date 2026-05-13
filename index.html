@@ -19,6 +19,18 @@
             initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
             getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query 
         };
+
+        try {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            if (Object.keys(firebaseConfig).length > 0) {
+                const app = initializeApp(firebaseConfig);
+                window.auth = getAuth(app);
+                window.db = getFirestore(app);
+            }
+        } catch(e) {
+            console.error("Firebase Initialization Skipped.", e);
+        }
+        
         // Dispatch event so React knows exactly when Firebase is ready to roll
         window.dispatchEvent(new Event('firebase-modules-ready'));
     </script>
@@ -401,9 +413,12 @@
 
             // Robust Firebase Synchronization & Race Condition Fixes
             useEffect(() => {
-                if (window.FirebaseAPI) { setFirebaseReady(true); return; }
                 const handleReady = () => setFirebaseReady(true);
-                window.addEventListener('firebase-modules-ready', handleReady);
+                if (window.FirebaseAPI) {
+                    setFirebaseReady(true);
+                } else {
+                    window.addEventListener('firebase-modules-ready', handleReady);
+                }
                 
                 // Fallback timeout just in case it's run locally on double-click (file:// protocol)
                 const timer = setTimeout(() => {
@@ -417,46 +432,35 @@
             }, []);
 
             useEffect(() => {
-                if (!firebaseReady || window.db) return;
+                if (!firebaseReady) return;
                 
-                if (!window.FirebaseAPI) {
+                if (!window.FirebaseAPI || !window.auth || !window.db) {
                     // Offline fallback - completes load instantly to not block game
                     setUser({ uid: 'local_offline_user' });
                     setIsDataLoaded(true);
+                    setIsLeaderboardLoading(false);
                     return;
                 }
                 
-                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore } = window.FirebaseAPI;
-                
-                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-                let config = {};
-                try { config = JSON.parse(firebaseConfigStr); } catch(e){}
-
-                if (Object.keys(config).length === 0) {
-                    // Offline fallback 
-                    setUser({ uid: 'local_offline_user' });
-                    setIsDataLoaded(true);
-                    return;
-                }
-
-                let app;
-                try { app = initializeApp(config); } catch(e) { console.warn("App initialization skipped."); return; }
-                
-                const auth = getAuth(app);
-                window.db = getFirestore(app);
+                const { signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.FirebaseAPI;
 
                 const initAuth = async () => {
                     try {
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
+                            await signInWithCustomToken(window.auth, __initial_auth_token);
                         } else {
-                            await signInAnonymously(auth);
+                            await signInAnonymously(window.auth);
                         }
-                    } catch (e) { console.error("Auth error:", e); }
+                    } catch (e) { 
+                        console.error("Auth error:", e); 
+                        setUser({ uid: 'local_offline_user' });
+                        setIsDataLoaded(true);
+                        setIsLeaderboardLoading(false);
+                    }
                 };
                 
                 initAuth();
-                const unsubscribe = onAuthStateChanged(auth, setUser);
+                const unsubscribe = onAuthStateChanged(window.auth, setUser);
                 return () => unsubscribe();
             }, [firebaseReady]);
             
@@ -465,6 +469,7 @@
                 if (!user) return;
                 if (!window.db) {
                     setIsDataLoaded(true);
+                    setIsLeaderboardLoading(false);
                     return; 
                 }
                 
@@ -568,7 +573,11 @@
 
             // Public Leaderboard Listener
             useEffect(() => {
-                if (!user || !window.db) return;
+                if (!user) return;
+                if (!window.db) {
+                    setIsLeaderboardLoading(false);
+                    return;
+                }
                 const { collection, onSnapshot } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
