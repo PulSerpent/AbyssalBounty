@@ -478,12 +478,20 @@
                         if (data.claimedSets) setClaimedSets(data.claimedSets);
                         if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
                         if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
+                        
+                        // NEW: Load Social Data
+                        if (data.username) setUsername(data.username);
+                        if (data.clubId) setClubId(data.clubId);
+                        if (data.pinnedItem) setPinnedItem(data.pinnedItem);
+                        if (data.friendsList) setFriendsList(data.friendsList);
                         console.log("Save loaded from LocalStorage!");
                     }
-                } catch(e) { 
-                    console.error("Local save load error", e); 
-                }
-                
+                    
+                    // NEW: Load Offline Clubs
+                    const savedClubs = localStorage.getItem('abyssal_bounty_clubs');
+                    if (savedClubs) setClubsList(JSON.parse(savedClubs));
+                    
+                } catch(e) { console.error("Local save load error", e); }
                 setIsDataLoaded(true);
             }, []);
 
@@ -502,18 +510,15 @@
                 const saveToLocal = () => {
                     const state = gameStateRef.current;
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
-                        currency1: state.currency1, 
-                        currency2: state.currency2, 
-                        inventory: state.inventory, 
-                        claimedSets: state.claimedSets, 
-                        unlockedThemes: state.unlockedThemes, 
-                        currentThemeId: state.currentThemeId,
+                        currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        // NEW: Save Social Data
+                        username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
                 };
 
                 const syncInterval = setInterval(saveToLocal, 2000); 
-                
                 const handleVisibilityChange = () => { if (document.visibilityState === 'hidden') saveToLocal(); };
                 const handleBeforeUnload = () => { saveToLocal(); };
 
@@ -535,11 +540,18 @@
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
                         claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
                 }, 1000);
                 return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, isDataLoaded]);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, username, clubId, isDataLoaded]);
+
+            // Save Offline Clubs whenever they change
+            useEffect(() => {
+                if (!isDataLoaded) return;
+                localStorage.setItem('abyssal_bounty_clubs', JSON.stringify(clubsList));
+            }, [clubsList, isDataLoaded]);
 
             // Public Leaderboard Listener (Firebase)
             useEffect(() => {
