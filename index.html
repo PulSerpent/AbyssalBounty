@@ -503,9 +503,9 @@
             useEffect(() => {
                 if (!user || !window.db || !isDataLoaded) return;
                 const { doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
                 const syncInterval = setInterval(async () => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     const state = gameStateRef.current;
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
@@ -518,20 +518,31 @@
                 
                 const handleVisibilityChange = () => {
                     if (document.visibilityState === 'hidden') {
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const state = gameStateRef.current;
-                        setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                        window.FirebaseAPI.setDoc(window.FirebaseAPI.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
                             currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
                             claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
                             lastActive: new Date().toISOString()
                         }, { merge: true });
                     }
                 };
+
+                const handleBeforeUnload = () => {
+                    const state = gameStateRef.current;
+                    window.FirebaseAPI.setDoc(window.FirebaseAPI.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                        currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        lastActive: new Date().toISOString()
+                    }, { merge: true });
+                };
+
                 document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('beforeunload', handleBeforeUnload);
 
                 return () => {
                     clearInterval(syncInterval);
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
+                    window.removeEventListener('beforeunload', handleBeforeUnload);
                 };
             }, [user, isDataLoaded]);
 
@@ -1871,47 +1882,6 @@
                             </div>
                         )}
 
-                        {view === 'shrine' && (
-                            <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0`}>
-                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations. You will receive a random item that you already own, imbued with the chosen mutation.</p>
-                                </div>
-                                <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
-                                    {SHRINE_CATEGORIES.map((cat, idx) => {
-                                        const equalWeights = {};
-                                        RARITIES.forEach(r => equalWeights[r.id] = 10);
-                                        const baseCost = (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000)) * Math.pow(50, idx); 
-                                        
-                                        const pk = { id: `shrine_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
-                                        const discountedCost = getPackCost(pk, true);
-                                        const isUnlocked = idx === 0 || claimedSets.some(s => s.startsWith(currentThemeId + '_') && s.endsWith('_' + MUTATION_ORDER[idx]));
-                                        
-                                        // The player must own at least one item to use a shrine
-                                        const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
-                                        const afford = isUnlocked && currency2 >= discountedCost && ownedItemNames.length > 0;
-                                        
-                                        return (
-                                            <div key={cat.id} className={`snap-center shrink-0 w-24 sm:w-28 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
-                                                onMouseDown={() => { if(isUnlocked) handleHoldStart(pk); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(pk); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
-                                                onTouchStart={() => { if(isUnlocked) handleHoldStart(pk); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(pk); }}>
-                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${cat.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
-                                                    <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
-                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={14} /><span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {MUTATION_ORDER[idx]} Set</span></div>}
-                                                    <Icon name={cat.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
-                                                    <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
-                                                    <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                        <Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : "text-cyan-300"} />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className={`text-center opacity-50 text-[8px] font-black uppercase tracking-widest shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
-                                {renderUnboxingArea()}
-                            </div>
-                        )}
                     </main>
 
                     {inspectedPack && (
