@@ -15,24 +15,32 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        window.FirebaseAPI = { 
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
-            getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query 
-        };
+        let db = null;
+        let auth = null;
+        let isOffline = false;
 
         try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+            const firebaseConfig = JSON.parse(configStr);
             if (Object.keys(firebaseConfig).length > 0) {
                 const app = initializeApp(firebaseConfig);
-                window.auth = getAuth(app);
-                window.db = getFirestore(app);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                window.db = db; // Export globally for game functions
+            } else {
+                isOffline = true;
             }
         } catch(e) {
-            console.error("Firebase Initialization Skipped.", e);
+            console.error("Firebase init skipped", e);
+            isOffline = true;
         }
-        
-        // Dispatch event so React knows exactly when Firebase is ready to roll
-        window.dispatchEvent(new Event('firebase-modules-ready'));
+
+        window.FirebaseAPI = { 
+            db, auth, isOffline,
+            signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
+            collection, doc, setDoc, getDoc, onSnapshot, query 
+        };
+        window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
     <style>
@@ -413,72 +421,51 @@
 
             // Robust Firebase Synchronization & Race Condition Fixes
             useEffect(() => {
-                const handleReady = () => setFirebaseReady(true);
-                if (window.FirebaseAPI) {
-                    setFirebaseReady(true);
-                } else {
-                    window.addEventListener('firebase-modules-ready', handleReady);
-                }
-                
-                // Fallback timeout just in case it's run locally on double-click (file:// protocol)
-                const timer = setTimeout(() => {
-                    if (!window.FirebaseAPI) {
-                        console.warn("Firebase failed to load. Defaulting to local offline session.");
-                        setFirebaseReady(true); 
+                const init = async () => {
+                    if (!window.FirebaseAPI) return;
+                    const { auth, isOffline, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.FirebaseAPI;
+                    
+                    if (isOffline || !auth) {
+                        setUser({ uid: 'offline_user' });
+                        return;
                     }
-                }, 2000);
-                
-                return () => { window.removeEventListener('firebase-modules-ready', handleReady); clearTimeout(timer); };
-            }, []);
 
-            useEffect(() => {
-                if (!firebaseReady) return;
-                
-                if (!window.FirebaseAPI || !window.auth || !window.db) {
-                    // Offline fallback - completes load instantly to not block game
-                    setUser({ uid: 'local_offline_user' });
-                    setIsDataLoaded(true);
-                    setIsLeaderboardLoading(false);
-                    return;
-                }
-                
-                const { signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.FirebaseAPI;
-
-                const initAuth = async () => {
                     try {
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(window.auth, __initial_auth_token);
+                            await signInWithCustomToken(auth, __initial_auth_token);
                         } else {
-                            await signInAnonymously(window.auth);
+                            await signInAnonymously(auth);
                         }
-                    } catch (e) { 
-                        console.error("Auth error:", e); 
-                        setUser({ uid: 'local_offline_user' });
-                        setIsDataLoaded(true);
-                        setIsLeaderboardLoading(false);
+                    } catch(e) {
+                        setUser({ uid: 'offline_user' });
                     }
+
+                    onAuthStateChanged(auth, setUser);
                 };
-                
-                initAuth();
-                const unsubscribe = onAuthStateChanged(window.auth, setUser);
-                return () => unsubscribe();
-            }, [firebaseReady]);
+
+                if (window.FirebaseAPI) {
+                    init();
+                } else {
+                    window.addEventListener('firebase-ready', init);
+                    return () => window.removeEventListener('firebase-ready', init);
+                }
+            }, []);
             
             // Load Private Game Data exactly ONCE when User exists
             useEffect(() => {
                 if (!user) return;
-                if (!window.db) {
+                const { db, doc, getDoc } = window.FirebaseAPI || {};
+                
+                if (!db || user.uid === 'offline_user') {
                     setIsDataLoaded(true);
-                    setIsLeaderboardLoading(false);
                     return; 
                 }
                 
-                const { doc, getDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
                 const loadData = async () => {
                     try {
-                        const snap = await getDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'));
+                        const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'));
                         if (snap.exists()) {
                             const data = snap.data();
                             if (data.currency1 !== undefined) setCurrency1(data.currency1);
@@ -490,13 +477,12 @@
                         }
                     } catch(e) { console.error("Save load error", e); }
                     
-                    // Mark as loaded so interval starts safely saving future states
                     setIsDataLoaded(true);
                 };
                 loadData();
             }, [user]);
 
-            // Keep the ref updated with latest state values so intervals don't get reset constantly
+            // Keep the ref updated with latest state values
             useEffect(() => {
                 gameStateRef.current = {
                     currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId,
@@ -504,42 +490,27 @@
                 };
             });
 
-            // Periodic Private Game Data Sync (Only if successfully loaded first)
+            // Periodic Private Game Data Sync
             useEffect(() => {
-                if (!user || !window.db || !isDataLoaded) return;
-                const { doc, setDoc } = window.FirebaseAPI;
+                if (!user || !isDataLoaded) return;
+                const { db, doc, setDoc } = window.FirebaseAPI || {};
+                if (!db || user.uid === 'offline_user') return;
+
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
-                const syncInterval = setInterval(async () => {
+                const saveToCloud = () => {
                     const state = gameStateRef.current;
-                    try {
-                        await setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch(e) { console.error("Private save error", e); }
-                }, 2000); 
-                
-                const handleVisibilityChange = () => {
-                    if (document.visibilityState === 'hidden') {
-                        const state = gameStateRef.current;
-                        window.FirebaseAPI.setDoc(window.FirebaseAPI.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    }
-                };
-
-                const handleBeforeUnload = () => {
-                    const state = gameStateRef.current;
-                    window.FirebaseAPI.setDoc(window.FirebaseAPI.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                    setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
                         claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
                         lastActive: new Date().toISOString()
-                    }, { merge: true });
+                    }, { merge: true }).catch(console.error);
                 };
+
+                const syncInterval = setInterval(saveToCloud, 2000); 
+                
+                const handleVisibilityChange = () => { if (document.visibilityState === 'hidden') saveToCloud(); };
+                const handleBeforeUnload = () => { saveToCloud(); };
 
                 document.addEventListener('visibilitychange', handleVisibilityChange);
                 window.addEventListener('beforeunload', handleBeforeUnload);
@@ -553,19 +524,18 @@
 
             // Instant Save Trigger for Important Actions (Inventory, Forge, Set Claims)
             useEffect(() => {
-                if (!user || !window.db || !isDataLoaded) return;
-                const { doc, setDoc } = window.FirebaseAPI;
+                if (!user || !isDataLoaded) return;
+                const { db, doc, setDoc } = window.FirebaseAPI || {};
+                if (!db || user.uid === 'offline_user') return;
                 
-                const saveTimer = setTimeout(async () => {
+                const saveTimer = setTimeout(() => {
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     const state = gameStateRef.current;
-                    try {
-                        await setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch(e) { console.error("Instant save error", e); }
+                    setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                        currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        lastActive: new Date().toISOString()
+                    }, { merge: true }).catch(console.error);
                 }, 1000);
                 
                 return () => clearTimeout(saveTimer);
@@ -574,32 +544,30 @@
             // Public Leaderboard Listener
             useEffect(() => {
                 if (!user) return;
-                if (!window.db) {
+                const { db, collection, onSnapshot } = window.FirebaseAPI || {};
+                if (!db || user.uid === 'offline_user') {
                     setIsLeaderboardLoading(false);
                     return;
                 }
-                const { collection, onSnapshot } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
                 setIsLeaderboardLoading(true);
-                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'profiles');
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
                 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
                     const profiles = [];
-                    snapshot.forEach(doc => profiles.push({ id: doc.id, ...doc.data() }));
+                    snapshot.forEach(d => profiles.push({ id: d.id, ...d.data() }));
                     
-                    // Simple memory sort for score
                     profiles.sort((a, b) => ((b.wealth || 0) + ((b.cpsPrimary || 0) * 100)) - ((a.wealth || 0) + ((a.cpsPrimary || 0) * 100)));
                     setLeaderboard(profiles);
                     setIsLeaderboardLoading(false);
                     
-                    // Load own established profile data locally
                     const myProfile = profiles.find(p => p.id === user.uid);
                     if (myProfile) {
-                        if (myProfile.username && !username) setUsername(myProfile.username);
-                        if (myProfile.pinnedItem && !pinnedItem) setPinnedItem(myProfile.pinnedItem);
-                        if (myProfile.friends) setFriendsList(myProfile.friends);
-                        if (myProfile.clubId) setClubId(myProfile.clubId);
+                        setUsername(prev => prev || myProfile.username || '');
+                        setPinnedItem(prev => prev || myProfile.pinnedItem || null);
+                        setFriendsList(prev => prev.length ? prev : (myProfile.friends || []));
+                        setClubId(prev => prev || myProfile.clubId || null);
                     }
                 }, (error) => {
                     console.error("Leaderboard fetch error:", error);
@@ -607,18 +575,20 @@
                 });
 
                 return () => unsubscribe();
-            }, [user, username, pinnedItem]);
+            }, [user]);
 
             // Public Clubs Listener
             useEffect(() => {
-                if (!user || !window.db) return;
-                const { collection, onSnapshot } = window.FirebaseAPI;
+                if (!user) return;
+                const { db, collection, onSnapshot } = window.FirebaseAPI || {};
+                if (!db || user.uid === 'offline_user') return;
+                
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'clubs');
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'clubs');
                 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
                     const c = [];
-                    snapshot.forEach(doc => c.push({ id: doc.id, ...doc.data() }));
+                    snapshot.forEach(d => c.push({ id: d.id, ...d.data() }));
                     setClubsList(c);
                 }, (error) => {
                     console.error("Clubs fetch error:", error);
@@ -629,25 +599,25 @@
 
             // Periodic Profile Push Sync
             useEffect(() => {
-                if (!user || !username || !window.db) return;
-                const { doc, setDoc } = window.FirebaseAPI;
-                const syncInterval = setInterval(async () => {
+                if (!user || !username) return;
+                const { db, doc, setDoc } = window.FirebaseAPI || {};
+                if (!db || user.uid === 'offline_user') return;
+
+                const syncInterval = setInterval(() => {
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     const state = gameStateRef.current;
                     
-                    try {
-                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                            username: state.username,
-                            currentRealm: state.currentThemeId,
-                            cpsPrimary: state.income.c1,
-                            cpsSecondary: state.income.c2,
-                            wealth: state.currency1 + (state.currency2 * 5),
-                            pinnedItem: state.pinnedItem,
-                            friends: state.friendsList,
-                            clubId: state.clubId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch (e) { console.error("Sync error:", e); }
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                        username: state.username,
+                        currentRealm: state.currentThemeId,
+                        cpsPrimary: state.income.c1,
+                        cpsSecondary: state.income.c2,
+                        wealth: state.currency1 + (state.currency2 * 5),
+                        pinnedItem: state.pinnedItem,
+                        friends: state.friendsList,
+                        clubId: state.clubId,
+                        lastActive: new Date().toISOString()
+                    }, { merge: true }).catch(console.error);
                 }, 10000); 
 
                 return () => clearInterval(syncInterval);
