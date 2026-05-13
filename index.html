@@ -9,6 +9,14 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Added Firebase Cloud Database Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        window.Firebase = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, collection, doc, setDoc, getDoc, onSnapshot };
+    </script>
+
     <style>
         @keyframes drift { 0% { transform: translate(0, 0); } 33% { transform: translate(15px, -15px); } 66% { transform: translate(-15px, 10px); } 100% { transform: translate(0, 0); } }
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
@@ -115,7 +123,12 @@
                 ZapFast: <path d="M13 2 L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/>,
                 Infinity: <path d="M12 12c-2-2.5-6-2.5-8 0s-2 6 0 8 6 2.5 8 0c2 2.5 6 2.5 8 0s2-6 0-8-6-2.5-8 0z" />,
                 Leaf: <React.Fragment><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></React.Fragment>,
-                Hexagon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                Hexagon: <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>,
+                Users: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M12 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"/>,
+                UserPlus: <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M20 8v6 M23 11h-6"/>,
+                UserMinus: <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M23 11h-6"/>,
+                Trade: <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />,
+                Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -330,6 +343,16 @@
             }
         };
 
+        const CLUB_LEVEL_CAPS = [0, 1000, 5000, 15000, 50000, 100000];
+        const getClubLevel = (xp = 0) => {
+            let lvl = 1;
+            for(let i = 1; i < CLUB_LEVEL_CAPS.length; i++) {
+                if (xp >= CLUB_LEVEL_CAPS[i]) lvl = i + 1;
+                else break;
+            }
+            return lvl;
+        };
+
         const App = () => {
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
             const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy']);
@@ -361,6 +384,29 @@
             const [anomalyVisible, setAnomalyVisible] = useState(false);
             const [frenzyTimer, setFrenzyTimer] = useState(0);
 
+            // Multiplayer Social Hub State
+            const [user, setUser] = useState(null);
+            const [username, setUsername] = useState('');
+            const [tempUsername, setTempUsername] = useState('');
+            const [pinnedItem, setPinnedItem] = useState(null);
+            const [leaderboard, setLeaderboard] = useState([]);
+            const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+            
+            // Friends & Trading State
+            const [hubTab, setHubTab] = useState('leaderboards');
+            const [leaderboardTab, setLeaderboardTab] = useState('global');
+            const [friendsList, setFriendsList] = useState([]);
+            const [clubId, setClubId] = useState(null);
+            const [tradeTarget, setTradeTarget] = useState(null);
+            const [friendSearchQuery, setFriendSearchQuery] = useState('');
+            const [friendSearchMessage, setFriendSearchMessage] = useState('');
+            
+            // Club State
+            const [clubsList, setClubsList] = useState([]);
+            const [createClubName, setCreateClubName] = useState('');
+            const [createClubTag, setCreateClubTag] = useState('');
+            const [clubSearchQuery, setClubSearchQuery] = useState('');
+
             const holdTimer = useRef(null);
             const isHolding = useRef(false);
             const isSwiping = useRef(false);
@@ -368,7 +414,16 @@
             const activeTheme = THEMES[currentThemeId];
             const { RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
 
-            // Safe Lookups for Legacy/Renamed Items & Mutations
+            // Compute Global Club Buffs
+            const activeClub = useMemo(() => clubsList.find(c => c.id === clubId), [clubsList, clubId]);
+            const clubLevel = useMemo(() => activeClub ? getClubLevel(activeClub.xp || 0) : 1, [activeClub]);
+            const clubMuseumBonus = useMemo(() => activeClub ? ((activeClub.museum || []).length * 0.01) : 0, [activeClub]);
+            
+            // Buffs: Level 2 = +5% CPS, Level 4 = +5% CPS (+10% total)
+            const clubCpsBuff = 1 + (clubLevel >= 2 ? 0.05 : 0) + (clubLevel >= 4 ? 0.05 : 0) + clubMuseumBonus;
+            // Buffs: Level 3 = 5% off, Level 5 = 10% off
+            const clubDiscount = clubLevel >= 5 ? 0.9 : (clubLevel >= 3 ? 0.95 : 1);
+
             const getMutData = useCallback((tId, mId) => {
                 const t = THEMES[tId] || THEMES['abyssal'];
                 return t.MUTATIONS[mId] || t.MUTATIONS['none'];
@@ -420,15 +475,121 @@
                 };
             }, [inventory, getMutData]);
 
-            const activeMultiplier = (frenzyTimer > 0 ? 5 : 1);
+            // Multiply final income by any active Club buffs
+            const finalCpsMultiplier = (frenzyTimer > 0 ? 5 : 1) * clubCpsBuff;
+
+            // Firebase Initialization & Auth
+            useEffect(() => {
+                if (!window.Firebase) return;
+                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore } = window.Firebase;
+                
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                if (Object.keys(firebaseConfig).length === 0) return;
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                window.db = getFirestore(app);
+
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) { console.error("Auth error:", e); }
+                };
+                initAuth();
+
+                const unsubscribe = onAuthStateChanged(auth, setUser);
+                return () => unsubscribe();
+            }, []);
+
+            // Public Leaderboard Listener
+            useEffect(() => {
+                if (!user || !window.db) return;
+                const { collection, onSnapshot } = window.Firebase;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                setIsLeaderboardLoading(true);
+                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'profiles');
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const profiles = [];
+                    snapshot.forEach(doc => profiles.push({ id: doc.id, ...doc.data() }));
+                    
+                    // Simple memory sort for score (Wealth normalized heavily by CPS to reflect active progress)
+                    profiles.sort((a, b) => ((b.wealth || 0) + ((b.cpsPrimary || 0) * 100)) - ((a.wealth || 0) + ((a.cpsPrimary || 0) * 100)));
+                    setLeaderboard(profiles);
+                    setIsLeaderboardLoading(false);
+                    
+                    // Load own established profile data locally
+                    const myProfile = profiles.find(p => p.id === user.uid);
+                    if (myProfile) {
+                        if (myProfile.username && !username) setUsername(myProfile.username);
+                        if (myProfile.pinnedItem && !pinnedItem) setPinnedItem(myProfile.pinnedItem);
+                        if (myProfile.friends) setFriendsList(myProfile.friends);
+                        if (myProfile.clubId) setClubId(myProfile.clubId);
+                    }
+                }, (error) => {
+                    console.error("Leaderboard fetch error:", error);
+                    setIsLeaderboardLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            // Public Clubs Listener
+            useEffect(() => {
+                if (!user || !window.db) return;
+                const { collection, onSnapshot } = window.Firebase;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'clubs');
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const c = [];
+                    snapshot.forEach(doc => c.push({ id: doc.id, ...doc.data() }));
+                    setClubsList(c);
+                }, (error) => {
+                    console.error("Clubs fetch error:", error);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            // Periodic Profile Push Sync
+            useEffect(() => {
+                if (!user || !username || !window.db) return;
+                
+                const syncInterval = setInterval(async () => {
+                    const { doc, setDoc } = window.Firebase;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                            username: username,
+                            currentRealm: currentThemeId,
+                            cpsPrimary: incomeFlow.income.c1,
+                            cpsSecondary: incomeFlow.income.c2,
+                            wealth: currency1 + (currency2 * 5),
+                            pinnedItem: pinnedItem,
+                            friends: friendsList,
+                            clubId: clubId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    } catch (e) { console.error("Sync error:", e); }
+                }, 10000); // 10 second sync to not flood requests
+
+                return () => clearInterval(syncInterval);
+            }, [user, username, currentThemeId, incomeFlow, currency1, currency2, pinnedItem, friendsList, clubId]);
 
             useEffect(() => {
                 const timer = setInterval(() => {
-                    setCurrency1(d => d + (incomeFlow.income.c1 * activeMultiplier / 10));
-                    setCurrency2(p => p + (incomeFlow.income.c2 * activeMultiplier / 10));
+                    setCurrency1(d => d + (incomeFlow.income.c1 * finalCpsMultiplier / 10));
+                    setCurrency2(p => p + (incomeFlow.income.c2 * finalCpsMultiplier / 10));
                 }, 100);
                 return () => clearInterval(timer);
-            }, [incomeFlow.income, activeMultiplier]);
+            }, [incomeFlow.income, finalCpsMultiplier]);
 
             useEffect(() => {
                 const tick = setInterval(() => {
@@ -497,9 +658,9 @@
             }, [claimedSets, currentThemeId, RARITIES, MUTATION_ORDER]);
 
             const getPackCost = (p, isShrine = false) => { 
-                if (!merchantSaleActive) return p.cost;
-                const discount = isShrine ? 0.75 : 0.5;
-                return Math.floor(p.cost * discount); 
+                let discount = isShrine ? 0.75 : 1;
+                if (merchantSaleActive) discount *= 0.5;
+                return Math.floor(p.cost * discount * clubDiscount); 
             };
 
             const openPack = (p, isShrine = false) => {
@@ -546,6 +707,31 @@
                         cps: cpsBase,
                         value: Math.floor(rarity.incomeBase * 200) 
                     });
+
+                    // Update Club Bounty & Museum
+                    if (activeClub && window.db) {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const updateData = {};
+                        
+                        // Bounty Progression
+                        if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
+                            updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
+                        }
+
+                        // Museum Progression (Epic or higher)
+                        const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
+                        if (rareIndexes.includes(rarity.id)) {
+                            const museumList = activeClub.museum || [];
+                            if (!museumList.includes(item.name)) {
+                                updateData.museum = [...museumList, item.name];
+                            }
+                        }
+
+                        if (Object.keys(updateData).length > 0) {
+                            window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true });
+                        }
+                    }
+
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
                 return true;
@@ -652,6 +838,128 @@
                 setLastPull(null);
                 setActivePack(null);
                 setView('shop');
+            };
+
+            const toggleFriend = async (targetUid) => {
+                if (!user || !window.db) return;
+                const newFriends = friendsList.includes(targetUid)
+                    ? friendsList.filter(id => id !== targetUid)
+                    : [...friendsList, targetUid];
+
+                setFriendsList(newFriends);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                try {
+                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                        friends: newFriends
+                    }, { merge: true });
+                } catch (e) { console.error("Friend sync error", e); }
+            };
+
+            const handleAddFriendByUsername = () => {
+                if (!friendSearchQuery.trim()) return;
+                const targetUsername = friendSearchQuery.trim().toLowerCase();
+
+                if (targetUsername === username.toLowerCase()) {
+                    setFriendSearchMessage("You cannot add yourself.");
+                    return;
+                }
+
+                const targetProfile = leaderboard.find(p => (p.username || '').toLowerCase() === targetUsername);
+
+                if (!targetProfile) {
+                    setFriendSearchMessage("Player not found.");
+                    return;
+                }
+
+                if (friendsList.includes(targetProfile.id)) {
+                    setFriendSearchMessage("Already in friends list.");
+                    return;
+                }
+
+                toggleFriend(targetProfile.id);
+                setFriendSearchQuery('');
+                setFriendSearchMessage(`Added ${targetProfile.username}!`);
+                setTimeout(() => setFriendSearchMessage(''), 3000);
+            };
+
+            const generateBounty = () => {
+                const target = 50 + Math.floor(Math.random() * 50);
+                return { type: 'packs', target, progress: 0, claimedBy: [] };
+            }
+
+            const handleCreateClub = async () => {
+                if (!createClubName.trim() || !createClubTag.trim() || !user || !window.db) return;
+                const newClubId = Math.random().toString(36).substr(2, 9);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                try {
+                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), {
+                        name: createClubName.trim(),
+                        tag: createClubTag.trim().toUpperCase(),
+                        ownerId: user.uid,
+                        xp: 0,
+                        museum: [],
+                        bounty: generateBounty(),
+                        createdAt: new Date().toISOString()
+                    });
+                    setClubId(newClubId);
+                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                        clubId: newClubId
+                    }, { merge: true });
+                    setCreateClubName('');
+                    setCreateClubTag('');
+                } catch (e) { console.error("Error creating club", e); }
+            };
+
+            const handleJoinClub = async (cId) => {
+                if (!user || !window.db) return;
+                setClubId(cId);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                try {
+                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                        clubId: cId
+                    }, { merge: true });
+                } catch (e) { console.error("Error joining club", e); }
+            };
+
+            const handleLeaveClub = async () => {
+                if (!user || !window.db) return;
+                setClubId(null);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                try {
+                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                        clubId: null
+                    }, { merge: true });
+                } catch (e) { console.error("Error leaving club", e); }
+            };
+
+            const handleDonateClub = async () => {
+                const cost = currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e24 : 100000);
+                if (currency1 < cost || !activeClub || !window.db) return;
+                setCurrency1(c => c - cost);
+                
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                    xp: (activeClub.xp || 0) + 100
+                }, { merge: true });
+            };
+
+            const claimBounty = async () => {
+                if (!activeClub || !activeClub.bounty || !window.db || !user) return;
+                const bountyPrize = currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
+                setCurrency2(c => c + bountyPrize);
+                
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                    bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
+                }, { merge: true });
+            };
+
+            const rollNewBounty = async () => {
+                if (!activeClub || !window.db) return;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                    bounty: generateBounty()
+                }, { merge: true });
             };
 
             const renderUnboxingArea = () => {
@@ -897,19 +1205,23 @@
                             <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full border w-36 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.primaryIcon} size={14} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : 'text-amber-500 shrink-0'} />
                                 <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
-                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * activeMultiplier)}/s</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * finalCpsMultiplier)}/s</span>
                             </div>
                             <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full border w-36 sm:w-48 shadow-inner`}>
                                 <Icon name={terms.secondaryIcon} size={14} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : 'text-cyan-500 shrink-0'} />
                                 <span className={`text-[10px] sm:text-xs font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
-                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * activeMultiplier)}/s</span>
+                                <span className={`ml-auto text-[8px] sm:text-[9px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * finalCpsMultiplier)}/s</span>
                             </div>
                         </div>
                         <div className="text-right">
                             <h1 className={`text-[9px] sm:text-[10px] font-black uppercase opacity-60 mb-1 sm:mb-2 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-white')}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
                                 <div className={`text-[8.5px] sm:text-[10px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
-                                    SURGE x{activeMultiplier.toFixed(1)}
+                                    SURGE x{(5 * clubCpsBuff).toFixed(2)}
+                                </div>
+                            ) : activeClub && clubCpsBuff > 1 ? (
+                                <div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>
+                                    Club Buff x{clubCpsBuff.toFixed(2)}
                                 </div>
                             ) : (
                                 <div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')}`}>Standard Yield</div>
@@ -919,7 +1231,7 @@
 
                     <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 sm:p-4 flex flex-col z-10 scrollbar-hide pb-24 sm:pb-32">
                         <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1.5 sm:py-2 rounded-2xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
-                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' } ].map(t => (
+                            {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' }, { id: 'social', icon: 'Users', label: 'Hub' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-xl transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-[0_0_15px_rgba(101,163,13,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]')) : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={16} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
                         </div>
@@ -954,6 +1266,327 @@
                                 </div>
                                 <div className={`text-center opacity-50 text-[9px] sm:text-[10px] font-black uppercase tracking-widest -mt-2 shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
                                 {renderUnboxingArea()}
+                            </div>
+                        )}
+
+                        {view === 'social' && (
+                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in slide-in-from-right-4">
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : 'border-cyan-500/30')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
+                                    <Icon name="Users" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-cyan-400')} mx-auto mb-3 sm:mb-4`} />
+                                    <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
+                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
+                                </div>
+
+                                {!username ? (
+                                    <div className="bg-slate-900/90 backdrop-blur border border-white/10 p-6 rounded-3xl text-center">
+                                        <h3 className="font-black uppercase mb-4 text-white">Join the Network</h3>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter Username" 
+                                            className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-white mb-4 text-center font-black uppercase focus:outline-none focus:border-cyan-500"
+                                            maxLength={12}
+                                            value={tempUsername}
+                                            onChange={(e) => setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                        />
+                                        <button 
+                                            disabled={tempUsername.length < 3}
+                                            onClick={() => {
+                                                setUsername(tempUsername);
+                                                // Trigger an immediate sync
+                                                if (user && window.db) {
+                                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                                                    window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                                                        username: tempUsername, currentRealm: currentThemeId, cpsPrimary: incomeFlow.income.c1, cpsSecondary: incomeFlow.income.c2, wealth: currency1, lastActive: new Date().toISOString()
+                                                    }, { merge: true });
+                                                }
+                                            }}
+                                            className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-600')} text-white font-black uppercase py-3 rounded-xl disabled:opacity-50`}
+                                        >
+                                            Set Username
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="bg-white/5 border border-white/10 p-4 rounded-3xl flex justify-between items-center backdrop-blur">
+                                            <div>
+                                                <div className="text-[10px] font-black uppercase text-white/50 mb-1">Your Profile</div>
+                                                <div className={`text-xl font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-500' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>{username}</div>
+                                            </div>
+                                            <button onClick={() => setInventoryModal('pin')} className={`w-16 h-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${pinnedItem ? 'border-white/5 bg-white/5 shadow-inner' : 'border-white/20 bg-black/30 hover:bg-white/10'}`}>
+                                                {pinnedItem ? (
+                                                    <span className="text-3xl drop-shadow-md" title={pinnedItem.name}>{getDbItem(pinnedItem.name).e}</span>
+                                                ) : (
+                                                    <React.Fragment>
+                                                        <Icon name="Star" size={16} className="text-white/30" />
+                                                        <span className="text-[7px] font-black uppercase text-white/30 mt-1">Pin Item</span>
+                                                    </React.Fragment>
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        {/* HUB TABS */}
+                                        <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/5 mx-1 shadow-inner">
+                                            <button onClick={() => setHubTab('leaderboards')} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${hubTab === 'leaderboards' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>Leaderboards</button>
+                                            <button onClick={() => setHubTab('club')} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${hubTab === 'club' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>My Club</button>
+                                        </div>
+
+                                        {hubTab === 'leaderboards' && (
+                                            <React.Fragment>
+                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-3">Add Friend</h3>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Enter Username"
+                                                            className={`flex-1 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none transition-colors ${currentThemeId === 'olympian' ? 'focus:border-amber-500' : (currentThemeId === 'canopy' ? 'focus:border-lime-500' : 'focus:border-cyan-500')}`}
+                                                            maxLength={12}
+                                                            value={friendSearchQuery}
+                                                            onChange={(e) => { setFriendSearchQuery(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setFriendSearchMessage(''); }}
+                                                        />
+                                                        <button
+                                                            onClick={handleAddFriendByUsername}
+                                                            disabled={!friendSearchQuery}
+                                                            className={`text-white px-4 rounded-xl font-black uppercase text-xs transition-colors disabled:opacity-50 ${currentThemeId === 'olympian' ? 'bg-amber-500 hover:bg-amber-400' : (currentThemeId === 'canopy' ? 'bg-lime-600 hover:bg-lime-500' : 'bg-cyan-600 hover:bg-cyan-500')}`}
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                    {friendSearchMessage && (
+                                                        <div className={`text-[10px] font-black uppercase mt-2 ${friendSearchMessage.includes('Added') ? 'text-green-400' : 'text-amber-400'}`}>
+                                                            {friendSearchMessage}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-4 flex items-center justify-between">
+                                                        <div className="flex gap-2 bg-black/40 p-1 rounded-lg">
+                                                            <button onClick={() => setLeaderboardTab('global')} className={`px-3 py-1 rounded-md transition-colors text-[9px] sm:text-[10px] ${leaderboardTab === 'global' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Global</button>
+                                                            <button onClick={() => setLeaderboardTab('friends')} className={`px-3 py-1 rounded-md transition-colors text-[9px] sm:text-[10px] ${leaderboardTab === 'friends' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Friends</button>
+                                                        </div>
+                                                        {isLeaderboardLoading && <Icon name="Zap" size={12} className={`animate-spin ${currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400'}`} />}
+                                                    </h3>
+                                                    
+                                                    <div className="space-y-2">
+                                                        {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).length === 0 && !isLeaderboardLoading && (
+                                                            <div className="text-center text-white/30 text-[10px] font-black uppercase py-4">No {leaderboardTab} players found.</div>
+                                                        )}
+                                                        {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).map((p, index) => {
+                                                            const mData = p.pinnedItem ? getMutData(p.currentRealm || 'abyssal', p.pinnedItem.mutation) : null;
+                                                            const isMe = p.id === user?.uid;
+                                                            const isFriend = friendsList.includes(p.id);
+                                                            const canTrade = isFriend || (clubId && p.clubId === clubId);
+
+                                                            return (
+                                                                <div key={p.id} className={`flex items-center gap-3 p-3 rounded-2xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
+                                                                    <div className={`w-6 text-center font-black text-sm ${leaderboardTab === 'global' ? (index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-700' : 'text-white/30') : 'text-white/30'}`}>
+                                                                        {leaderboardTab === 'global' ? `#${index + 1}` : '-'}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`font-black uppercase truncate ${isMe ? 'text-white' : 'text-white/70'}`}>{p.username}</span>
+                                                                            {p.currentRealm === 'olympian' && <Icon name="Sun" size={10} className="text-amber-500" />}
+                                                                            {p.currentRealm === 'canopy' && <Icon name="Leaf" size={10} className="text-lime-500" />}
+                                                                            {p.currentRealm === 'abyssal' && <Icon name="Anchor" size={10} className="text-cyan-500" />}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                            <div className={`text-[9px] font-black ${currentThemeId === 'canopy' ? 'text-lime-500/80' : 'text-amber-500/80'}`}>{formatNum(p.cpsPrimary || 0)}/s</div>
+                                                                            <div className="text-[9px] font-black text-white/30 truncate">Wealth: {formatNum(p.wealth || 0)}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {!isMe && (
+                                                                        <div className="flex gap-1 ml-auto shrink-0">
+                                                                            <button onClick={() => canTrade ? setTradeTarget(p) : null} disabled={!canTrade} className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be friends or in same club to trade"}>
+                                                                                <Icon name="Trade" size={12} />
+                                                                            </button>
+                                                                            <button onClick={() => toggleFriend(p.id)} className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors shadow-inner ${isFriend ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30'}`} title={isFriend ? "Remove Friend" : "Add Friend"}>
+                                                                                <Icon name={isFriend ? "UserMinus" : "UserPlus"} size={12} />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {p.pinnedItem && (
+                                                                        <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-2xl border bg-slate-900 ${mData?.glow} border-white/10 ml-1`} title={p.pinnedItem.name}>
+                                                                            {getDbItem(p.pinnedItem.name).e}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </React.Fragment>
+                                        )}
+
+                                        {hubTab === 'club' && (
+                                            <React.Fragment>
+                                                {clubId ? (
+                                                    (() => {
+                                                        const activeClub = clubsList.find(c => c.id === clubId);
+                                                        if (!activeClub) return <div className="text-center text-white/50 text-xs font-black p-4">Syncing club data...</div>;
+                                                        const members = leaderboard.filter(p => p.clubId === clubId);
+                                                        
+                                                        const cLvl = getClubLevel(activeClub.xp || 0);
+                                                        const nxtLvlXp = CLUB_LEVEL_CAPS[cLvl] || (activeClub.xp || 0);
+                                                        const curLvlXp = CLUB_LEVEL_CAPS[cLvl-1] || 0;
+                                                        const xpProgress = cLvl >= 5 ? 100 : Math.max(0, Math.min(100, ((activeClub.xp || 0) - curLvlXp) / (nxtLvlXp - curLvlXp) * 100));
+
+                                                        const bounty = activeClub.bounty || { target: 100, progress: 0, claimedBy: [] };
+                                                        const bountyDone = bounty.progress >= bounty.target;
+                                                        const hasClaimed = bounty.claimedBy && bounty.claimedBy.includes(user?.uid);
+                                                        const allClaimed = members.every(m => bounty.claimedBy && bounty.claimedBy.includes(m.id));
+
+                                                        return (
+                                                            <div className="flex flex-col gap-4 animate-in fade-in">
+                                                                {/* CLUB HEADER & LEVELING */}
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-5 shadow-xl text-center relative overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
+                                                                    <Icon name="Shield" size={40} className="mx-auto text-yellow-500 mb-2 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
+                                                                    <h3 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tighter relative z-10">[{activeClub.tag}] {activeClub.name}</h3>
+                                                                    
+                                                                    <div className="bg-black/40 border border-white/5 rounded-xl p-3 mt-3 relative z-10">
+                                                                        <div className="flex justify-between items-end mb-2">
+                                                                            <span className="text-[10px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
+                                                                            <span className="text-[9px] font-black uppercase text-white/50">{cLvl >= 5 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
+                                                                        </div>
+                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-3">
+                                                                            <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
+                                                                        </div>
+                                                                        
+                                                                        {cLvl < 5 && (
+                                                                            <button onClick={handleDonateClub} className="w-full py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[9px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
+                                                                                Donate 100k <Icon name={terms.primaryIcon} size={10} /> for +100 XP
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="flex gap-2 justify-center mt-3 relative z-10">
+                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors shadow-inner">Leave</button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* DAILY BOUNTY */}
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                                    <div className="flex items-center gap-2 mb-3">
+                                                                        <Icon name="ScrollText" size={16} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
+                                                                        <h3 className="text-xs font-black uppercase text-white/80">Active Club Bounty</h3>
+                                                                    </div>
+                                                                    <div className="bg-black/40 border border-white/5 p-3 rounded-xl">
+                                                                        <div className="text-[10px] font-black uppercase text-white/70 mb-2">Open {bounty.target} Dimensional Caches</div>
+                                                                        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
+                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${bountyDone ? 'bg-green-500' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-500')}`} style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }} />
+                                                                            <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
+                                                                        </div>
+                                                                        
+                                                                        {bountyDone && !hasClaimed && (
+                                                                            <button onClick={claimBounty} className="mt-3 w-full py-2 bg-green-500 text-white rounded-lg text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Bounty Reward!</button>
+                                                                        )}
+                                                                        {bountyDone && hasClaimed && !allClaimed && (
+                                                                            <div className="mt-3 text-center text-[9px] font-black uppercase text-white/40">Waiting for other members to claim...</div>
+                                                                        )}
+                                                                        {bountyDone && allClaimed && (
+                                                                            <button onClick={rollNewBounty} className="mt-3 w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-black uppercase transition-colors">Roll New Bounty</button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* MUSEUM */}
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Icon name="Star" size={16} className="text-yellow-400" />
+                                                                            <h3 className="text-xs font-black uppercase text-white/80">Club Museum</h3>
+                                                                        </div>
+                                                                        <div className="text-[9px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
+                                                                    </div>
+                                                                    
+                                                                    {(activeClub.museum || []).length === 0 ? (
+                                                                        <div className="text-center text-[9px] font-black uppercase text-white/30 py-4 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
+                                                                    ) : (
+                                                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                                                            {(activeClub.museum || []).map((itemName, i) => {
+                                                                                const dbItem = getDbItem(itemName);
+                                                                                const r = RARITIES.find(x => x.id === dbItem.rarityId);
+                                                                                return (
+                                                                                    <div key={i} className="shrink-0 w-12 h-12 bg-black/40 border border-white/10 rounded-xl flex items-center justify-center text-xl shadow-inner relative group" title={itemName}>
+                                                                                        {dbItem.e}
+                                                                                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* ROSTER */}
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl mb-6">
+                                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-3">Roster</h3>
+                                                                    <div className="space-y-2">
+                                                                        {members.map(p => (
+                                                                            <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-2xl bg-black/40 border border-white/5">
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="font-black uppercase text-white truncate text-xs">{p.username}</span>
+                                                                                        {p.id === activeClub.ownerId && <Icon name="Star" size={10} className="text-yellow-500 shrink-0" title="Club Owner" />}
+                                                                                    </div>
+                                                                                    <div className="text-[9px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
+                                                                                </div>
+                                                                                
+                                                                                {p.id !== user?.uid && (
+                                                                                    <div className="flex gap-1 ml-auto shrink-0">
+                                                                                        <button onClick={() => setTradeTarget(p)} className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/40 flex items-center justify-center transition-colors shadow-inner" title="Propose Trade">
+                                                                                            <Icon name="Trade" size={12} />
+                                                                                        </button>
+                                                                                        {!friendsList.includes(p.id) && (
+                                                                                            <button onClick={() => toggleFriend(p.id)} className="w-8 h-8 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 flex items-center justify-center transition-colors shadow-inner" title="Add Friend">
+                                                                                                <Icon name="UserPlus" size={12} />
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()
+                                                ) : (
+                                                    <div className="flex flex-col gap-4 animate-in fade-in">
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                            <h3 className="text-xs font-black uppercase text-white/50 mb-3">Found a Club</h3>
+                                                            <div className="flex gap-2 mb-3">
+                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
+                                                                <input type="text" placeholder="TAG" className="w-20 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
+                                                            </div>
+                                                            <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-3 rounded-xl text-[10px] sm:text-xs transition-colors disabled:opacity-50">Create Club</button>
+                                                        </div>
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
+                                                            <h3 className="text-xs font-black uppercase text-white/50 mb-3">Join a Club</h3>
+                                                            <input type="text" placeholder="Search by name or tag..." className="w-full bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none focus:border-cyan-500 mb-3 transition-colors" value={clubSearchQuery} onChange={e => setClubSearchQuery(e.target.value.toLowerCase())} />
+                                                            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+                                                                {clubsList.filter(c => c.name.toLowerCase().includes(clubSearchQuery) || c.tag.toLowerCase().includes(clubSearchQuery)).map(c => {
+                                                                    const memberCount = leaderboard.filter(p => p.clubId === c.id).length;
+                                                                    return (
+                                                                        <div key={c.id} className="flex justify-between items-center p-3 rounded-2xl bg-black/40 border border-white/5">
+                                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                                <div className="text-[10px] sm:text-xs font-black uppercase text-white truncate">[{c.tag}] {c.name}</div>
+                                                                                <div className="text-[8px] font-black uppercase text-white/40 mt-0.5">{memberCount} Member{memberCount !== 1 ? 's' : ''}</div>
+                                                                            </div>
+                                                                            <button onClick={() => handleJoinClub(c.id)} className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-colors shrink-0 shadow-inner">Join</button>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {clubsList.length === 0 && <div className="text-center text-white/30 text-[10px] font-black uppercase py-4">No clubs discovered.</div>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -1231,15 +1864,35 @@
                         </div>
                     )}
 
+                    {tradeTarget && (
+                        <div className="fixed inset-0 z-[600] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 sm:p-8 animate-in zoom-in-95" onClick={() => setTradeTarget(null)}>
+                            <div className="bg-slate-900 w-full max-w-sm rounded-[2rem] sm:rounded-3xl border-2 border-cyan-500/30 p-6 sm:p-8 shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
+                                <button className="absolute top-3 right-3 text-white/20 hover:text-white transition-colors" onClick={() => setTradeTarget(null)}><Icon name="X" size={20} className="sm:scale-125" /></button>
+                                <Icon name="Trade" size={48} className="text-cyan-400 mx-auto mb-4 animate-pulse drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
+                                <h3 className="text-lg font-black uppercase mb-2 text-white">Dimensional Exchange</h3>
+                                <p className="text-[10px] text-cyan-200/70 mb-6 uppercase font-black tracking-widest">Initiating link with <span className="text-cyan-400">{tradeTarget.username}</span>...</p>
+                                <div className="bg-black/40 border border-white/5 rounded-2xl p-5 mb-6 shadow-inner">
+                                    <p className="text-[9px] sm:text-[10px] uppercase font-black text-white/50 leading-relaxed">Trade module is spinning up.<br/><br/>You will be able to select items to offer and request from {tradeTarget.username}'s inventory in the next update!</p>
+                                </div>
+                                <button onClick={() => setTradeTarget(null)} className="w-full bg-cyan-600 text-white py-3 sm:py-4 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform shadow-lg shadow-cyan-500/20">Close Uplink</button>
+                            </div>
+                        </div>
+                    )}
+
                     {inventoryModal && (
                         <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex flex-col p-4 animate-in fade-in" onClick={() => setInventoryModal(null)}>
                             <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-6 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
+                                <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : inventoryModal === 'pin' ? 'Select Item to Showcase' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
                                 <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                                    {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation && i.mutation !== 'none') : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => {
+                                    {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation && i.mutation !== 'none') : inventoryModal === 'pin' ? true : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => {
                                         const mData = getMutData(currentThemeId, item.mutation);
                                         return (
-                                            <div key={item.id} onClick={() => { if (inventoryModal === 'source') setTransferSacrifice(item); else setTransferTarget(item); setInventoryModal(null); }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${mData.glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{getDbItem(item.name).e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div></div>
+                                            <div key={item.id} onClick={() => { 
+                                                if (inventoryModal === 'source') setTransferSacrifice(item); 
+                                                else if (inventoryModal === 'pin') setPinnedItem(item);
+                                                else setTransferTarget(item); 
+                                                setInventoryModal(null); 
+                                            }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${mData.glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{getDbItem(item.name).e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div></div>
                                         );
                                     })}
                                 </div>
