@@ -383,7 +383,7 @@
             const [krakenFeedback, setKrakenFeedback] = useState(null);
             const [anomalyVisible, setAnomalyVisible] = useState(false);
             const [frenzyTimer, setFrenzyTimer] = useState(0);
-
+            
             const [isDataLoaded, setIsDataLoaded] = useState(false);
 
             // Multiplayer Social Hub State
@@ -412,6 +412,36 @@
             const holdTimer = useRef(null);
             const isHolding = useRef(false);
             const isSwiping = useRef(false);
+            const gameStateRef = useRef({});
+
+            // Fallback for missing/empty Firebase Config to allow local testing of Hub/Clubs
+            useEffect(() => {
+                let isConfigEmpty = true;
+                try {
+                    const conf = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                    if (Object.keys(conf).length > 0) isConfigEmpty = false;
+                } catch (e) {}
+
+                if (isConfigEmpty) {
+                    setUser({ uid: 'local_user_' + Math.floor(Math.random()*1000) });
+                    setIsLeaderboardLoading(false);
+                    setLeaderboard([
+                        { id: 'mock1', username: 'AbyssalKing', currentRealm: 'abyssal', cpsPrimary: 450000, wealth: 15000000, pinnedItem: { name: 'Kraken Tentacle', mutation: 'void_touched' }, clubId: 'club1' },
+                        { id: 'mock2', username: 'ForestRanger', currentRealm: 'canopy', cpsPrimary: 8000, wealth: 250000, pinnedItem: null, clubId: 'club1' }
+                    ]);
+                    setClubsList([
+                        { id: 'club1', name: 'The Ancients', tag: 'ANCT', ownerId: 'mock1', xp: 12500, museum: ['Kraken Tentacle', 'Triton Conch'], bounty: { target: 50, progress: 50, claimedBy: [] } }
+                    ]);
+                }
+            }, []);
+
+            // Keep the ref updated with latest state values so intervals don't get reset constantly
+            useEffect(() => {
+                gameStateRef.current = {
+                    currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId,
+                    username, pinnedItem, friendsList, clubId, income: incomeFlow?.income || {c1:0, c2:0}
+                };
+            });
 
             const activeTheme = THEMES[currentThemeId];
             const { RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
@@ -506,7 +536,7 @@
                 const unsubscribe = onAuthStateChanged(auth, setUser);
                 return () => unsubscribe();
             }, []);
-
+            
             // Load Private Game Data
             useEffect(() => {
                 if (!user || !window.db) return;
@@ -536,15 +566,35 @@
                 if (!user || !window.db || !isDataLoaded) return;
                 const syncInterval = setInterval(async () => {
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
                     try {
                         await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId,
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
                             lastActive: new Date().toISOString()
                         }, { merge: true });
                     } catch(e) { console.error("Private save error", e); }
                 }, 5000);
-                return () => clearInterval(syncInterval);
-            }, [user, isDataLoaded, currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId]);
+                
+                // Force an immediate save when the page is hidden/closed
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'hidden') {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const state = gameStateRef.current;
+                        window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                return () => {
+                    clearInterval(syncInterval);
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                };
+            }, [user, isDataLoaded]);
 
             // Public Leaderboard Listener
             useEffect(() => {
@@ -605,24 +655,25 @@
                 const syncInterval = setInterval(async () => {
                     const { doc, setDoc } = window.Firebase;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
                     
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                            username: username,
-                            currentRealm: currentThemeId,
-                            cpsPrimary: incomeFlow.income.c1,
-                            cpsSecondary: incomeFlow.income.c2,
-                            wealth: currency1 + (currency2 * 5),
-                            pinnedItem: pinnedItem,
-                            friends: friendsList,
-                            clubId: clubId,
+                            username: state.username,
+                            currentRealm: state.currentThemeId,
+                            cpsPrimary: state.income.c1,
+                            cpsSecondary: state.income.c2,
+                            wealth: state.currency1 + (state.currency2 * 5),
+                            pinnedItem: state.pinnedItem,
+                            friends: state.friendsList,
+                            clubId: state.clubId,
                             lastActive: new Date().toISOString()
                         }, { merge: true });
                     } catch (e) { console.error("Sync error:", e); }
                 }, 10000); // 10 second sync to not flood requests
 
                 return () => clearInterval(syncInterval);
-            }, [user, username, currentThemeId, incomeFlow, currency1, currency2, pinnedItem, friendsList, clubId]);
+            }, [user, username]);
 
             useEffect(() => {
                 const timer = setInterval(() => {
@@ -882,12 +933,15 @@
             };
 
             const toggleFriend = async (targetUid) => {
-                if (!user || !window.db) return;
+                if (!user) return;
                 const newFriends = friendsList.includes(targetUid)
                     ? friendsList.filter(id => id !== targetUid)
                     : [...friendsList, targetUid];
 
                 setFriendsList(newFriends);
+                
+                if (!window.db) return; // Fallback prevents crash if DB is offline
+                
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
                     await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -929,8 +983,21 @@
             }
 
             const handleCreateClub = async () => {
-                if (!createClubName.trim() || !createClubTag.trim() || !user || !window.db) return;
+                if (!createClubName.trim() || !createClubTag.trim() || !user) return;
                 const newClubId = Math.random().toString(36).substr(2, 9);
+                
+                // Allow local clubs to be created if offline
+                if (!window.db) {
+                    setClubsList(prev => [...prev, {
+                        id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
+                        ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
+                    }]);
+                    setClubId(newClubId);
+                    setCreateClubName('');
+                    setCreateClubTag('');
+                    return;
+                }
+
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
                     await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), {
@@ -952,8 +1019,11 @@
             };
 
             const handleJoinClub = async (cId) => {
-                if (!user || !window.db) return;
+                if (!user) return;
                 setClubId(cId);
+                
+                if (!window.db) return;
+                
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
                     await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -963,8 +1033,11 @@
             };
 
             const handleLeaveClub = async () => {
-                if (!user || !window.db) return;
+                if (!user) return;
                 setClubId(null);
+                
+                if (!window.db) return;
+                
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
                     await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -975,9 +1048,14 @@
 
             const handleDonateClub = async () => {
                 const cost = currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e24 : 100000);
-                if (currency1 < cost || !activeClub || !window.db) return;
+                if (currency1 < cost || !activeClub) return;
                 setCurrency1(c => c - cost);
                 
+                if (!window.db) {
+                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
+                    return;
+                }
+
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                     xp: (activeClub.xp || 0) + 100
@@ -985,10 +1063,15 @@
             };
 
             const claimBounty = async () => {
-                if (!activeClub || !activeClub.bounty || !window.db || !user) return;
+                if (!activeClub || !activeClub.bounty || !user) return;
                 const bountyPrize = currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
                 setCurrency2(c => c + bountyPrize);
                 
+                if (!window.db) {
+                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
+                    return;
+                }
+
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                     bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
@@ -996,7 +1079,13 @@
             };
 
             const rollNewBounty = async () => {
-                if (!activeClub || !window.db) return;
+                if (!activeClub) return;
+                
+                if (!window.db) {
+                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: generateBounty() } : c));
+                    return;
+                }
+
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                     bounty: generateBounty()
@@ -1013,52 +1102,52 @@
                 const hasMutation = lastPull && lastPull.mutation && lastPull.mutation !== 'none';
 
                 return (
-                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : 'bg-white/5 border-white/10')} flex-1 min-h-[300px] sm:min-h-[350px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
-                        {isOpening && <div className="animate-pulse flex flex-col items-center gap-4"><div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : 'bg-cyan-500/20 border-cyan-500')} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : "text-cyan-400")} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>Summoning...</span></div>}
+                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : 'bg-white/5 border-white/10')} flex-1 min-h-[220px] sm:min-h-[280px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
+                        {isOpening && <div className="animate-pulse flex flex-col items-center gap-2"><div className={`w-12 h-12 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : 'bg-cyan-500/20 border-cyan-500')} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" size={16} className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : "text-cyan-400")} /></div><span className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>Summoning...</span></div>}
                         {isSealed && (
-                            <div className="flex flex-col items-center gap-4 sm:gap-6 cursor-pointer group" onClick={() => {
+                            <div className="flex flex-col items-center gap-3 cursor-pointer group" onClick={() => {
                                 if(isRipping || isShaking) return; setIsShaking(true);
                                 setTimeout(() => { setIsShaking(false); setIsRipping(true);
                                     setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
                                 }, pendingLoot.rarity?.id === 'trash' ? 400 : 1200);
                             }}>
-                                <div className={`w-36 h-48 sm:w-44 sm:h-60 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
-                                    <div className="absolute top-8 sm:top-12 left-0 right-0 h-12 sm:h-16 flex items-center justify-center z-10">
+                                <div className={`w-28 h-36 sm:w-36 sm:h-48 rounded-xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
+                                    <div className="absolute top-6 left-0 right-0 h-10 flex items-center justify-center z-10">
                                         <div className="relative w-full h-full">
-                                            <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (currentThemeId === 'canopy' ? 'bg-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]')} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed Cache</span></div>
+                                            <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (currentThemeId === 'canopy' ? 'bg-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]')} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed</span></div>
                                             <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
                                         </div>
                                     </div>
-                                    <div className="absolute inset-3 sm:inset-4 border border-white/5 rounded-lg pointer-events-none" />
-                                    <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={48} /></div>
+                                    <div className="absolute inset-2 border border-white/5 rounded-lg pointer-events-none" />
+                                    <div className="absolute bottom-2 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={32} /></div>
                                 </div>
-                                {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-500 shadow-lime-500/40 ring-green-900/20 text-lime-950' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20')} px-6 py-3 sm:px-8 sm:py-4 rounded-full font-black text-xs sm:text-sm uppercase shadow-lg animate-pulse ring-4`}>Unlock Artifact</div>}
+                                {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-500 shadow-lime-500/40 ring-green-900/20 text-lime-950' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20')} px-4 py-2 rounded-full font-black text-[9px] sm:text-xs uppercase shadow-lg animate-pulse ring-4`}>Unlock</div>}
                             </div>
                         )}
                         {lastPull && !isSealed && (
-                            <div className={`w-full h-full flex flex-col items-center justify-center p-6 sm:p-8 text-center animate-in zoom-in-75 ${lastPull.rarity?.bg || 'bg-slate-900'}`}>
-                                <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-4">
-                                    <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-white/95 ${lastPull.rarity?.color || 'text-slate-900'}`}>{lastPull.rarity?.label || 'Artifact'}</span>
+                            <div className={`w-full h-full flex flex-col items-center justify-center p-4 text-center animate-in zoom-in-75 ${lastPull.rarity?.bg || 'bg-slate-900'}`}>
+                                <div className="flex gap-1.5 mb-1 sm:mb-2">
+                                    <span className={`text-[7px] sm:text-[8px] font-black uppercase px-2 py-0.5 rounded-full border bg-white/95 ${lastPull.rarity?.color || 'text-slate-900'}`}>{lastPull.rarity?.label || 'Artifact'}</span>
                                     {hasMutation && (
-                                        <span className={`text-[8px] sm:text-[9px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border bg-slate-950/80 border-white/20 ${mutData.color}`}>
+                                        <span className={`text-[7px] sm:text-[8px] font-black uppercase px-2 py-0.5 rounded-full border bg-slate-950/80 border-white/20 ${mutData.color}`}>
                                             {mutData.label}
                                         </span>
                                     )}
                                 </div>
-                                <div className="text-6xl sm:text-7xl mb-4 sm:mb-6 drop-shadow-2xl">{getDbItem(lastPull.name).e}</div>
-                                <h2 className={`text-2xl sm:text-4xl font-black mb-2 tracking-tighter ${textColor}`}>{lastPull.name}</h2>
-                                <div className="flex flex-col items-center gap-1.5 sm:gap-2 bg-slate-950/40 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 shadow-inner w-full max-w-[250px] border border-white/5">
+                                <div className="text-5xl sm:text-6xl mb-1 sm:mb-2 drop-shadow-2xl">{getDbItem(lastPull.name).e}</div>
+                                <h2 className={`text-xl sm:text-2xl font-black mb-1 tracking-tighter ${textColor}`}>{lastPull.name}</h2>
+                                <div className="flex flex-col items-center gap-0.5 bg-slate-950/40 px-2 py-1.5 rounded-xl mb-3 shadow-inner w-full max-w-[200px] border border-white/5">
                                     {lastPull.currency === 'secondary' ? (
                                         <React.Fragment>
-                                            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={14} /></div>
+                                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
                                             <div className="h-[1px] w-1/2 bg-white/10 rounded-full" />
-                                            <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-cyan-400">+{formatNum(lastPull.cps * (mutData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={14} /></div>
+                                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-cyan-400">+{formatNum(lastPull.cps * (mutData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={10} /></div>
                                         </React.Fragment>
                                     ) : (
-                                        <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={14} /></div>
+                                        <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
                                     )}
                                 </div>
-                                <div className="flex gap-2 sm:gap-3 w-full">
+                                <div className="flex gap-2 w-full max-w-[200px]">
                                     <button onClick={() => {
                                         const sellVal = (lastPull.value || 0) * (mutData.mult || 1);
                                         setCurrency1(d => d + sellVal);
@@ -1066,16 +1155,16 @@
                                         setInventory(inv => inv.filter(i => i.id !== lastPull.id));
                                         setLastPull(null);
                                         setActivePack(null);
-                                    }} className={`flex-1 border py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all flex flex-col items-center justify-center gap-1 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
+                                    }} className={`flex-1 border py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
                                         <span>Exchange</span>
-                                        <span className="text-[8px] sm:text-[9px] opacity-80 flex items-center gap-1 font-mono">
-                                            +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={10} />
+                                        <span className="text-[7px] opacity-80 flex items-center gap-0.5 font-mono">
+                                            +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={8} />
                                         </span>
                                     </button>
                                     <button onClick={() => {
                                         setLastPull(null);
                                         setActivePack(null);
-                                    }} className="flex-1 bg-slate-950 border border-white/10 text-white py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                    }} className="flex-1 bg-slate-950 border border-white/10 text-white py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                 </div>
                             </div>
                         )}
@@ -1126,30 +1215,30 @@
                     {/* Active Event Banner and Action Notifications */}
                     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
                         {(merchantSaleActive || frenzyTimer > 0) && (
-                            <div className={`pointer-events-auto px-4 sm:px-6 py-2 rounded-full border border-white/20 flex items-center gap-3 sm:gap-4 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
-                                <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={16} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
-                                <span className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
+                            <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
+                                <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={14} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
                                     {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
                                 </span>
-                                <div className="px-2.5 py-0.5 rounded-full bg-black/60 font-mono text-[9px] sm:text-[10px] font-black text-white">
+                                <div className="px-2 py-0.5 rounded-full bg-black/60 font-mono text-[8px] font-black text-white">
                                     {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
                                 </div>
                             </div>
                         )}
                         
                         {activeNotifications.slice(0, 3).map((notif, i) => (
-                            <div key={notif.id} className="pointer-events-auto px-4 sm:px-5 py-1.5 rounded-full border border-white/20 shadow-lg backdrop-blur-md bg-slate-900/90 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in slide-in-from-top-4" onClick={notif.onClick} style={{animationDelay: `${i * 0.1}s`}}>
+                            <div key={notif.id} className="pointer-events-auto px-4 py-1 rounded-full border border-white/20 shadow-lg backdrop-blur-md bg-slate-900/90 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in slide-in-from-top-4" onClick={notif.onClick} style={{animationDelay: `${i * 0.1}s`}}>
                                 <div className="flex items-center gap-2">
-                                    <Icon name={notif.icon} size={12} className={notif.color} />
-                                    <span className={`text-[8.5px] sm:text-[10px] font-black uppercase tracking-widest ${notif.color}`}>
+                                    <Icon name={notif.icon} size={10} className={notif.color} />
+                                    <span className={`text-[8px] font-black uppercase tracking-widest ${notif.color}`}>
                                         {notif.label}
                                     </span>
-                                    <span className="text-[7px] opacity-60 ml-1 text-white">Tap to Claim</span>
+                                    <span className="text-[6px] opacity-60 ml-1 text-white">Tap to Claim</span>
                                 </div>
                             </div>
                         ))}
                         {activeNotifications.length > 3 && (
-                            <div className="text-[8px] font-black uppercase opacity-60 bg-black/80 px-2 py-0.5 rounded-full text-white pointer-events-auto">
+                            <div className="text-[7px] font-black uppercase opacity-60 bg-black/80 px-2 py-0.5 rounded-full text-white pointer-events-auto">
                                 +{activeNotifications.length - 3} More Ready
                             </div>
                         )}
@@ -1241,90 +1330,94 @@
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : 'bg-slate-950/60 border-white/10')} p-2 sm:p-3 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
-                        <div className="flex flex-col gap-1 sm:gap-1.5">
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20 shadow-sm' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:py-1.5 rounded-full border w-32 sm:w-40 shadow-inner`}>
-                                <Icon name={terms.primaryIcon} size={12} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : 'text-amber-500 shrink-0'} />
-                                <span className={`text-[9px] sm:text-[10px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
-                                <span className={`ml-auto text-[7px] sm:text-[8px] font-black ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * finalCpsMultiplier)}/s</span>
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : 'bg-slate-950/60 border-white/10')} px-2 py-1 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
+                        <div className="flex gap-1">
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
+                                <Icon name={terms.primaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : 'text-amber-500 shrink-0'} />
+                                <div className="flex flex-col ml-1 leading-none min-w-0">
+                                    <span className={`text-[9px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
+                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * finalCpsMultiplier)}/s</span>
+                                </div>
                             </div>
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:py-1.5 rounded-full border w-32 sm:w-40 shadow-inner`}>
-                                <Icon name={terms.secondaryIcon} size={12} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : 'text-cyan-500 shrink-0'} />
-                                <span className={`text-[9px] sm:text-[10px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
-                                <span className={`ml-auto text-[7px] sm:text-[8px] font-black ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * finalCpsMultiplier)}/s</span>
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
+                                <Icon name={terms.secondaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : 'text-cyan-500 shrink-0'} />
+                                <div className="flex flex-col ml-1 leading-none min-w-0">
+                                    <span className={`text-[9px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
+                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * finalCpsMultiplier)}/s</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <h1 className={`text-[8px] sm:text-[9px] font-black uppercase opacity-60 mb-0.5 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-white')}`}>{activeTheme.name}</h1>
+                        <div className="text-right flex flex-col justify-center">
+                            <h1 className={`text-[7px] font-black uppercase opacity-60 leading-none mb-0.5 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-white')}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
-                                <div className={`text-[7.5px] sm:text-[9px] font-black uppercase animate-pulse ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
+                                <div className={`text-[7px] font-black uppercase animate-pulse leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
                                     SURGE x{(5 * clubCpsBuff).toFixed(2)}
                                 </div>
                             ) : activeClub && clubCpsBuff > 1 ? (
-                                <div className={`text-[7px] sm:text-[8px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>
+                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>
                                     Club Buff x{clubCpsBuff.toFixed(2)}
                                 </div>
                             ) : (
-                                <div className={`text-[7px] sm:text-[8px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')}`}>Standard Yield</div>
+                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')}`}>Standard Yield</div>
                             )}
                         </div>
                     </nav>
 
-                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-4">
-                        <div className="flex gap-1 sm:gap-2 mb-2 sm:mb-4 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1 sm:py-1.5 rounded-xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
+                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-2">
+                        <div className="flex gap-1 sm:gap-2 mb-2 sm:mb-4 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1 rounded-xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
                             {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' }, { id: 'social', icon: 'Users', label: 'Hub' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 rounded-lg transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-[0_0_15px_rgba(101,163,13,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]')) : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={14} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
                             ))}
                         </div>
 
                         {view === 'shop' && (
-                            <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mx-auto w-fit border shadow-lg shrink-0 mb-2`}>
-                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
+                            <div className="flex-1 flex flex-col gap-2 sm:gap-4 animate-in fade-in slide-in-from-bottom-4">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0 hidden sm:block`}>
+                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
                                 </div>
-                                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-1 sm:px-2 scrollbar-hide">
+                                <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
                                     {STANDARD_PACKS.map((p, idx) => {
                                         const isUnlocked = idx === 0 || highestClaimedRarityIdx >= (idx - 1);
                                         const cost = getPackCost(p, false);
                                         const afford = isUnlocked && (p.currency === 'primary' ? currency1 : currency2) >= cost;
                                         return (
-                                            <div key={p.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
+                                            <div key={p.id} className={`snap-center shrink-0 w-24 sm:w-28 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
                                                 onMouseDown={() => { if(isUnlocked) handleHoldStart(p); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(p); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => { if(isUnlocked) handleHoldStart(p); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(p); }}
                                             >
-                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${p.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : (currentThemeId === 'canopy' ? 'border-lime-950 shadow-lime-900/60' : 'border-white/20')}`}>
+                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${p.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : (currentThemeId === 'canopy' ? 'border-lime-950 shadow-lime-900/60' : 'border-white/20')}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : (currentThemeId === 'canopy' ? 'bg-white opacity-10' : 'bg-transparent')} pointer-events-none`} />
-                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={16} /><span className="text-[7px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {RARITIES[idx-1]?.label} Base Set</span></div>}
-                                                    <Icon name={p.icon} size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10 sm:scale-110" />
-                                                    <span className="text-[7px] sm:text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
-                                                    <div className="flex items-center gap-1 font-black text-[10px] sm:text-xs z-10 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-300')} /></> ) : <span className="text-green-400">FREE</span>}
+                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={14} /><span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {RARITIES[idx-1]?.label} Base Set</span></div>}
+                                                    <Icon name={p.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
+                                                    <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
+                                                    <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
+                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-300')} /></> ) : <span className="text-green-400">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className={`text-center opacity-50 text-[9px] sm:text-[10px] font-black uppercase tracking-widest -mt-2 shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                <div className={`text-center opacity-50 text-[8px] sm:text-[9px] font-black uppercase tracking-widest shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
                                 {renderUnboxingArea()}
                             </div>
                         )}
 
                         {view === 'social' && (
-                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : 'border-cyan-500/30')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
-                                    <Icon name="Users" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-cyan-400')} mx-auto mb-3 sm:mb-4`} />
-                                    <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
-                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
+                            <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4">
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : 'border-cyan-500/30')} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
+                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-cyan-400')} mx-auto mb-2`} />
+                                    <h2 className={`text-lg sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
+                                    <p className={`text-[8px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
                                 </div>
 
                                 {!username ? (
-                                    <div className="bg-slate-900/90 backdrop-blur border border-white/10 p-6 rounded-3xl text-center">
-                                        <h3 className="font-black uppercase mb-4 text-white">Join the Network</h3>
+                                    <div className="bg-slate-900/90 backdrop-blur border border-white/10 p-5 rounded-3xl text-center">
+                                        <h3 className="font-black uppercase mb-4 text-white text-xs">Join the Network</h3>
                                         <input 
                                             type="text" 
                                             placeholder="Enter Username" 
-                                            className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-white mb-4 text-center font-black uppercase focus:outline-none focus:border-cyan-500"
+                                            className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-white mb-4 text-center font-black uppercase text-xs focus:outline-none focus:border-cyan-500"
                                             maxLength={12}
                                             value={tempUsername}
                                             onChange={(e) => setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
@@ -1341,45 +1434,45 @@
                                                     }, { merge: true });
                                                 }
                                             }}
-                                            className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-600')} text-white font-black uppercase py-3 rounded-xl disabled:opacity-50`}
+                                            className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-600')} text-white font-black uppercase py-2.5 rounded-xl disabled:opacity-50 text-xs`}
                                         >
                                             Set Username
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="bg-white/5 border border-white/10 p-4 rounded-3xl flex justify-between items-center backdrop-blur">
+                                    <div className="flex flex-col gap-3">
+                                        <div className="bg-white/5 border border-white/10 p-3 rounded-3xl flex justify-between items-center backdrop-blur">
                                             <div>
-                                                <div className="text-[10px] font-black uppercase text-white/50 mb-1">Your Profile</div>
-                                                <div className={`text-xl font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-500' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>{username}</div>
+                                                <div className="text-[9px] font-black uppercase text-white/50 mb-0.5">Your Profile</div>
+                                                <div className={`text-lg font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-500' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>{username}</div>
                                             </div>
-                                            <button onClick={() => setInventoryModal('pin')} className={`w-16 h-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${pinnedItem ? 'border-white/5 bg-white/5 shadow-inner' : 'border-white/20 bg-black/30 hover:bg-white/10'}`}>
+                                            <button onClick={() => setInventoryModal('pin')} className={`w-12 h-12 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${pinnedItem ? 'border-white/5 bg-white/5 shadow-inner' : 'border-white/20 bg-black/30 hover:bg-white/10'}`}>
                                                 {pinnedItem ? (
-                                                    <span className="text-3xl drop-shadow-md" title={pinnedItem.name}>{getDbItem(pinnedItem.name).e}</span>
+                                                    <span className="text-2xl drop-shadow-md" title={pinnedItem.name}>{getDbItem(pinnedItem.name).e}</span>
                                                 ) : (
                                                     <React.Fragment>
-                                                        <Icon name="Star" size={16} className="text-white/30" />
-                                                        <span className="text-[7px] font-black uppercase text-white/30 mt-1">Pin Item</span>
+                                                        <Icon name="Star" size={12} className="text-white/30" />
+                                                        <span className="text-[6px] font-black uppercase text-white/30 mt-1">Pin Item</span>
                                                     </React.Fragment>
                                                 )}
                                             </button>
                                         </div>
 
                                         {/* HUB TABS */}
-                                        <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/5 mx-1 shadow-inner">
-                                            <button onClick={() => setHubTab('leaderboards')} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${hubTab === 'leaderboards' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>Leaderboards</button>
-                                            <button onClick={() => setHubTab('club')} className={`flex-1 py-2.5 rounded-lg text-[10px] sm:text-xs font-black uppercase transition-all ${hubTab === 'club' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>My Club</button>
+                                        <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner">
+                                            <button onClick={() => setHubTab('leaderboards')} className={`flex-1 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all ${hubTab === 'leaderboards' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>Leaderboards</button>
+                                            <button onClick={() => setHubTab('club')} className={`flex-1 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all ${hubTab === 'club' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>My Club</button>
                                         </div>
 
                                         {hubTab === 'leaderboards' && (
                                             <React.Fragment>
-                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-3">Add Friend</h3>
+                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Add Friend</h3>
                                                     <div className="flex gap-2">
                                                         <input
                                                             type="text"
                                                             placeholder="Enter Username"
-                                                            className={`flex-1 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none transition-colors ${currentThemeId === 'olympian' ? 'focus:border-amber-500' : (currentThemeId === 'canopy' ? 'focus:border-lime-500' : 'focus:border-cyan-500')}`}
+                                                            className={`flex-1 bg-black/50 border border-white/20 rounded-lg px-3 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none transition-colors ${currentThemeId === 'olympian' ? 'focus:border-amber-500' : (currentThemeId === 'canopy' ? 'focus:border-lime-500' : 'focus:border-cyan-500')}`}
                                                             maxLength={12}
                                                             value={friendSearchQuery}
                                                             onChange={(e) => { setFriendSearchQuery(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setFriendSearchMessage(''); }}
@@ -1387,30 +1480,30 @@
                                                         <button
                                                             onClick={handleAddFriendByUsername}
                                                             disabled={!friendSearchQuery}
-                                                            className={`text-white px-4 rounded-xl font-black uppercase text-xs transition-colors disabled:opacity-50 ${currentThemeId === 'olympian' ? 'bg-amber-500 hover:bg-amber-400' : (currentThemeId === 'canopy' ? 'bg-lime-600 hover:bg-lime-500' : 'bg-cyan-600 hover:bg-cyan-500')}`}
+                                                            className={`text-white px-4 rounded-lg font-black uppercase text-[10px] transition-colors disabled:opacity-50 ${currentThemeId === 'olympian' ? 'bg-amber-500 hover:bg-amber-400' : (currentThemeId === 'canopy' ? 'bg-lime-600 hover:bg-lime-500' : 'bg-cyan-600 hover:bg-cyan-500')}`}
                                                         >
                                                             Add
                                                         </button>
                                                     </div>
                                                     {friendSearchMessage && (
-                                                        <div className={`text-[10px] font-black uppercase mt-2 ${friendSearchMessage.includes('Added') ? 'text-green-400' : 'text-amber-400'}`}>
+                                                        <div className={`text-[9px] font-black uppercase mt-1.5 ${friendSearchMessage.includes('Added') ? 'text-green-400' : 'text-amber-400'}`}>
                                                             {friendSearchMessage}
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-4 flex items-center justify-between">
-                                                        <div className="flex gap-2 bg-black/40 p-1 rounded-lg">
-                                                            <button onClick={() => setLeaderboardTab('global')} className={`px-3 py-1 rounded-md transition-colors text-[9px] sm:text-[10px] ${leaderboardTab === 'global' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Global</button>
-                                                            <button onClick={() => setLeaderboardTab('friends')} className={`px-3 py-1 rounded-md transition-colors text-[9px] sm:text-[10px] ${leaderboardTab === 'friends' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Friends</button>
+                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-3 flex items-center justify-between">
+                                                        <div className="flex gap-1 bg-black/40 p-1 rounded-lg">
+                                                            <button onClick={() => setLeaderboardTab('global')} className={`px-2 py-1 rounded transition-colors text-[8px] sm:text-[9px] ${leaderboardTab === 'global' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Global</button>
+                                                            <button onClick={() => setLeaderboardTab('friends')} className={`px-2 py-1 rounded transition-colors text-[8px] sm:text-[9px] ${leaderboardTab === 'friends' ? 'bg-white/20 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}>Friends</button>
                                                         </div>
-                                                        {isLeaderboardLoading && <Icon name="Zap" size={12} className={`animate-spin ${currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400'}`} />}
+                                                        {isLeaderboardLoading && <Icon name="Zap" size={10} className={`animate-spin ${currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400'}`} />}
                                                     </h3>
                                                     
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-1.5">
                                                         {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).length === 0 && !isLeaderboardLoading && (
-                                                            <div className="text-center text-white/30 text-[10px] font-black uppercase py-4">No {leaderboardTab} players found.</div>
+                                                            <div className="text-center text-white/30 text-[9px] font-black uppercase py-4">No {leaderboardTab} players found.</div>
                                                         )}
                                                         {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).map((p, index) => {
                                                             const mData = p.pinnedItem ? getMutData(p.currentRealm || 'abyssal', p.pinnedItem.mutation) : null;
@@ -1419,36 +1512,36 @@
                                                             const canTrade = isFriend || (clubId && p.clubId === clubId);
 
                                                             return (
-                                                                <div key={p.id} className={`flex items-center gap-3 p-3 rounded-2xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
-                                                                    <div className={`w-6 text-center font-black text-sm ${leaderboardTab === 'global' ? (index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-700' : 'text-white/30') : 'text-white/30'}`}>
+                                                                <div key={p.id} className={`flex items-center gap-2 p-2 rounded-xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
+                                                                    <div className={`w-5 text-center font-black text-[10px] ${leaderboardTab === 'global' ? (index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-700' : 'text-white/30') : 'text-white/30'}`}>
                                                                         {leaderboardTab === 'global' ? `#${index + 1}` : '-'}
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className={`font-black uppercase truncate ${isMe ? 'text-white' : 'text-white/70'}`}>{p.username}</span>
-                                                                            {p.currentRealm === 'olympian' && <Icon name="Sun" size={10} className="text-amber-500" />}
-                                                                            {p.currentRealm === 'canopy' && <Icon name="Leaf" size={10} className="text-lime-500" />}
-                                                                            {p.currentRealm === 'abyssal' && <Icon name="Anchor" size={10} className="text-cyan-500" />}
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className={`text-[10px] font-black uppercase truncate ${isMe ? 'text-white' : 'text-white/70'}`}>{p.username}</span>
+                                                                            {p.currentRealm === 'olympian' && <Icon name="Sun" size={8} className="text-amber-500" />}
+                                                                            {p.currentRealm === 'canopy' && <Icon name="Leaf" size={8} className="text-lime-500" />}
+                                                                            {p.currentRealm === 'abyssal' && <Icon name="Anchor" size={8} className="text-cyan-500" />}
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <div className={`text-[9px] font-black ${currentThemeId === 'canopy' ? 'text-lime-500/80' : 'text-amber-500/80'}`}>{formatNum(p.cpsPrimary || 0)}/s</div>
-                                                                            <div className="text-[9px] font-black text-white/30 truncate">Wealth: {formatNum(p.wealth || 0)}</div>
+                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                            <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-500/80' : 'text-amber-500/80'}`}>{formatNum(p.cpsPrimary || 0)}/s</div>
+                                                                            <div className="text-[8px] font-black text-white/30 truncate">Wealth: {formatNum(p.wealth || 0)}</div>
                                                                         </div>
                                                                     </div>
                                                                     
                                                                     {!isMe && (
                                                                         <div className="flex gap-1 ml-auto shrink-0">
-                                                                            <button onClick={() => canTrade ? setTradeTarget(p) : null} disabled={!canTrade} className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be friends or in same club to trade"}>
-                                                                                <Icon name="Trade" size={12} />
+                                                                            <button onClick={() => canTrade ? setTradeTarget(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be friends or in same club to trade"}>
+                                                                                <Icon name="Trade" size={10} />
                                                                             </button>
-                                                                            <button onClick={() => toggleFriend(p.id)} className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors shadow-inner ${isFriend ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30'}`} title={isFriend ? "Remove Friend" : "Add Friend"}>
-                                                                                <Icon name={isFriend ? "UserMinus" : "UserPlus"} size={12} />
+                                                                            <button onClick={() => toggleFriend(p.id)} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors shadow-inner ${isFriend ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30'}`} title={isFriend ? "Remove Friend" : "Add Friend"}>
+                                                                                <Icon name={isFriend ? "UserMinus" : "UserPlus"} size={10} />
                                                                             </button>
                                                                         </div>
                                                                     )}
 
                                                                     {p.pinnedItem && (
-                                                                        <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-2xl border bg-slate-900 ${mData?.glow} border-white/10 ml-1`} title={p.pinnedItem.name}>
+                                                                        <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-lg border bg-slate-900 ${mData?.glow} border-white/10 ml-1`} title={p.pinnedItem.name}>
                                                                             {getDbItem(p.pinnedItem.name).e}
                                                                         </div>
                                                                     )}
@@ -1479,80 +1572,80 @@
                                                         const allClaimed = members.every(m => bounty.claimedBy && bounty.claimedBy.includes(m.id));
 
                                                         return (
-                                                            <div className="flex flex-col gap-4 animate-in fade-in">
+                                                            <div className="flex flex-col gap-3 animate-in fade-in">
                                                                 {/* CLUB HEADER & LEVELING */}
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-5 shadow-xl text-center relative overflow-hidden">
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl text-center relative overflow-hidden">
                                                                     <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
-                                                                    <Icon name="Shield" size={40} className="mx-auto text-yellow-500 mb-2 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
-                                                                    <h3 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tighter relative z-10">[{activeClub.tag}] {activeClub.name}</h3>
+                                                                    <Icon name="Shield" size={32} className="mx-auto text-yellow-500 mb-1 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
+                                                                    <h3 className="text-lg font-black uppercase text-white tracking-tighter relative z-10">[{activeClub.tag}] {activeClub.name}</h3>
                                                                     
-                                                                    <div className="bg-black/40 border border-white/5 rounded-xl p-3 mt-3 relative z-10">
-                                                                        <div className="flex justify-between items-end mb-2">
-                                                                            <span className="text-[10px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
-                                                                            <span className="text-[9px] font-black uppercase text-white/50">{cLvl >= 5 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
+                                                                    <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 mt-2 relative z-10">
+                                                                        <div className="flex justify-between items-end mb-1.5">
+                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
+                                                                            <span className="text-[8px] font-black uppercase text-white/50">{cLvl >= 5 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
                                                                         </div>
-                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-3">
+                                                                        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
                                                                             <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
                                                                         </div>
                                                                         
                                                                         {cLvl < 5 && (
-                                                                            <button onClick={handleDonateClub} className="w-full py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[9px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
-                                                                                Donate 100k <Icon name={terms.primaryIcon} size={10} /> for +100 XP
+                                                                            <button onClick={handleDonateClub} className="w-full py-1.5 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[8px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
+                                                                                Donate 100k <Icon name={terms.primaryIcon} size={8} /> for +100 XP
                                                                             </button>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="flex gap-2 justify-center mt-3 relative z-10">
-                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-colors shadow-inner">Leave</button>
+                                                                    <div className="flex gap-2 justify-center mt-2 relative z-10">
+                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-colors shadow-inner">Leave</button>
                                                                     </div>
                                                                 </div>
 
                                                                 {/* DAILY BOUNTY */}
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                                    <div className="flex items-center gap-2 mb-3">
-                                                                        <Icon name="ScrollText" size={16} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
-                                                                        <h3 className="text-xs font-black uppercase text-white/80">Active Club Bounty</h3>
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                                        <Icon name="ScrollText" size={12} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
+                                                                        <h3 className="text-[10px] font-black uppercase text-white/80">Active Club Bounty</h3>
                                                                     </div>
-                                                                    <div className="bg-black/40 border border-white/5 p-3 rounded-xl">
-                                                                        <div className="text-[10px] font-black uppercase text-white/70 mb-2">Open {bounty.target} Dimensional Caches</div>
-                                                                        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
+                                                                    <div className="bg-black/40 border border-white/5 p-2 rounded-xl">
+                                                                        <div className="text-[9px] font-black uppercase text-white/70 mb-1.5">Open {bounty.target} Dimensional Caches</div>
+                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
                                                                             <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${bountyDone ? 'bg-green-500' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-500')}`} style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }} />
-                                                                            <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
+                                                                            <div className="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
                                                                         </div>
                                                                         
                                                                         {bountyDone && !hasClaimed && (
-                                                                            <button onClick={claimBounty} className="mt-3 w-full py-2 bg-green-500 text-white rounded-lg text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Bounty Reward!</button>
+                                                                            <button onClick={claimBounty} className="mt-2 w-full py-1.5 bg-green-500 text-white rounded-lg text-[9px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Reward!</button>
                                                                         )}
                                                                         {bountyDone && hasClaimed && !allClaimed && (
-                                                                            <div className="mt-3 text-center text-[9px] font-black uppercase text-white/40">Waiting for other members to claim...</div>
+                                                                            <div className="mt-2 text-center text-[8px] font-black uppercase text-white/40">Waiting for other members...</div>
                                                                         )}
                                                                         {bountyDone && allClaimed && (
-                                                                            <button onClick={rollNewBounty} className="mt-3 w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-black uppercase transition-colors">Roll New Bounty</button>
+                                                                            <button onClick={rollNewBounty} className="mt-2 w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black uppercase transition-colors">Roll New Bounty</button>
                                                                         )}
                                                                     </div>
                                                                 </div>
 
                                                                 {/* MUSEUM */}
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                                    <div className="flex items-center justify-between mb-3">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Icon name="Star" size={16} className="text-yellow-400" />
-                                                                            <h3 className="text-xs font-black uppercase text-white/80">Club Museum</h3>
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Icon name="Star" size={12} className="text-yellow-400" />
+                                                                            <h3 className="text-[10px] font-black uppercase text-white/80">Club Museum</h3>
                                                                         </div>
-                                                                        <div className="text-[9px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
+                                                                        <div className="text-[8px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
                                                                     </div>
                                                                     
                                                                     {(activeClub.museum || []).length === 0 ? (
-                                                                        <div className="text-center text-[9px] font-black uppercase text-white/30 py-4 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
+                                                                        <div className="text-center text-[8px] font-black uppercase text-white/30 py-3 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
                                                                     ) : (
-                                                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                                                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                                                                             {(activeClub.museum || []).map((itemName, i) => {
                                                                                 const dbItem = getDbItem(itemName);
                                                                                 const r = RARITIES.find(x => x.id === dbItem.rarityId);
                                                                                 return (
-                                                                                    <div key={i} className="shrink-0 w-12 h-12 bg-black/40 border border-white/10 rounded-xl flex items-center justify-center text-xl shadow-inner relative group" title={itemName}>
+                                                                                    <div key={i} className="shrink-0 w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-lg shadow-inner relative group" title={itemName}>
                                                                                         {dbItem.e}
-                                                                                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
+                                                                                        <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
                                                                                     </div>
                                                                                 );
                                                                             })}
@@ -1561,27 +1654,27 @@
                                                                 </div>
 
                                                                 {/* ROSTER */}
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl mb-6">
-                                                                    <h3 className="text-xs font-black uppercase text-white/50 mb-3">Roster</h3>
-                                                                    <div className="space-y-2">
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
+                                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Roster</h3>
+                                                                    <div className="space-y-1.5">
                                                                         {members.map(p => (
-                                                                            <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-2xl bg-black/40 border border-white/5">
+                                                                            <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-black/40 border border-white/5">
                                                                                 <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className="font-black uppercase text-white truncate text-xs">{p.username}</span>
-                                                                                        {p.id === activeClub.ownerId && <Icon name="Star" size={10} className="text-yellow-500 shrink-0" title="Club Owner" />}
+                                                                                    <div className="flex items-center gap-1.5">
+                                                                                        <span className="font-black uppercase text-white truncate text-[10px]">{p.username}</span>
+                                                                                        {p.id === activeClub.ownerId && <Icon name="Star" size={8} className="text-yellow-500 shrink-0" title="Club Owner" />}
                                                                                     </div>
-                                                                                    <div className="text-[9px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
+                                                                                    <div className="text-[8px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
                                                                                 </div>
                                                                                 
                                                                                 {p.id !== user?.uid && (
                                                                                     <div className="flex gap-1 ml-auto shrink-0">
-                                                                                        <button onClick={() => setTradeTarget(p)} className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/40 flex items-center justify-center transition-colors shadow-inner" title="Propose Trade">
-                                                                                            <Icon name="Trade" size={12} />
+                                                                                        <button onClick={() => setTradeTarget(p)} className="w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/40 flex items-center justify-center transition-colors shadow-inner" title="Propose Trade">
+                                                                                            <Icon name="Trade" size={10} />
                                                                                         </button>
                                                                                         {!friendsList.includes(p.id) && (
-                                                                                            <button onClick={() => toggleFriend(p.id)} className="w-8 h-8 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 flex items-center justify-center transition-colors shadow-inner" title="Add Friend">
-                                                                                                <Icon name="UserPlus" size={12} />
+                                                                                            <button onClick={() => toggleFriend(p.id)} className="w-7 h-7 rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 flex items-center justify-center transition-colors shadow-inner" title="Add Friend">
+                                                                                                <Icon name="UserPlus" size={10} />
                                                                                             </button>
                                                                                         )}
                                                                                     </div>
@@ -1594,32 +1687,32 @@
                                                         );
                                                     })()
                                                 ) : (
-                                                    <div className="flex flex-col gap-4 animate-in fade-in">
-                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                            <h3 className="text-xs font-black uppercase text-white/50 mb-3">Found a Club</h3>
-                                                            <div className="flex gap-2 mb-3">
-                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
-                                                                <input type="text" placeholder="TAG" className="w-20 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
+                                                    <div className="flex flex-col gap-3 animate-in fade-in">
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Found a Club</h3>
+                                                            <div className="flex gap-2 mb-2">
+                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
+                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
                                                             </div>
-                                                            <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-3 rounded-xl text-[10px] sm:text-xs transition-colors disabled:opacity-50">Create Club</button>
+                                                            <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-2 rounded-lg text-[9px] transition-colors disabled:opacity-50">Create Club</button>
                                                         </div>
-                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-3xl p-4 shadow-xl">
-                                                            <h3 className="text-xs font-black uppercase text-white/50 mb-3">Join a Club</h3>
-                                                            <input type="text" placeholder="Search by name or tag..." className="w-full bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-white text-xs font-black uppercase focus:outline-none focus:border-cyan-500 mb-3 transition-colors" value={clubSearchQuery} onChange={e => setClubSearchQuery(e.target.value.toLowerCase())} />
-                                                            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Join a Club</h3>
+                                                            <input type="text" placeholder="Search by name or tag..." className="w-full bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-cyan-500 mb-2 transition-colors" value={clubSearchQuery} onChange={e => setClubSearchQuery(e.target.value.toLowerCase())} />
+                                                            <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-hide">
                                                                 {clubsList.filter(c => c.name.toLowerCase().includes(clubSearchQuery) || c.tag.toLowerCase().includes(clubSearchQuery)).map(c => {
                                                                     const memberCount = leaderboard.filter(p => p.clubId === c.id).length;
                                                                     return (
-                                                                        <div key={c.id} className="flex justify-between items-center p-3 rounded-2xl bg-black/40 border border-white/5">
+                                                                        <div key={c.id} className="flex justify-between items-center p-2 rounded-xl bg-black/40 border border-white/5">
                                                                             <div className="min-w-0 flex-1 pr-2">
-                                                                                <div className="text-[10px] sm:text-xs font-black uppercase text-white truncate">[{c.tag}] {c.name}</div>
-                                                                                <div className="text-[8px] font-black uppercase text-white/40 mt-0.5">{memberCount} Member{memberCount !== 1 ? 's' : ''}</div>
+                                                                                <div className="text-[9px] font-black uppercase text-white truncate">[{c.tag}] {c.name}</div>
+                                                                                <div className="text-[7.5px] font-black uppercase text-white/40 mt-0.5">{memberCount} Member{memberCount !== 1 ? 's' : ''}</div>
                                                                             </div>
-                                                                            <button onClick={() => handleJoinClub(c.id)} className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-colors shrink-0 shadow-inner">Join</button>
+                                                                            <button onClick={() => handleJoinClub(c.id)} className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-colors shrink-0 shadow-inner">Join</button>
                                                                         </div>
                                                                     );
                                                                 })}
-                                                                {clubsList.length === 0 && <div className="text-center text-white/30 text-[10px] font-black uppercase py-4">No clubs discovered.</div>}
+                                                                {clubsList.length === 0 && <div className="text-center text-white/30 text-[9px] font-black uppercase py-3">No clubs discovered.</div>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1632,23 +1725,23 @@
                         )}
 
                         {view === 'realms' && (
-                             <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 sm:mb-4`}>
+                             <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4">
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]')} p-4 rounded-3xl text-center relative overflow-hidden mb-1`}>
                                     <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : 'from-fuchsia-600/10')} to-transparent pointer-events-none`}></div>
-                                    <Icon name="Globe" size={40} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-fuchsia-500')} mx-auto mb-3 sm:mb-4 relative z-10 sm:scale-110`} />
-                                    <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter mb-1 sm:mb-2 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
-                                    <p className={`text-[9px] sm:text-[10px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-fuchsia-200')}`}>
+                                    <Icon name="Globe" size={28} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-fuchsia-500')} mx-auto mb-2 relative z-10 sm:scale-110`} />
+                                    <h2 className={`text-lg font-black uppercase tracking-tighter mb-1 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
+                                    <p className={`text-[8px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-fuchsia-200')}`}>
                                         Travel to alternate realities. Each realm features Escalating Challenges!
                                     </p>
                                 </div>
-                                <div className="space-y-3 sm:space-y-4 px-1 sm:px-2">
+                                <div className="space-y-2 px-1">
                                     {Object.values(THEMES).map(th => (
-                                        <div key={th.id} className={`p-4 sm:p-5 rounded-[1.5rem] sm:rounded-3xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl')) : 'bg-white/5 border-white/10'}`}>
-                                            <div className="flex items-center gap-3 sm:gap-4">
-                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : 'bg-slate-900 text-white') : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={20} className="sm:scale-110" /></div>
-                                                <div><div className={`text-xs sm:text-sm font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{th.name}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase opacity-50 mt-1 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
+                                        <div key={th.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl')) : 'bg-white/5 border-white/10'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : 'bg-slate-900 text-white') : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={16} /></div>
+                                                <div><div className={`text-xs font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{th.name}</div><div className={`text-[8px] font-black uppercase opacity-50 mt-0.5 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
                                             </div>
-                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : (currentThemeId === 'canopy' ? 'bg-lime-600' : 'bg-fuchsia-600')}`}>Travel</button>}
+                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : (currentThemeId === 'canopy' ? 'bg-lime-600' : 'bg-fuchsia-600')}`}>Travel</button>}
                                         </div>
                                     ))}
                                 </div>
@@ -1656,12 +1749,12 @@
                         )}
 
                         {view === 'inventory' && (
-                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : 'bg-white/5 border-white/10')} p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col gap-3 sm:gap-4 border`}>
+                            <div className="flex-1 flex flex-col gap-3 animate-in fade-in">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : 'bg-white/5 border-white/10')} p-4 rounded-3xl flex flex-col gap-2 border`}>
                                     <div className="flex justify-between items-start">
-                                        <div><h3 className={`text-xl sm:text-2xl font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{terms.log}</h3><p className={`text-[9px] sm:text-[10px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : 'text-white')}`}>{activeInventory.length} items in realm</p></div>
+                                        <div><h3 className={`text-lg font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{terms.log}</h3><p className={`text-[8px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : 'text-white')}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
-                                    <p className={`text-[9px] sm:text-[10px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-cyan-300')}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
+                                    <p className={`text-[8px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-cyan-300')}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
                                     <button onClick={() => {
                                         const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
                                         let dAdded = 0, pAdded = 0;
@@ -1675,14 +1768,14 @@
                                         });
                                         setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
                                         setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
-                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-600/20 text-lime-400' : 'bg-amber-500/10 text-amber-400')} px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95`}>Exchange All Duplicates</button>
+                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-600/20 text-lime-400' : 'bg-amber-500/10 text-amber-400')} px-3 py-2 rounded-lg text-[9px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95 mt-1`}>Exchange All Duplicates</button>
                                 </div>
                                 {RARITIES.map(r => (
-                                    <div key={r.id} className="mb-4 sm:mb-6 px-1 sm:px-2">
-                                        <h4 className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] ${r.color} mb-3 sm:mb-4 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-3 sm:ml-4 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
+                                    <div key={r.id} className="mb-3 px-1">
+                                        <h4 className={`text-[9px] font-black uppercase tracking-[0.3em] ${r.color} mb-2.5 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-3 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
                                         
                                         {/* SET REWARDS BAR */}
-                                        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scroll-smooth snap-x scrollbar-hide">
+                                        <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scroll-smooth snap-x scrollbar-hide">
                                             {MUTATION_ORDER.map(mut => {
                                                 const setId = `${currentThemeId}_${r.id}_${mut}`;
                                                 const isClaimed = claimedSets.includes(setId);
@@ -1695,22 +1788,22 @@
                                                 const prizeAmt = r.setPrize.amt * mData.mult;
                                                 
                                                 return (
-                                                    <div key={mut} className={`snap-center shrink-0 w-32 sm:w-36 px-2 py-2 rounded-xl sm:rounded-2xl border-2 flex flex-col items-center gap-1 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]') : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
-                                                        <div className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mut === 'none' ? (currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white') : mData.color}`}>{mData.label || 'Base'} Set</div>
-                                                        <div className={`text-[10px] sm:text-xs font-mono font-black ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{progress}/{total}</div>
+                                                    <div key={mut} className={`snap-center shrink-0 w-28 px-2 py-1.5 rounded-xl border-2 flex flex-col items-center gap-0.5 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]') : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
+                                                        <div className={`text-[8px] font-black uppercase tracking-widest ${mut === 'none' ? (currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white') : mData.color}`}>{mData.label || 'Base'} Set</div>
+                                                        <div className={`text-[9px] font-mono font-black ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{progress}/{total}</div>
                                                         {isClaimed ? (
-                                                            <span className="text-[8px] font-black text-green-400 uppercase tracking-widest mt-1">Claimed</span>
+                                                            <span className="text-[7px] font-black text-green-400 uppercase tracking-widest">Claimed</span>
                                                         ) : canClaim ? (
                                                             <button onClick={() => {
                                                                 if(r.setPrize.curr === 'secondary') setCurrency2(v => v + prizeAmt);
                                                                 else setCurrency1(v => v + prizeAmt);
                                                                 setClaimedSets(prev => [...prev, setId]);
-                                                            }} className={`mt-1 ${currentThemeId === 'canopy' ? 'bg-lime-400 text-lime-950' : 'bg-amber-400 text-amber-950'} px-2 sm:px-3 py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse`}>
+                                                            }} className={`mt-0.5 ${currentThemeId === 'canopy' ? 'bg-lime-400 text-lime-950' : 'bg-amber-400 text-amber-950'} px-2 py-1 rounded-full text-[8px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse`}>
                                                                 Claim {formatNum(prizeAmt)}
                                                             </button>
                                                         ) : (
-                                                            <div className={`mt-1 flex items-center gap-1 text-[8px] sm:text-[9px] font-black opacity-60 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>
-                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={10} className={r.setPrize.curr === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')} />
+                                                            <div className={`flex items-center gap-1 text-[7px] font-black opacity-60 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>
+                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={r.setPrize.curr === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')} />
                                                             </div>
                                                         )}
                                                     </div>
@@ -1718,19 +1811,19 @@
                                             })}
                                         </div>
 
-                                        <div className="grid gap-2 sm:gap-3">
+                                        <div className="grid gap-2">
                                             {MASTER_ITEM_DB.filter(m => m.rarityId === r.id).map(dbItem => {
                                                 const owned = activeInventory.filter(i => i.name === dbItem.name).sort(sortItemsThemeAware);
                                                 const directCost = getDirectBuyCost(r.id);
                                                 const canAffordBuy = currency2 >= directCost;
                                                 
                                                 if (!owned.length) return (
-                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-90' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 border-dashed flex flex-col sm:flex-row sm:items-center justify-between transition-all group gap-2 sm:gap-0`}>
-                                                        <div className={`flex items-center gap-3 sm:gap-4 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={14} className="sm:scale-110" /><span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
-                                                        <div className="flex items-center gap-2 justify-between w-full sm:w-auto mt-2 sm:mt-0">
-                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8.5px] sm:text-[10px] font-black flex items-center gap-1`}>Undiscovered</div>
-                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
-                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={10} />
+                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-90' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 rounded-2xl border-2 border-dashed flex items-center justify-between transition-all group gap-2`}>
+                                                        <div className={`flex items-center gap-2 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={12} /><span className="text-[9px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
+                                                        <div className="flex items-center gap-2 justify-end w-auto">
+                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={8} />
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1739,24 +1832,24 @@
                                                 const mData = getMutData(currentThemeId, best.mutation);
                                                 const isDarkMut = best.mutation === 'void_touched' || best.mutation === 'underworld' || best.mutation === 'overgrown' || best.mutation === 'feral' || best.mutation === 'shamanic';
                                                 return (
-                                                    <div key={best.id} className={`p-3 sm:p-4 rounded-[1.25rem] sm:rounded-3xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
-                                                        <div className="flex items-center gap-3 sm:gap-4 truncate"><span className="text-2xl sm:text-3xl drop-shadow-md">{getDbItem(best.name).e}</span><div className="text-left truncate">
-                                                            <div className={`flex items-center gap-2 font-black text-[10px] sm:text-xs ${isDarkMut ? 'text-white' : 'text-slate-900'}`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 sm:px-2 py-0.5 rounded text-[7px] sm:text-[8px]">x{owned.length}</span>}</div>
-                                                            {best.mutation !== 'none' && <div className={`text-[7.5px] sm:text-[8.5px] font-black uppercase tracking-widest mt-0.5 ${mData.color}`}>Mutation: {mData.label}</div>}
+                                                    <div key={best.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between gap-2 ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
+                                                        <div className="flex items-center gap-2 min-w-0"><span className="text-2xl drop-shadow-md shrink-0">{getDbItem(best.name).e}</span><div className="text-left min-w-0">
+                                                            <div className={`flex items-center gap-1.5 font-black text-[9px] ${isDarkMut ? 'text-white' : 'text-slate-900'} truncate`}><span>{best.name}</span>{owned.length > 1 && <span className="bg-slate-900 text-white px-1.5 py-0.5 rounded text-[7px]">x{owned.length}</span>}</div>
+                                                            {best.mutation !== 'none' && <div className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${mData.color}`}>Mutation: {mData.label}</div>}
                                                             {best.currency === 'secondary' ? (
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
-                                                                    <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-emerald-700' : 'text-teal-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={10} /></div>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
+                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-emerald-700' : 'text-teal-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={8} /></div>
                                                                 </div>
                                                             ) : (
-                                                                <div className={`text-[9px] sm:text-[10px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5 mt-1`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
+                                                                <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5 mt-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
                                                             )}
                                                         </div></div>
-                                                        <div className="flex items-center gap-2 justify-end w-full sm:w-auto shrink-0 mt-2 sm:mt-0">
-                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
-                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={10} />
+                                                        <div className="flex items-center gap-1.5 justify-end shrink-0">
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                                Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={8} />
                                                             </button>
-                                                            <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-[9px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md">Exchange 1</button>
+                                                            <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md">Exchange 1</button>
                                                         </div>
                                                     </div>
                                                 );
@@ -1768,21 +1861,21 @@
                         )}
 
                         {view === 'altar' && (
-                            <div className="flex-1 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-right-4">
-                                <div className="flex bg-slate-900/40 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white/10 shrink-0 backdrop-blur">
-                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Ascension</button>
-                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Transfer</button>
+                            <div className="flex-1 flex flex-col gap-4 animate-in slide-in-from-right-4">
+                                <div className="flex bg-slate-900/40 p-1 rounded-xl border border-white/10 shrink-0 backdrop-blur">
+                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Ascension</button>
+                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Transfer</button>
                                 </div>
                                 {altarMode === 'ascend' ? (
-                                    <div className="space-y-3 sm:space-y-4">
-                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier. You are guaranteed a new, undiscovered item unless you have found them all!</p>
+                                    <div className="space-y-2.5">
+                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier. You are guaranteed a new, undiscovered item unless you have found them all!</p>
                                         {RARITIES.slice(0, -1).map((r, idx) => {
                                             const dupes = getDuplicatesForRarity(r.id);
                                             const next = RARITIES[idx + 1];
                                             const canForge = dupes.length >= 5;
                                             return (
-                                                <div key={r.id} className={`${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-white/5'} border border-white/5 p-4 sm:p-5 rounded-2xl sm:rounded-3xl flex items-center justify-between transition-all hover:bg-white/10 group`}>
-                                                    <div><div className={`text-[10px] sm:text-xs font-black uppercase ${r.color}`}>{r.label}</div><div className={`text-[8px] sm:text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-900/40' : 'text-white/30'}`}>{dupes.length} Duplicates Available</div></div>
+                                                <div key={r.id} className={`${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-white/5'} border border-white/5 p-4 rounded-2xl flex items-center justify-between transition-all hover:bg-white/10 group`}>
+                                                    <div><div className={`text-[10px] font-black uppercase ${r.color}`}>{r.label}</div><div className={`text-[8px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-900/40' : 'text-white/30'}`}>{dupes.length} Duplicates Available</div></div>
                                                     <button disabled={!canForge} onClick={() => {
                                                         const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
                                                         const bM = sacList.reduce((b,c) => MUTATION_ORDER.indexOf(c.mutation) > MUTATION_ORDER.indexOf(b) ? c.mutation : b, 'none');
@@ -1799,30 +1892,30 @@
                                                         const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
-                                                    }} className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[8.5px] sm:text-[10px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
+                                                    }} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center gap-8 sm:gap-10 py-6 sm:py-10">
-                                        <p className={`text-[9px] sm:text-[10px] text-center opacity-60 uppercase font-black px-2 sm:px-4 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Transfer a mutation from a source material to a target vessel.</p>
-                                        <div className="flex items-center gap-4 sm:gap-6">
-                                            <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + getMutData(currentThemeId, transferSacrifice.mutation).glow : 'border-red-500/20 text-red-400/30'}`}>
-                                                {transferSacrifice ? <span className="text-3xl sm:text-4xl">{getDbItem(transferSacrifice.name).e}</span> : <Icon name="Flame" size={24} className="sm:scale-110" />}
-                                                <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferSacrifice ? transferSacrifice.name : 'Material'}</span>
+                                    <div className="flex flex-col items-center gap-6 py-6">
+                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Transfer a mutation from a source material to a target vessel.</p>
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + getMutData(currentThemeId, transferSacrifice.mutation).glow : 'border-red-500/20 text-red-400/30'}`}>
+                                                {transferSacrifice ? <span className="text-3xl">{getDbItem(transferSacrifice.name).e}</span> : <Icon name="Flame" size={20} />}
+                                                <span className="text-[7.5px] font-black uppercase text-center px-1">{transferSacrifice ? transferSacrifice.name : 'Material'}</span>
                                             </button>
-                                            <Icon name="Zap" size={16} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')} rotate-90 sm:scale-125`} />
-                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 sm:w-28 sm:h-36 rounded-2xl sm:rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-2 sm:gap-3 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : (currentThemeId === 'canopy' ? 'border-emerald-500/20 text-emerald-400/30' : 'border-cyan-500/20 text-cyan-400/30')}`}>
-                                                {transferTarget ? <span className="text-3xl sm:text-4xl">{getDbItem(transferTarget.name).e}</span> : <Icon name="Box" size={24} className="sm:scale-110" />}
-                                                <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-center px-1 sm:px-2">{transferTarget ? transferTarget.name : 'Target'}</span>
+                                            <Icon name="Zap" size={14} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')} rotate-90`} />
+                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : (currentThemeId === 'canopy' ? 'border-emerald-500/20 text-emerald-400/30' : 'border-cyan-500/20 text-cyan-400/30')}`}>
+                                                {transferTarget ? <span className="text-3xl">{getDbItem(transferTarget.name).e}</span> : <Icon name="Box" size={20} />}
+                                                <span className="text-[7.5px] font-black uppercase text-center px-1">{transferTarget ? transferTarget.name : 'Target'}</span>
                                             </button>
                                         </div>
                                         {transferSacrifice && transferTarget && (
-                                            <div className="bg-slate-950/50 border border-cyan-500/30 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl flex items-center gap-2 sm:gap-3 shadow-inner">
-                                                <span className={`text-[9px] sm:text-[10px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>Fusion Cost:</span>
-                                                <span className={`text-xs sm:text-sm font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
-                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={12} className={`sm:scale-110 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : 'text-red-400'}`} />
+                                            <div className="bg-slate-950/50 border border-cyan-500/30 px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner">
+                                                <span className={`text-[9px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>Fusion Cost:</span>
+                                                <span className={`text-xs font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
+                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={10} className={`${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : 'text-red-400'}`} />
                                                 </span>
                                             </div>
                                         )}
@@ -1833,18 +1926,18 @@
                                             const nt = { ...transferTarget, mutation: transferSacrifice.mutation };
                                             setInventory(p => [nt, ...p.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id)]);
                                             setTransferSacrifice(null); setTransferTarget(null); setLastPull(nt); setView('shop');
-                                        }} className={`w-full max-w-xs py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
+                                        }} className={`w-full max-w-[200px] py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
                                     </div>
                                 )}
                             </div>
                         )}
 
                         {view === 'shrine' && (
-                            <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl mx-auto w-fit border shadow-lg shrink-0`}>
-                                    <p className={`text-[9px] sm:text-[10px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations. You will receive a random item that you already own, imbued with the chosen mutation.</p>
+                            <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0`}>
+                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations. You will receive a random item that you already own, imbued with the chosen mutation.</p>
                                 </div>
-                                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 sm:px-2 scrollbar-hide">
+                                <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
                                     {SHRINE_CATEGORIES.map((cat, idx) => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
@@ -1859,24 +1952,24 @@
                                         const afford = isUnlocked && currency2 >= discountedCost && ownedItemNames.length > 0;
                                         
                                         return (
-                                            <div key={cat.id} className={`snap-center shrink-0 w-28 sm:w-32 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
+                                            <div key={cat.id} className={`snap-center shrink-0 w-24 sm:w-28 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
                                                 onMouseDown={() => { if(isUnlocked) handleHoldStart(pk); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(pk); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => { if(isUnlocked) handleHoldStart(pk); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(pk); }}>
-                                                <div className={`w-full aspect-[4/5] rounded-2xl sm:rounded-3xl bg-gradient-to-br ${cat.color} border-2 sm:border-4 flex flex-col items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
+                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${cat.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
-                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={16} /><span className="text-[7px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {MUTATION_ORDER[idx]} Set</span></div>}
-                                                    <Icon name={cat.icon} size={24} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10 sm:scale-110" />
-                                                    <span className="text-[7px] sm:text-[9px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
-                                                    <div className="flex items-center gap-1 font-black text-[10px] sm:text-xs z-10 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
+                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={14} /><span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {MUTATION_ORDER[idx]} Set</span></div>}
+                                                    <Icon name={cat.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
+                                                    <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
+                                                    <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
                                                         <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                        <Icon name={terms.secondaryIcon} size={10} className={currentThemeId === 'canopy' ? "text-emerald-400" : "text-cyan-300"} />
+                                                        <Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : "text-cyan-300"} />
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className={`text-center opacity-50 text-[9px] sm:text-[10px] font-black uppercase tracking-widest -mt-2 shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                <div className={`text-center opacity-50 text-[8px] font-black uppercase tracking-widest shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
                                 {renderUnboxingArea()}
                             </div>
                         )}
@@ -1922,9 +2015,9 @@
 
                     {inventoryModal && (
                         <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-md flex flex-col p-4 animate-in fade-in" onClick={() => setInventoryModal(null)}>
-                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-6 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-center mb-6"><h3 className="text-sm font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : inventoryModal === 'pin' ? 'Select Item to Showcase' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-2 bg-white/5 rounded-full"><Icon name="X" size={20} /></button></div>
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-4 flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4"><h3 className="text-xs font-black uppercase text-white tracking-[0.2em]">{inventoryModal === 'source' ? 'Select Material' : inventoryModal === 'pin' ? 'Select Item to Showcase' : 'Select Target'}</h3><button onClick={() => setInventoryModal(null)} className="p-1.5 bg-white/5 rounded-full"><Icon name="X" size={16} /></button></div>
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
                                     {activeInventory.filter(i => inventoryModal === 'source' ? (i.mutation && i.mutation !== 'none') : inventoryModal === 'pin' ? true : (i.id !== (transferSacrifice?.id || ''))).sort(sortItemsThemeAware).map(item => {
                                         const mData = getMutData(currentThemeId, item.mutation);
                                         return (
@@ -1933,7 +2026,7 @@
                                                 else if (inventoryModal === 'pin') setPinnedItem(item);
                                                 else setTransferTarget(item); 
                                                 setInventoryModal(null); 
-                                            }} className={`p-4 rounded-3xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${mData.glow}`}><div className="flex items-center gap-4"><span className="text-3xl">{getDbItem(item.name).e}</span><div><div className="text-xs font-black text-white">{item.name}</div><div className={`text-[9px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div></div>
+                                            }} className={`p-3 rounded-2xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all ${mData.glow}`}><div className="flex items-center gap-3"><span className="text-2xl">{getDbItem(item.name).e}</span><div><div className="text-[10px] font-black text-white">{item.name}</div><div className={`text-[8px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div></div>
                                         );
                                     })}
                                 </div>
