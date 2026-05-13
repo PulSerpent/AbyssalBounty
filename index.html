@@ -574,7 +574,7 @@
                             lastActive: new Date().toISOString()
                         }, { merge: true });
                     } catch(e) { console.error("Private save error", e); }
-                }, 5000);
+                }, 2000); // Reduced to 2 seconds for a much tighter currency sync
                 
                 // Force an immediate save when the page is hidden/closed
                 const handleVisibilityChange = () => {
@@ -595,6 +595,26 @@
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
                 };
             }, [user, isDataLoaded]);
+
+            // Instant Save Trigger for Important Actions (Inventory, Forge, Set Claims)
+            useEffect(() => {
+                if (!user || !window.db || !isDataLoaded) return;
+                
+                // Debounce slightly to avoid spamming the database if multiple states change at once
+                const saveTimer = setTimeout(async () => {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
+                    try {
+                        await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    } catch(e) { console.error("Instant save error", e); }
+                }, 1000);
+                
+                return () => clearTimeout(saveTimer);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, user, isDataLoaded]);
 
             // Public Leaderboard Listener
             useEffect(() => {
