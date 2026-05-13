@@ -19,9 +19,17 @@
         let auth = null;
         let isOffline = false;
 
-        try {
-            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-            const firebaseConfig = JSON.parse(configStr);
+      try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyD6Om50RfeqTIXCNmeOphHJf7wtr64UbQo",
+                authDomain: "abyssal-bounty.firebaseapp.com",
+                projectId: "abyssal-bounty",
+                storageBucket: "abyssal-bounty.firebasestorage.app",
+                messagingSenderId: "508374142367",
+                appId: "1:508374142367:web:8600b3ea6253c51d56c1aa",
+                measurementId: "G-MN14TZ0GXL"
+            };
+            
             if (Object.keys(firebaseConfig).length > 0) {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
