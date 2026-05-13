@@ -19,7 +19,7 @@
         let auth = null;
         let isOffline = false;
 
-      try {
+        try {
             const firebaseConfig = {
                 apiKey: "AIzaSyD6Om50RfeqTIXCNmeOphHJf7wtr64UbQo",
                 authDomain: "abyssal-bounty.firebaseapp.com",
@@ -439,16 +439,24 @@
                     }
 
                     try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
+                        let currentUser = auth.currentUser;
+                        if (!currentUser) {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
                         }
                     } catch(e) {
+                        console.error("Auth Failed:", e);
                         setUser({ uid: 'offline_user' });
+                        return;
                     }
 
-                    onAuthStateChanged(auth, setUser);
+                    onAuthStateChanged(auth, (u) => {
+                        if (u) setUser(u);
+                        else setUser({ uid: 'offline_user' }); // Fallback
+                    });
                 };
 
                 if (window.FirebaseAPI) {
@@ -466,6 +474,7 @@
                 
                 if (!db || user.uid === 'offline_user') {
                     setIsDataLoaded(true);
+                    setIsLeaderboardLoading(false);
                     return; 
                 }
                 
