@@ -9,12 +9,18 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Added Firebase Cloud Database Modules -->
+    <!-- Robust Firebase Cloud Database Modules Injection -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        window.Firebase = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, collection, doc, setDoc, getDoc, onSnapshot };
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        window.FirebaseAPI = { 
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
+            getFirestore, collection, doc, setDoc, getDoc, onSnapshot, query 
+        };
+        // Dispatch event so React knows exactly when Firebase is ready to roll
+        window.dispatchEvent(new Event('firebase-modules-ready'));
     </script>
 
     <style>
@@ -84,15 +90,13 @@
             const suffixIndex = Math.floor(power / 3);
             const suffixes = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No'];
             
-            // Standard formatting up to Nonillion
             if (suffixIndex < suffixes.length) {
                 return (n / Math.pow(10, suffixIndex * 3)).toFixed(2) + suffixes[suffixIndex];
             }
             
-            // Infinite formatting past Decillion: aa, bb, cc... zz, aaa...
             const aaIndex = suffixIndex - suffixes.length;
-            const letter = String.fromCharCode(97 + (aaIndex % 26)); // 'a' = 97
-            const repeat = Math.floor(aaIndex / 26) + 2; // starts at 2 ('aa')
+            const letter = String.fromCharCode(97 + (aaIndex % 26));
+            const repeat = Math.floor(aaIndex / 26) + 2; 
             return (n / Math.pow(10, suffixIndex * 3)).toFixed(2) + letter.repeat(repeat);
         };
 
@@ -139,15 +143,8 @@
 
         const THEMES = {
             abyssal: {
-                id: 'abyssal',
-                name: 'Abyssal Depths',
-                bgClass: 'bg-theme-abyssal',
-                icon: 'Anchor',
-                terms: {
-                    primary: 'Dubloons', primaryIcon: 'Coins',
-                    secondary: 'Pearls', secondaryIcon: 'Droplet',
-                    packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken', merchant: 'Ghost Ship'
-                },
+                id: 'abyssal', name: 'Abyssal Depths', bgClass: 'bg-theme-abyssal', icon: 'Anchor',
+                terms: { primary: 'Dubloons', primaryIcon: 'Coins', secondary: 'Pearls', secondaryIcon: 'Droplet', packMenu: 'Dive', log: 'Log', beast: '🦑', beastName: 'Kraken', merchant: 'Ghost Ship' },
                 RARITIES: [
                     { id: 'trash', label: 'Trash', color: 'text-stone-500', bg: 'bg-stone-200/90', multiplier: 0.5, incomeBase: 0.5, secondaryChance: 0.01, setPrize: { amt: 5000, curr: 'primary' } },
                     { id: 'common', label: 'Common', color: 'text-zinc-400', bg: 'bg-zinc-800/90', multiplier: 1, incomeBase: 3.0, secondaryChance: 0.02, setPrize: { amt: 50000, curr: 'primary' } },
@@ -205,17 +202,9 @@
                     { id: 'ethereal', name: 'Ethereal', icon: 'Waves', color: 'from-cyan-400 to-blue-900', glow: 'shadow-cyan-400/20' }
                 ]
             },
-            
             olympian: {
-                id: 'olympian',
-                name: 'Olympian Peak',
-                bgClass: 'bg-theme-olympian',
-                icon: 'Sun',
-                terms: {
-                    primary: 'Drachma', primaryIcon: 'Drachma',
-                    secondary: 'Ambrosia', secondaryIcon: 'Star',
-                    packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur', merchant: 'Celestial Chariot'
-                },
+                id: 'olympian', name: 'Olympian Peak', bgClass: 'bg-theme-olympian', icon: 'Sun',
+                terms: { primary: 'Drachma', primaryIcon: 'Drachma', secondary: 'Ambrosia', secondaryIcon: 'Star', packMenu: 'Summon', log: 'Fates', beast: '🐂', beastName: 'Minotaur', merchant: 'Celestial Chariot' },
                 RARITIES: [
                     { id: 'trash', label: 'Mortal', color: 'text-yellow-600', bg: 'bg-stone-50/90', multiplier: 0.5, incomeBase: 1e11, secondaryChance: 0.01, setPrize: { amt: 2.5e17, curr: 'primary' } },
                     { id: 'common', label: 'Common', color: 'text-amber-600', bg: 'bg-amber-50/90', multiplier: 1, incomeBase: 5e11, secondaryChance: 0.02, setPrize: { amt: 2.5e18, curr: 'primary' } },
@@ -273,17 +262,9 @@
                     { id: 'pantheon', name: 'Pantheon', icon: 'Castle', color: 'from-amber-300 to-amber-500', glow: 'shadow-amber-400/30' }
                 ]
             },
-
             canopy: {
-                id: 'canopy',
-                name: 'Verdant Canopy',
-                bgClass: 'bg-theme-canopy',
-                icon: 'Leaf',
-                terms: {
-                    primary: 'Amber', primaryIcon: 'Hexagon',
-                    secondary: 'Essence', secondaryIcon: 'Leaf',
-                    packMenu: 'Forage', log: 'Bestiary', beast: '🐍', beastName: 'Elder Anaconda', merchant: 'Wandering Shaman'
-                },
+                id: 'canopy', name: 'Verdant Canopy', bgClass: 'bg-theme-canopy', icon: 'Leaf',
+                terms: { primary: 'Amber', primaryIcon: 'Hexagon', secondary: 'Essence', secondaryIcon: 'Leaf', packMenu: 'Forage', log: 'Bestiary', beast: '🐍', beastName: 'Elder Anaconda', merchant: 'Wandering Shaman' },
                 RARITIES: [
                     { id: 'trash', label: 'Overgrowth', color: 'text-green-600', bg: 'bg-green-50/90', multiplier: 0.5, incomeBase: 1e20, secondaryChance: 0.01, setPrize: { amt: 2.5e26, curr: 'primary' } },
                     { id: 'common', label: 'Foliage', color: 'text-lime-600', bg: 'bg-lime-50/90', multiplier: 1, incomeBase: 5e20, secondaryChance: 0.02, setPrize: { amt: 2.5e27, curr: 'primary' } },
@@ -361,6 +342,8 @@
             const [inventory, setInventory] = useState([]);
             const [claimedSets, setClaimedSets] = useState([]);
             const [view, setView] = useState('shop');
+            
+            // UI States
             const [isOpening, setIsOpening] = useState(false);
             const [isSealed, setIsSealed] = useState(false);
             const [isRipping, setIsRipping] = useState(false);
@@ -373,6 +356,8 @@
             const [transferTarget, setTransferTarget] = useState(null);
             const [inventoryModal, setInventoryModal] = useState(null);
             const [inspectedPack, setInspectedPack] = useState(null);
+            
+            // Events
             const [merchantVisible, setMerchantVisible] = useState(false);
             const [merchantSaleActive, setMerchantSaleActive] = useState(false);
             const [merchantSaleTimer, setMerchantSaleTimer] = useState(0);
@@ -384,26 +369,26 @@
             const [anomalyVisible, setAnomalyVisible] = useState(false);
             const [frenzyTimer, setFrenzyTimer] = useState(0);
             
+            // Data Loading & Firebase
+            const [firebaseReady, setFirebaseReady] = useState(!!window.FirebaseAPI);
             const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-            // Multiplayer Social Hub State
             const [user, setUser] = useState(null);
+            
+            // Multiplayer Social Hub State
             const [username, setUsername] = useState('');
             const [tempUsername, setTempUsername] = useState('');
             const [pinnedItem, setPinnedItem] = useState(null);
             const [leaderboard, setLeaderboard] = useState([]);
             const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
-            
-            // Friends & Trading State
             const [hubTab, setHubTab] = useState('leaderboards');
             const [leaderboardTab, setLeaderboardTab] = useState('global');
             const [friendsList, setFriendsList] = useState([]);
-            const [clubId, setClubId] = useState(null);
             const [tradeTarget, setTradeTarget] = useState(null);
             const [friendSearchQuery, setFriendSearchQuery] = useState('');
             const [friendSearchMessage, setFriendSearchMessage] = useState('');
             
             // Club State
+            const [clubId, setClubId] = useState(null);
             const [clubsList, setClubsList] = useState([]);
             const [createClubName, setCreateClubName] = useState('');
             const [createClubTag, setCreateClubTag] = useState('');
@@ -414,26 +399,97 @@
             const isSwiping = useRef(false);
             const gameStateRef = useRef({});
 
-            // Fallback for missing/empty Firebase Config to allow local testing of Hub/Clubs
+            // Robust Firebase Synchronization & Race Condition Fixes
             useEffect(() => {
-                let isConfigEmpty = true;
-                try {
-                    const conf = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                    if (Object.keys(conf).length > 0) isConfigEmpty = false;
-                } catch (e) {}
-
-                if (isConfigEmpty) {
-                    setUser({ uid: 'local_user_' + Math.floor(Math.random()*1000) });
-                    setIsLeaderboardLoading(false);
-                    setLeaderboard([
-                        { id: 'mock1', username: 'AbyssalKing', currentRealm: 'abyssal', cpsPrimary: 450000, wealth: 15000000, pinnedItem: { name: 'Kraken Tentacle', mutation: 'void_touched' }, clubId: 'club1' },
-                        { id: 'mock2', username: 'ForestRanger', currentRealm: 'canopy', cpsPrimary: 8000, wealth: 250000, pinnedItem: null, clubId: 'club1' }
-                    ]);
-                    setClubsList([
-                        { id: 'club1', name: 'The Ancients', tag: 'ANCT', ownerId: 'mock1', xp: 12500, museum: ['Kraken Tentacle', 'Triton Conch'], bounty: { target: 50, progress: 50, claimedBy: [] } }
-                    ]);
-                }
+                if (window.FirebaseAPI) { setFirebaseReady(true); return; }
+                const handleReady = () => setFirebaseReady(true);
+                window.addEventListener('firebase-modules-ready', handleReady);
+                
+                // Fallback timeout just in case it's run locally on double-click (file:// protocol)
+                const timer = setTimeout(() => {
+                    if (!window.FirebaseAPI) {
+                        console.warn("Firebase failed to load. Defaulting to local offline session.");
+                        setFirebaseReady(true); 
+                    }
+                }, 2000);
+                
+                return () => { window.removeEventListener('firebase-modules-ready', handleReady); clearTimeout(timer); };
             }, []);
+
+            useEffect(() => {
+                if (!firebaseReady || window.db) return;
+                
+                if (!window.FirebaseAPI) {
+                    // Offline fallback - completes load instantly to not block game
+                    setUser({ uid: 'local_offline_user' });
+                    setIsDataLoaded(true);
+                    return;
+                }
+                
+                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore } = window.FirebaseAPI;
+                
+                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                let config = {};
+                try { config = JSON.parse(firebaseConfigStr); } catch(e){}
+
+                if (Object.keys(config).length === 0) {
+                    // Offline fallback 
+                    setUser({ uid: 'local_offline_user' });
+                    setIsDataLoaded(true);
+                    return;
+                }
+
+                let app;
+                try { app = initializeApp(config); } catch(e) { console.warn("App initialization skipped."); return; }
+                
+                const auth = getAuth(app);
+                window.db = getFirestore(app);
+
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) { console.error("Auth error:", e); }
+                };
+                
+                initAuth();
+                const unsubscribe = onAuthStateChanged(auth, setUser);
+                return () => unsubscribe();
+            }, [firebaseReady]);
+            
+            // Load Private Game Data exactly ONCE when User exists
+            useEffect(() => {
+                if (!user) return;
+                if (!window.db) {
+                    setIsDataLoaded(true);
+                    return; 
+                }
+                
+                const { doc, getDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                const loadData = async () => {
+                    try {
+                        const snap = await getDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'));
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            if (data.currency1 !== undefined) setCurrency1(data.currency1);
+                            if (data.currency2 !== undefined) setCurrency2(data.currency2);
+                            if (data.inventory) setInventory(data.inventory);
+                            if (data.claimedSets) setClaimedSets(data.claimedSets);
+                            if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
+                            if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
+                        }
+                    } catch(e) { console.error("Save load error", e); }
+                    
+                    // Mark as loaded so interval starts safely saving future states
+                    setIsDataLoaded(true);
+                };
+                loadData();
+            }, [user]);
 
             // Keep the ref updated with latest state values so intervals don't get reset constantly
             useEffect(() => {
@@ -443,6 +499,142 @@
                 };
             });
 
+            // Periodic Private Game Data Sync (Only if successfully loaded first)
+            useEffect(() => {
+                if (!user || !window.db || !isDataLoaded) return;
+                const { doc, setDoc } = window.FirebaseAPI;
+                
+                const syncInterval = setInterval(async () => {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    } catch(e) { console.error("Private save error", e); }
+                }, 2000); 
+                
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'hidden') {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const state = gameStateRef.current;
+                        setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                return () => {
+                    clearInterval(syncInterval);
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                };
+            }, [user, isDataLoaded]);
+
+            // Instant Save Trigger for Important Actions (Inventory, Forge, Set Claims)
+            useEffect(() => {
+                if (!user || !window.db || !isDataLoaded) return;
+                const { doc, setDoc } = window.FirebaseAPI;
+                
+                const saveTimer = setTimeout(async () => {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
+                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
+                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    } catch(e) { console.error("Instant save error", e); }
+                }, 1000);
+                
+                return () => clearTimeout(saveTimer);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, user, isDataLoaded]);
+
+            // Public Leaderboard Listener
+            useEffect(() => {
+                if (!user || !window.db) return;
+                const { collection, onSnapshot } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                setIsLeaderboardLoading(true);
+                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'profiles');
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const profiles = [];
+                    snapshot.forEach(doc => profiles.push({ id: doc.id, ...doc.data() }));
+                    
+                    // Simple memory sort for score
+                    profiles.sort((a, b) => ((b.wealth || 0) + ((b.cpsPrimary || 0) * 100)) - ((a.wealth || 0) + ((a.cpsPrimary || 0) * 100)));
+                    setLeaderboard(profiles);
+                    setIsLeaderboardLoading(false);
+                    
+                    // Load own established profile data locally
+                    const myProfile = profiles.find(p => p.id === user.uid);
+                    if (myProfile) {
+                        if (myProfile.username && !username) setUsername(myProfile.username);
+                        if (myProfile.pinnedItem && !pinnedItem) setPinnedItem(myProfile.pinnedItem);
+                        if (myProfile.friends) setFriendsList(myProfile.friends);
+                        if (myProfile.clubId) setClubId(myProfile.clubId);
+                    }
+                }, (error) => {
+                    console.error("Leaderboard fetch error:", error);
+                    setIsLeaderboardLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, [user, username, pinnedItem]);
+
+            // Public Clubs Listener
+            useEffect(() => {
+                if (!user || !window.db) return;
+                const { collection, onSnapshot } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'clubs');
+                
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const c = [];
+                    snapshot.forEach(doc => c.push({ id: doc.id, ...doc.data() }));
+                    setClubsList(c);
+                }, (error) => {
+                    console.error("Clubs fetch error:", error);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            // Periodic Profile Push Sync
+            useEffect(() => {
+                if (!user || !username || !window.db) return;
+                const { doc, setDoc } = window.FirebaseAPI;
+                const syncInterval = setInterval(async () => {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const state = gameStateRef.current;
+                    
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                            username: state.username,
+                            currentRealm: state.currentThemeId,
+                            cpsPrimary: state.income.c1,
+                            cpsSecondary: state.income.c2,
+                            wealth: state.currency1 + (state.currency2 * 5),
+                            pinnedItem: state.pinnedItem,
+                            friends: state.friendsList,
+                            clubId: state.clubId,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    } catch (e) { console.error("Sync error:", e); }
+                }, 10000); 
+
+                return () => clearInterval(syncInterval);
+            }, [user, username]);
+
+
+            // Game Logic & Theme Mechanics
             const activeTheme = THEMES[currentThemeId];
             const { RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
 
@@ -451,9 +643,7 @@
             const clubLevel = useMemo(() => activeClub ? getClubLevel(activeClub.xp || 0) : 1, [activeClub]);
             const clubMuseumBonus = useMemo(() => activeClub ? ((activeClub.museum || []).length * 0.01) : 0, [activeClub]);
             
-            // Buffs: Level 2 = +5% CPS, Level 4 = +5% CPS (+10% total)
             const clubCpsBuff = 1 + (clubLevel >= 2 ? 0.05 : 0) + (clubLevel >= 4 ? 0.05 : 0) + clubMuseumBonus;
-            // Buffs: Level 3 = 5% off, Level 5 = 10% off
             const clubDiscount = clubLevel >= 5 ? 0.9 : (clubLevel >= 3 ? 0.95 : 1);
 
             const getMutData = useCallback((tId, mId) => {
@@ -507,193 +697,7 @@
                 };
             }, [inventory, getMutData]);
 
-            // Multiply final income by any active Club buffs
             const finalCpsMultiplier = (frenzyTimer > 0 ? 5 : 1) * clubCpsBuff;
-
-            // Firebase Initialization & Auth
-            useEffect(() => {
-                if (!window.Firebase) return;
-                const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore } = window.Firebase;
-                
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                if (Object.keys(firebaseConfig).length === 0) return;
-
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                window.db = getFirestore(app);
-
-                const initAuth = async () => {
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) { console.error("Auth error:", e); }
-                };
-                initAuth();
-
-                const unsubscribe = onAuthStateChanged(auth, setUser);
-                return () => unsubscribe();
-            }, []);
-            
-            // Load Private Game Data
-            useEffect(() => {
-                if (!user || !window.db) return;
-                const { doc, getDoc } = window.Firebase;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                
-                const loadData = async () => {
-                    try {
-                        const snap = await getDoc(doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'));
-                        if (snap.exists()) {
-                            const data = snap.data();
-                            if (data.currency1 !== undefined) setCurrency1(data.currency1);
-                            if (data.currency2 !== undefined) setCurrency2(data.currency2);
-                            if (data.inventory) setInventory(data.inventory);
-                            if (data.claimedSets) setClaimedSets(data.claimedSets);
-                            if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
-                            if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
-                        }
-                    } catch(e) { console.error("Save load error", e); }
-                    setIsDataLoaded(true);
-                };
-                loadData();
-            }, [user]);
-
-            // Periodic Private Game Data Sync
-            useEffect(() => {
-                if (!user || !window.db || !isDataLoaded) return;
-                const syncInterval = setInterval(async () => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    const state = gameStateRef.current;
-                    try {
-                        await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch(e) { console.error("Private save error", e); }
-                }, 2000); // Reduced to 2 seconds for a much tighter currency sync
-                
-                // Force an immediate save when the page is hidden/closed
-                const handleVisibilityChange = () => {
-                    if (document.visibilityState === 'hidden') {
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        const state = gameStateRef.current;
-                        window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    }
-                };
-                document.addEventListener('visibilitychange', handleVisibilityChange);
-
-                return () => {
-                    clearInterval(syncInterval);
-                    document.removeEventListener('visibilitychange', handleVisibilityChange);
-                };
-            }, [user, isDataLoaded]);
-
-            // Instant Save Trigger for Important Actions (Inventory, Forge, Set Claims)
-            useEffect(() => {
-                if (!user || !window.db || !isDataLoaded) return;
-                
-                // Debounce slightly to avoid spamming the database if multiple states change at once
-                const saveTimer = setTimeout(async () => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    const state = gameStateRef.current;
-                    try {
-                        await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'users', user.uid, 'gamedata', 'save'), {
-                            currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                            claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch(e) { console.error("Instant save error", e); }
-                }, 1000);
-                
-                return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, user, isDataLoaded]);
-
-            // Public Leaderboard Listener
-            useEffect(() => {
-                if (!user || !window.db) return;
-                const { collection, onSnapshot } = window.Firebase;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                
-                setIsLeaderboardLoading(true);
-                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'profiles');
-                
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const profiles = [];
-                    snapshot.forEach(doc => profiles.push({ id: doc.id, ...doc.data() }));
-                    
-                    // Simple memory sort for score (Wealth normalized heavily by CPS to reflect active progress)
-                    profiles.sort((a, b) => ((b.wealth || 0) + ((b.cpsPrimary || 0) * 100)) - ((a.wealth || 0) + ((a.cpsPrimary || 0) * 100)));
-                    setLeaderboard(profiles);
-                    setIsLeaderboardLoading(false);
-                    
-                    // Load own established profile data locally
-                    const myProfile = profiles.find(p => p.id === user.uid);
-                    if (myProfile) {
-                        if (myProfile.username && !username) setUsername(myProfile.username);
-                        if (myProfile.pinnedItem && !pinnedItem) setPinnedItem(myProfile.pinnedItem);
-                        if (myProfile.friends) setFriendsList(myProfile.friends);
-                        if (myProfile.clubId) setClubId(myProfile.clubId);
-                    }
-                }, (error) => {
-                    console.error("Leaderboard fetch error:", error);
-                    setIsLeaderboardLoading(false);
-                });
-
-                return () => unsubscribe();
-            }, [user]);
-
-            // Public Clubs Listener
-            useEffect(() => {
-                if (!user || !window.db) return;
-                const { collection, onSnapshot } = window.Firebase;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const q = collection(window.db, 'artifacts', appId, 'public', 'data', 'clubs');
-                
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const c = [];
-                    snapshot.forEach(doc => c.push({ id: doc.id, ...doc.data() }));
-                    setClubsList(c);
-                }, (error) => {
-                    console.error("Clubs fetch error:", error);
-                });
-
-                return () => unsubscribe();
-            }, [user]);
-
-            // Periodic Profile Push Sync
-            useEffect(() => {
-                if (!user || !username || !window.db) return;
-                
-                const syncInterval = setInterval(async () => {
-                    const { doc, setDoc } = window.Firebase;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    const state = gameStateRef.current;
-                    
-                    try {
-                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                            username: state.username,
-                            currentRealm: state.currentThemeId,
-                            cpsPrimary: state.income.c1,
-                            cpsSecondary: state.income.c2,
-                            wealth: state.currency1 + (state.currency2 * 5),
-                            pinnedItem: state.pinnedItem,
-                            friends: state.friendsList,
-                            clubId: state.clubId,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-                    } catch (e) { console.error("Sync error:", e); }
-                }, 10000); // 10 second sync to not flood requests
-
-                return () => clearInterval(syncInterval);
-            }, [user, username]);
 
             useEffect(() => {
                 const timer = setInterval(() => {
@@ -703,6 +707,7 @@
                 return () => clearInterval(timer);
             }, [incomeFlow.income, finalCpsMultiplier]);
 
+            // Environment Random Events
             useEffect(() => {
                 const tick = setInterval(() => {
                     if (!merchantVisible && !merchantSaleActive && Math.random() < 0.03) {
@@ -723,9 +728,7 @@
 
             useEffect(() => {
                 let interval;
-                if (frenzyTimer > 0) {
-                    interval = setInterval(() => setFrenzyTimer(t => Math.max(0, t - 1)), 1000);
-                }
+                if (frenzyTimer > 0) interval = setInterval(() => setFrenzyTimer(t => Math.max(0, t - 1)), 1000);
                 return () => clearInterval(interval);
             }, [frenzyTimer]);
 
@@ -761,9 +764,7 @@
                 let maxIdx = -1;
                 RARITIES.forEach((r, rIdx) => {
                     MUTATION_ORDER.forEach(m => {
-                        if (claimedSets.includes(`${currentThemeId}_${r.id}_${m}`)) {
-                            maxIdx = Math.max(maxIdx, rIdx);
-                        }
+                        if (claimedSets.includes(`${currentThemeId}_${r.id}_${m}`)) maxIdx = Math.max(maxIdx, rIdx);
                     });
                 });
                 return maxIdx;
@@ -780,7 +781,6 @@
                 const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return false;
                 
-                // Extra safety check for shrines: make sure they own at least one item
                 if (isShrine) {
                     const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
                     if (ownedItemNames.length === 0) return false;
@@ -811,36 +811,28 @@
                     
                     setPendingLoot({ 
                         id: Math.random().toString(36).substr(2, 9), 
-                        themeId: currentThemeId,
-                        name: item.name, 
-                        rarity, 
-                        mutation: p.mutation || 'none', 
-                        currency: isSec ? 'secondary' : 'primary', 
-                        cps: cpsBase,
-                        value: Math.floor(rarity.incomeBase * 200) 
+                        themeId: currentThemeId, name: item.name, rarity, mutation: p.mutation || 'none', 
+                        currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                     });
 
                     // Update Club Bounty & Museum
-                    if (activeClub && window.db) {
+                    if (activeClub && window.db && window.FirebaseAPI) {
+                        const { doc, setDoc } = window.FirebaseAPI;
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const updateData = {};
                         
-                        // Bounty Progression
                         if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
                             updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
                         }
 
-                        // Museum Progression (Epic or higher)
                         const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
                         if (rareIndexes.includes(rarity.id)) {
                             const museumList = activeClub.museum || [];
-                            if (!museumList.includes(item.name)) {
-                                updateData.museum = [...museumList, item.name];
-                            }
+                            if (!museumList.includes(item.name)) updateData.museum = [...museumList, item.name];
                         }
 
                         if (Object.keys(updateData).length > 0) {
-                            window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true });
+                            setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true });
                         }
                     }
 
@@ -858,7 +850,6 @@
 
             const activeNotifications = useMemo(() => {
                 const notifs = [];
-                // Check Ascensions
                 RARITIES.slice(0, -1).forEach(r => {
                     const dupes = getDuplicatesForRarity(r.id);
                     if (dupes.length >= 5) {
@@ -866,7 +857,6 @@
                     }
                 });
 
-                // Check Sets
                 RARITIES.forEach(r => {
                     MUTATION_ORDER.forEach(mut => {
                         const setId = `${currentThemeId}_${r.id}_${mut}`;
@@ -899,7 +889,6 @@
                 if (!basePackCost || basePackCost === 0) {
                     basePackCost = currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50);
                 }
-                // The Dilemma: 5x the equivalent Pack price, AND must be paid in the rarer Secondary Currency!
                 return basePackCost * 5; 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
 
@@ -908,65 +897,42 @@
                 setCurrency2(c => c - cost);
                 const cpsBase = rarity.incomeBase;
                 const newItem = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    themeId: currentThemeId,
-                    name: dbItem.name,
-                    rarity: rarity,
-                    mutation: 'none',
-                    currency: 'primary',
-                    cps: cpsBase,
-                    value: Math.floor(rarity.incomeBase * 200)
+                    id: Math.random().toString(36).substr(2, 9), themeId: currentThemeId, name: dbItem.name,
+                    rarity: rarity, mutation: 'none', currency: 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200)
                 };
                 setInventory(prev => [newItem, ...prev]);
             };
 
             const handleHoldStart = (p) => { 
-                isSwiping.current = false; 
-                isHolding.current = false; 
+                isSwiping.current = false; isHolding.current = false; 
                 holdTimer.current = setTimeout(() => { 
                     if (!isSwiping.current && !isOpening && !isSealed && !activePack) {
-                        isHolding.current = true; 
-                        setInspectedPack(p); 
+                        isHolding.current = true; setInspectedPack(p); 
                     }
                 }, 500); 
             };
-            const handleHoldMove = () => { 
-                isSwiping.current = true; 
-                clearTimeout(holdTimer.current); 
-            };
+            const handleHoldMove = () => { isSwiping.current = true; clearTimeout(holdTimer.current); };
             const handleHoldEnd = (p) => { 
                 clearTimeout(holdTimer.current); 
                 if (isSwiping.current || inspectedPack) return; 
-                if(!isHolding.current) {
-                    openPack(p, p.isShrine);
-                }
+                if(!isHolding.current) openPack(p, p.isShrine);
             };
 
             const handleRealmSwitch = (themeId) => {
                 if (currentThemeId === themeId) return;
-                setCurrentThemeId(themeId);
-                setTransferSacrifice(null); 
-                setTransferTarget(null);
-                setLastPull(null);
-                setActivePack(null);
-                setView('shop');
+                setCurrentThemeId(themeId); setTransferSacrifice(null); setTransferTarget(null); setLastPull(null); setActivePack(null); setView('shop');
             };
 
             const toggleFriend = async (targetUid) => {
                 if (!user) return;
-                const newFriends = friendsList.includes(targetUid)
-                    ? friendsList.filter(id => id !== targetUid)
-                    : [...friendsList, targetUid];
-
+                const newFriends = friendsList.includes(targetUid) ? friendsList.filter(id => id !== targetUid) : [...friendsList, targetUid];
                 setFriendsList(newFriends);
                 
-                if (!window.db) return; // Fallback prevents crash if DB is offline
-                
+                if (!window.db || !window.FirebaseAPI) return; 
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
-                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                        friends: newFriends
-                    }, { merge: true });
+                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { friends: newFriends }, { merge: true });
                 } catch (e) { console.error("Friend sync error", e); }
             };
 
@@ -975,25 +941,15 @@
                 const targetUsername = friendSearchQuery.trim().toLowerCase();
 
                 if (targetUsername === username.toLowerCase()) {
-                    setFriendSearchMessage("You cannot add yourself.");
-                    return;
+                    setFriendSearchMessage("You cannot add yourself."); return;
                 }
 
                 const targetProfile = leaderboard.find(p => (p.username || '').toLowerCase() === targetUsername);
-
-                if (!targetProfile) {
-                    setFriendSearchMessage("Player not found.");
-                    return;
-                }
-
-                if (friendsList.includes(targetProfile.id)) {
-                    setFriendSearchMessage("Already in friends list.");
-                    return;
-                }
+                if (!targetProfile) { setFriendSearchMessage("Player not found."); return; }
+                if (friendsList.includes(targetProfile.id)) { setFriendSearchMessage("Already in friends list."); return; }
 
                 toggleFriend(targetProfile.id);
-                setFriendSearchQuery('');
-                setFriendSearchMessage(`Added ${targetProfile.username}!`);
+                setFriendSearchQuery(''); setFriendSearchMessage(`Added ${targetProfile.username}!`);
                 setTimeout(() => setFriendSearchMessage(''), 3000);
             };
 
@@ -1006,63 +962,47 @@
                 if (!createClubName.trim() || !createClubTag.trim() || !user) return;
                 const newClubId = Math.random().toString(36).substr(2, 9);
                 
-                // Allow local clubs to be created if offline
-                if (!window.db) {
+                if (!window.db || !window.FirebaseAPI) {
                     setClubsList(prev => [...prev, {
                         id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
                         ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
                     }]);
-                    setClubId(newClubId);
-                    setCreateClubName('');
-                    setCreateClubTag('');
+                    setClubId(newClubId); setCreateClubName(''); setCreateClubTag('');
                     return;
                 }
 
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
-                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), {
-                        name: createClubName.trim(),
-                        tag: createClubTag.trim().toUpperCase(),
-                        ownerId: user.uid,
-                        xp: 0,
-                        museum: [],
-                        bounty: generateBounty(),
-                        createdAt: new Date().toISOString()
+                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), {
+                        name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(), ownerId: user.uid,
+                        xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
                     });
                     setClubId(newClubId);
-                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                        clubId: newClubId
-                    }, { merge: true });
-                    setCreateClubName('');
-                    setCreateClubTag('');
+                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: newClubId }, { merge: true });
+                    setCreateClubName(''); setCreateClubTag('');
                 } catch (e) { console.error("Error creating club", e); }
             };
 
             const handleJoinClub = async (cId) => {
                 if (!user) return;
                 setClubId(cId);
-                
-                if (!window.db) return;
-                
+                if (!window.db || !window.FirebaseAPI) return;
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
-                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                        clubId: cId
-                    }, { merge: true });
+                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: cId }, { merge: true });
                 } catch (e) { console.error("Error joining club", e); }
             };
 
             const handleLeaveClub = async () => {
                 if (!user) return;
                 setClubId(null);
-                
-                if (!window.db) return;
-                
+                if (!window.db || !window.FirebaseAPI) return;
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 try {
-                    await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                        clubId: null
-                    }, { merge: true });
+                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: null }, { merge: true });
                 } catch (e) { console.error("Error leaving club", e); }
             };
 
@@ -1071,15 +1011,14 @@
                 if (currency1 < cost || !activeClub) return;
                 setCurrency1(c => c - cost);
                 
-                if (!window.db) {
+                if (!window.db || !window.FirebaseAPI) {
                     setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
                     return;
                 }
 
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
-                    xp: (activeClub.xp || 0) + 100
-                }, { merge: true });
+                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true });
             };
 
             const claimBounty = async () => {
@@ -1087,29 +1026,28 @@
                 const bountyPrize = currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
                 setCurrency2(c => c + bountyPrize);
                 
-                if (!window.db) {
+                if (!window.db || !window.FirebaseAPI) {
                     setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
                     return;
                 }
 
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                     bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
                 }, { merge: true });
             };
 
             const rollNewBounty = async () => {
                 if (!activeClub) return;
-                
-                if (!window.db) {
+                if (!window.db || !window.FirebaseAPI) {
                     setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: generateBounty() } : c));
                     return;
                 }
 
+                const { doc, setDoc } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
-                    bounty: generateBounty()
-                }, { merge: true });
+                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: generateBounty() }, { merge: true });
             };
 
             const renderUnboxingArea = () => {
@@ -1173,18 +1111,14 @@
                                         setCurrency1(d => d + sellVal);
                                         if (lastPull.currency === 'secondary') setCurrency2(p => p + (sellVal * 0.3));
                                         setInventory(inv => inv.filter(i => i.id !== lastPull.id));
-                                        setLastPull(null);
-                                        setActivePack(null);
+                                        setLastPull(null); setActivePack(null);
                                     }} className={`flex-1 border py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
                                         <span>Exchange</span>
                                         <span className="text-[7px] opacity-80 flex items-center gap-0.5 font-mono">
                                             +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={8} />
                                         </span>
                                     </button>
-                                    <button onClick={() => {
-                                        setLastPull(null);
-                                        setActivePack(null);
-                                    }} className="flex-1 bg-slate-950 border border-white/10 text-white py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                    <button onClick={() => { setLastPull(null); setActivePack(null); }} className="flex-1 bg-slate-950 border border-white/10 text-white py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                 </div>
                             </div>
                         )}
@@ -1192,23 +1126,21 @@
                 );
             };
 
+            if (!isDataLoaded) {
+                return (
+                    <div className="h-screen w-full flex items-center justify-center bg-slate-950 flex-col gap-4">
+                        <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+                        <div className="text-cyan-400 font-black uppercase tracking-widest text-sm animate-pulse">Synchronizing Realms...</div>
+                    </div>
+                );
+            }
+
             return (
                 <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                         {[...Array(25)].map((_, i) => (
-                            <div 
-                                key={i} 
-                                className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : 'bg-white/10 rounded-full')} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]')}`} 
-                                style={{ 
-                                    left: `${Math.random() * 100}vw`, 
-                                    width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), 
-                                    height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), 
-                                    animationDuration: `${Math.random() * 10 + 10}s`, 
-                                    animationDelay: `${Math.random() * 10}s`, 
-                                    clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none')
-                                }} 
-                            />
+                            <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : 'bg-white/10 rounded-full')} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]')}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none') }} />
                         ))}
                     </div>
 
@@ -1232,7 +1164,6 @@
                         </div>
                     )}
 
-                    {/* Active Event Banner and Action Notifications */}
                     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
                         {(merchantSaleActive || frenzyTimer > 0) && (
                             <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
@@ -1250,9 +1181,7 @@
                             <div key={notif.id} className="pointer-events-auto px-4 py-1 rounded-full border border-white/20 shadow-lg backdrop-blur-md bg-slate-900/90 cursor-pointer transition-all hover:scale-105 active:scale-95 animate-in slide-in-from-top-4" onClick={notif.onClick} style={{animationDelay: `${i * 0.1}s`}}>
                                 <div className="flex items-center gap-2">
                                     <Icon name={notif.icon} size={10} className={notif.color} />
-                                    <span className={`text-[8px] font-black uppercase tracking-widest ${notif.color}`}>
-                                        {notif.label}
-                                    </span>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest ${notif.color}`}>{notif.label}</span>
                                     <span className="text-[6px] opacity-60 ml-1 text-white">Tap to Claim</span>
                                 </div>
                             </div>
@@ -1266,8 +1195,6 @@
 
                     {krakenEvent && (
                         <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : 'bg-red-950/80')} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
-                            
-                            {/* Detailed Kraken Visuals */}
                             {currentThemeId === 'abyssal' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-t from-cyan-950/40 via-transparent to-black/60 animate-ink" />
@@ -1285,7 +1212,6 @@
                                 </div>
                             )}
 
-                            {/* Cinematic Minotaur Visuals */}
                             {currentThemeId === 'olympian' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none">
                                     <div className="absolute inset-0 bg-red-900/10" />
@@ -1304,7 +1230,6 @@
                                 </div>
                             )}
 
-                            {/* Cinematic Canopy Visuals */}
                             {currentThemeId === 'canopy' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                                     <div className="absolute inset-0 bg-green-950/50" />
@@ -1446,10 +1371,10 @@
                                             disabled={tempUsername.length < 3}
                                             onClick={() => {
                                                 setUsername(tempUsername);
-                                                // Trigger an immediate sync
-                                                if (user && window.db) {
+                                                if (user && window.db && window.FirebaseAPI) {
+                                                    const { doc, setDoc } = window.FirebaseAPI;
                                                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                                                    window.Firebase.setDoc(window.Firebase.doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
+                                                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
                                                         username: tempUsername, currentRealm: currentThemeId, cpsPrimary: incomeFlow.income.c1, cpsSecondary: incomeFlow.income.c2, wealth: currency1, lastActive: new Date().toISOString()
                                                     }, { merge: true });
                                                 }
@@ -1478,7 +1403,6 @@
                                             </button>
                                         </div>
 
-                                        {/* HUB TABS */}
                                         <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner">
                                             <button onClick={() => setHubTab('leaderboards')} className={`flex-1 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all ${hubTab === 'leaderboards' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>Leaderboards</button>
                                             <button onClick={() => setHubTab('club')} className={`flex-1 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all ${hubTab === 'club' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}>My Club</button>
@@ -1593,7 +1517,6 @@
 
                                                         return (
                                                             <div className="flex flex-col gap-3 animate-in fade-in">
-                                                                {/* CLUB HEADER & LEVELING */}
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl text-center relative overflow-hidden">
                                                                     <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
                                                                     <Icon name="Shield" size={32} className="mx-auto text-yellow-500 mb-1 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
@@ -1620,7 +1543,6 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {/* DAILY BOUNTY */}
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
                                                                     <div className="flex items-center gap-1.5 mb-2">
                                                                         <Icon name="ScrollText" size={12} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
@@ -1645,7 +1567,6 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {/* MUSEUM */}
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
                                                                     <div className="flex items-center justify-between mb-2">
                                                                         <div className="flex items-center gap-1.5">
@@ -1673,7 +1594,6 @@
                                                                     )}
                                                                 </div>
 
-                                                                {/* ROSTER */}
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
                                                                     <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Roster</h3>
                                                                     <div className="space-y-1.5">
@@ -1794,7 +1714,6 @@
                                     <div key={r.id} className="mb-3 px-1">
                                         <h4 className={`text-[9px] font-black uppercase tracking-[0.3em] ${r.color} mb-2.5 flex items-center`}>{r.label} <div className={`h-[1px] flex-1 ml-3 ${currentThemeId === 'olympian' ? 'bg-amber-950/10' : 'bg-white/5'}`}></div></h4>
                                         
-                                        {/* SET REWARDS BAR */}
                                         <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scroll-smooth snap-x scrollbar-hide">
                                             {MUTATION_ORDER.map(mut => {
                                                 const setId = `${currentThemeId}_${r.id}_${mut}`;
@@ -1869,7 +1788,7 @@
                                                             <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
                                                                 Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={8} />
                                                             </button>
-                                                            <button onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className="bg-slate-950 text-amber-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md">Exchange 1</button>
+                                                            <button disabled={owned.length <= 1} onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className={`bg-slate-950 text-amber-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md ${owned.length <= 1 ? 'opacity-50 grayscale' : ''}`}>Exchange 1</button>
                                                         </div>
                                                     </div>
                                                 );
