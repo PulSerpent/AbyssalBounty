@@ -479,15 +479,14 @@
                         if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
                         if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
                         
-                        // NEW: Load Social Data
+                        // Load Social Data
                         if (data.username) setUsername(data.username);
                         if (data.clubId) setClubId(data.clubId);
                         if (data.pinnedItem) setPinnedItem(data.pinnedItem);
                         if (data.friendsList) setFriendsList(data.friendsList);
-                        console.log("Save loaded from LocalStorage!");
                     }
                     
-                    // NEW: Load Offline Clubs
+                    // Load Offline Clubs
                     const savedClubs = localStorage.getItem('abyssal_bounty_clubs');
                     if (savedClubs) setClubsList(JSON.parse(savedClubs));
                     
@@ -512,7 +511,6 @@
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
                         claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
-                        // NEW: Save Social Data
                         username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
@@ -545,7 +543,7 @@
                     }));
                 }, 1000);
                 return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, username, clubId, isDataLoaded]);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, username, clubId, pinnedItem, friendsList, isDataLoaded]);
 
             // Save Offline Clubs whenever they change
             useEffect(() => {
@@ -818,15 +816,11 @@
                     });
 
                     // Update Club Bounty & Museum
-                    if (activeClub && window.db && window.FirebaseAPI) {
-                        const { doc, setDoc } = window.FirebaseAPI;
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    if (activeClub) {
                         const updateData = {};
-                        
                         if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
                             updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
                         }
-
                         const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
                         if (rareIndexes.includes(rarity.id)) {
                             const museumList = activeClub.museum || [];
@@ -834,7 +828,14 @@
                         }
 
                         if (Object.keys(updateData).length > 0) {
-                            setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
+                            // Instant Local Update
+                            setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, ...updateData } : c));
+
+                            if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                                const { doc, setDoc } = window.FirebaseAPI;
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                                setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
+                            }
                         }
                     }
 
@@ -928,14 +929,15 @@
             const toggleFriend = async (targetUid) => {
                 if (!user) return;
                 const newFriends = friendsList.includes(targetUid) ? friendsList.filter(id => id !== targetUid) : [...friendsList, targetUid];
-                setFriendsList(newFriends);
+                setFriendsList(newFriends); // Local update
                 
-                if (!window.db || !window.FirebaseAPI) return; 
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                try {
-                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { friends: newFriends }, { merge: true });
-                } catch (e) { console.error("Friend sync error", e); }
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { friends: newFriends }, { merge: true });
+                    } catch (e) { console.error("Friend sync error", e); }
+                }
             };
 
             const handleAddFriendByUsername = () => {
@@ -963,49 +965,52 @@
             const handleCreateClub = async () => {
                 if (!createClubName.trim() || !createClubTag.trim() || !user) return;
                 const newClubId = Math.random().toString(36).substr(2, 9);
+                const newClubData = {
+                    id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
+                    ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
+                };
                 
-                if (!window.db || !window.FirebaseAPI) {
-                    setClubsList(prev => [...prev, {
-                        id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
-                        ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
-                    }]);
-                    setClubId(newClubId); setCreateClubName(''); setCreateClubTag('');
-                    return;
-                }
+                // 1. Instant Local Update
+                setClubsList(prev => [...prev, newClubData]);
+                setClubId(newClubId); 
+                setCreateClubName(''); 
+                setCreateClubTag('');
 
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                try {
-                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), {
-                        name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(), ownerId: user.uid,
-                        xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
-                    });
-                    setClubId(newClubId);
-                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: newClubId }, { merge: true });
-                    setCreateClubName(''); setCreateClubTag('');
-                } catch (e) { console.error("Error creating club", e); }
+                // 2. Cloud Sync
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), newClubData);
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: newClubId }, { merge: true });
+                    } catch (e) { console.error("Error creating club", e); }
+                }
             };
 
             const handleJoinClub = async (cId) => {
                 if (!user) return;
-                setClubId(cId);
-                if (!window.db || !window.FirebaseAPI) return;
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                try {
-                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: cId }, { merge: true });
-                } catch (e) { console.error("Error joining club", e); }
+                setClubId(cId); // Local Update
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: cId }, { merge: true });
+                    } catch (e) { console.error("Error joining club", e); }
+                }
             };
 
             const handleLeaveClub = async () => {
                 if (!user) return;
-                setClubId(null);
-                if (!window.db || !window.FirebaseAPI) return;
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                try {
-                    await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: null }, { merge: true });
-                } catch (e) { console.error("Error leaving club", e); }
+                setClubId(null); // Local Update
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    try {
+                        await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: null }, { merge: true });
+                    } catch (e) { console.error("Error leaving club", e); }
+                }
             };
 
             const handleDonateClub = async () => {
@@ -1013,14 +1018,14 @@
                 if (currency1 < cost || !activeClub) return;
                 setCurrency1(c => c - cost);
                 
-                if (!window.db || !window.FirebaseAPI) {
-                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
-                    return;
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true }).catch(()=>{});
                 }
-
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true });
             };
 
             const claimBounty = async () => {
@@ -1028,28 +1033,30 @@
                 const bountyPrize = currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
                 setCurrency2(c => c + bountyPrize);
                 
-                if (!window.db || !window.FirebaseAPI) {
-                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
-                    return;
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                        bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
+                    }, { merge: true }).catch(()=>{});
                 }
-
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
-                    bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
-                }, { merge: true });
             };
 
             const rollNewBounty = async () => {
                 if (!activeClub) return;
-                if (!window.db || !window.FirebaseAPI) {
-                    setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: generateBounty() } : c));
-                    return;
-                }
+                const newB = generateBounty();
+                
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: newB } : c));
 
-                const { doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: generateBounty() }, { merge: true });
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: newB }, { merge: true }).catch(()=>{});
+                }
             };
 
             const renderUnboxingArea = () => {
@@ -1378,7 +1385,7 @@
                                                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                                                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
                                                         username: tempUsername, currentRealm: currentThemeId, cpsPrimary: incomeFlow.income.c1, cpsSecondary: incomeFlow.income.c2, wealth: currency1, lastActive: new Date().toISOString()
-                                                    }, { merge: true });
+                                                    }, { merge: true }).catch(()=>{});
                                                 }
                                             }}
                                             className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-600')} text-white font-black uppercase py-2.5 rounded-xl disabled:opacity-50 text-xs`}
