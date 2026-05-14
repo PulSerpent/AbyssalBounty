@@ -487,10 +487,19 @@
             const [createClubTag, setCreateClubTag] = useState('');
             const [clubSearchQuery, setClubSearchQuery] = useState('');
 
+            // Live Trade State
+            const [activeTrade, setActiveTrade] = useState(null);
+            const [processedTrades, setProcessedTrades] = useState([]);
+            const [tradeResultMsg, setTradeResultMsg] = useState('');
+            const [tradePicker, setTradePicker] = useState(null);
+
             const holdTimer = useRef(null);
             const isHolding = useRef(false);
             const isSwiping = useRef(false);
             const gameStateRef = useRef({});
+            const processedRef = useRef(processedTrades);
+
+            useEffect(() => { processedRef.current = processedTrades; }, [processedTrades]);
 
             // Robust Secondary Economy Diminishing Returns
             const getSecondaryYieldMultiplier = useCallback((themeId, rarityId) => {
@@ -552,6 +561,7 @@
                         if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
                         if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
                         if (data.shrineOpens) setShrineOpens(data.shrineOpens);
+                        if (data.processedTrades) setProcessedTrades(data.processedTrades);
                         
                         // Load Social Data
                         if (data.username) setUsername(data.username);
@@ -571,7 +581,7 @@
             // Keep the ref updated with latest state values
             useEffect(() => {
                 gameStateRef.current = {
-                    currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens,
+                    currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens, processedTrades,
                     username, pinnedItem, friendsList, clubId, income: incomeFlow?.income || {c1:0, c2:0}
                 };
             });
@@ -584,7 +594,7 @@
                     const state = gameStateRef.current;
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens,
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens, processedTrades: state.processedTrades,
                         username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
@@ -611,13 +621,13 @@
                     const state = gameStateRef.current;
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens,
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens, processedTrades: state.processedTrades,
                         username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
                 }, 1000);
                 return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens, username, clubId, pinnedItem, friendsList, isDataLoaded]);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens, processedTrades, username, clubId, pinnedItem, friendsList, isDataLoaded]);
 
             // Save Offline Clubs whenever they change
             useEffect(() => {
@@ -661,25 +671,53 @@
                 return () => unsubscribe();
             }, [user]);
 
-            // Public Clubs Listener (Firebase)
+            // Live Trading Listener (Firebase)
             useEffect(() => {
-                if (!user) return;
-                const { db, collection, onSnapshot } = window.FirebaseAPI || {};
-                if (!db || user.uid === 'offline_user') return;
-                
+                if (!user || user.uid === 'offline_user' || !window.FirebaseAPI) return;
+                const { db, collection, onSnapshot } = window.FirebaseAPI;
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'clubs');
                 
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'trades');
                 const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const c = [];
-                    snapshot.forEach(d => c.push({ id: d.id, ...d.data() }));
-                    setClubsList(c);
-                }, (error) => {
-                    console.error("Clubs fetch error:", error);
-                });
-
+                    const trds = [];
+                    snapshot.forEach(d => trds.push({ id: d.id, ...d.data() }));
+                    
+                    const myTrades = trds.filter(t => t.senderId === user.uid || t.receiverId === user.uid);
+                    myTrades.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    
+                    setActiveTrade(curr => {
+                        if (curr) {
+                            const updated = myTrades.find(t => t.id === curr.id);
+                            if (updated) return updated;
+                        }
+                        const newTrade = myTrades.find(t => 
+                            ['pending', 'active'].includes(t.status) || 
+                            (t.status === 'completed' && !processedRef.current.includes(t.id))
+                        );
+                        return newTrade || null;
+                    });
+                }, console.error);
                 return () => unsubscribe();
             }, [user]);
+
+            // Handle Completed Trades & Inventory Injection
+            useEffect(() => {
+                if (activeTrade && activeTrade.status === 'completed' && !processedTrades.includes(activeTrade.id)) {
+                    const isSender = activeTrade.senderId === user?.uid;
+                    const myOffer = isSender ? (activeTrade.senderOffer || []) : (activeTrade.receiverOffer || []);
+                    const theirOffer = isSender ? (activeTrade.receiverOffer || []) : (activeTrade.senderOffer || []);
+                    
+                    setInventory(prev => {
+                        const myOfferIds = myOffer.map(i => i.id);
+                        const newInv = prev.filter(i => !myOfferIds.includes(i.id));
+                        const incomingItems = theirOffer.map(i => ({ ...i, id: Math.random().toString(36).substr(2, 9) }));
+                        return [...incomingItems, ...newInv];
+                    });
+                    
+                    setProcessedTrades(p => [...p, activeTrade.id]);
+                    setTradeResultMsg(`SUCCESS! Exchange Complete.`);
+                }
+            }, [activeTrade, processedTrades, user]);
 
             // Periodic Profile Push Sync (Firebase)
             useEffect(() => {
@@ -715,9 +753,9 @@
             // Compute Global Club Buffs
             const activeClub = useMemo(() => clubsList.find(c => c.id === clubId), [clubsList, clubId]);
             const clubLevel = useMemo(() => activeClub ? getClubLevel(activeClub.xp || 0) : 1, [activeClub]);
-            const clubMuseumBonus = useMemo(() => activeClub ? ((activeClub.museum || []).length * 0.01) : 0, [activeClub]);
             
-            const clubCpsBuff = 1 + (clubLevel >= 2 ? 0.05 : 0) + (clubLevel >= 4 ? 0.05 : 0) + clubMuseumBonus;
+            // Rebalanced: Max 8% Buff at Level 6
+            const clubCpsBuff = 1 + ((Math.min(6, clubLevel) - 1) * 0.016); 
             const clubDiscount = clubLevel >= 5 ? 0.9 : (clubLevel >= 3 ? 0.95 : 1);
 
             const getMutData = useCallback((tId, mId) => {
@@ -902,29 +940,7 @@
                         currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                     });
 
-                    // Update Club Bounty & Museum
-                    if (activeClub) {
-                        const updateData = {};
-                        if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
-                            updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
-                        }
-                        const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
-                        if (rareIndexes.includes(rarity.id)) {
-                            const museumList = activeClub.museum || [];
-                            if (!museumList.includes(item.name)) updateData.museum = [...museumList, item.name];
-                        }
-
-                        if (Object.keys(updateData).length > 0) {
-                            // Instant Local Update
-                            setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, ...updateData } : c));
-
-                            if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
-                                const { doc, setDoc } = window.FirebaseAPI;
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                                setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
-                            }
-                        }
-                    }
+                    // Removed legacy passive Museum/Bounty updates. Replaced by Monolith active sacrifices.
 
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
@@ -1008,9 +1024,131 @@
                 if(!isHolding.current) openPack(p, p.isShrine);
             };
 
+            const initiateTrade = (targetProfile) => {
+                if (!user || user.uid === 'offline_user' || !window.FirebaseAPI) return;
+                const { db, doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const tradeId = Math.random().toString(36).substr(2, 9);
+                
+                const newTrade = {
+                    id: tradeId,
+                    senderId: user.uid,
+                    senderName: username,
+                    receiverId: targetProfile.id,
+                    receiverName: targetProfile.username,
+                    status: 'pending',
+                    senderOffer: [],
+                    receiverOffer: [],
+                    senderConfirmed: false,
+                    receiverConfirmed: false,
+                    timestamp: Date.now()
+                };
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', tradeId), newTrade).catch(console.error);
+            };
+
+            const respondToTrade = (accept) => {
+                if (!activeTrade || !window.FirebaseAPI) return;
+                const { db, doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), {
+                    status: accept ? 'active' : 'rejected'
+                }, { merge: true });
+                if (!accept) setActiveTrade(null);
+            };
+
+            const cancelTrade = () => {
+                if (!activeTrade || !window.FirebaseAPI) return;
+                const { db, doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), { status: 'cancelled' }, { merge: true });
+                setActiveTrade(null);
+            };
+
+            const updateTradeOffer = (newOffer) => {
+                if (!activeTrade || !window.FirebaseAPI || !user) return;
+                const { db, doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const isSender = activeTrade.senderId === user.uid;
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), {
+                    [isSender ? 'senderOffer' : 'receiverOffer']: newOffer,
+                    senderConfirmed: false, receiverConfirmed: false
+                }, { merge: true });
+            };
+
+            const confirmTrade = () => {
+                if (!activeTrade || !window.FirebaseAPI || !user) return;
+                const { db, doc, setDoc } = window.FirebaseAPI;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const isSender = activeTrade.senderId === user.uid;
+                
+                const otherConfirmed = isSender ? activeTrade.receiverConfirmed : activeTrade.senderConfirmed;
+                const updates = { [isSender ? 'senderConfirmed' : 'receiverConfirmed']: true };
+                if (otherConfirmed) updates.status = 'completed';
+                
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), updates, { merge: true });
+            };
+
             const handleRealmSwitch = (themeId) => {
                 if (currentThemeId === themeId) return;
                 setCurrentThemeId(themeId); setTransferSacrifice(null); setTransferTarget(null); setLastPull(null); setActivePack(null); setView('shop');
+            };
+
+            const openTradeWindow = (p) => {
+                setTradeTarget(p);
+                setTradeOffer([]);
+                if (p.pinnedItem) {
+                    const rId = getDbItem(p.pinnedItem.name).rarityId;
+                    const tData = THEMES[p.currentRealm || 'abyssal'] || THEMES['abyssal'];
+                    const r = tData.RARITIES.find(x => x.id === rId) || tData.RARITIES[0];
+                    setTradeRequest({
+                        ...p.pinnedItem,
+                        themeId: p.currentRealm || 'abyssal',
+                        rarity: r,
+                        cps: r.incomeBase,
+                        value: Math.floor(r.incomeBase * 200)
+                    });
+                } else {
+                    setTradeRequest(null);
+                }
+                setTradeStep('setup');
+                setTradeResultMsg('');
+            };
+
+            const handleSendTrade = () => {
+                setTradeStep('processing');
+                setTimeout(() => {
+                    const offerValue = tradeOffer.reduce((sum, item) => sum + (item.value || 0) * (getMutData(item.themeId, item.mutation).mult || 1), 0);
+                    
+                    let requestBaseValue = tradeRequest.value || 0;
+                    if (!requestBaseValue && tradeRequest.rarity) {
+                        requestBaseValue = Math.floor(tradeRequest.rarity.incomeBase * 200);
+                    }
+                    const requestValue = requestBaseValue * (getMutData(tradeRequest.themeId, tradeRequest.mutation).mult || 1);
+                    
+                    // AI requires a slightly profitable trade (10% to 50% overpay)
+                    const requiredValue = requestValue * (1.1 + Math.random() * 0.4);
+
+                    if (offerValue >= requiredValue) {
+                        setInventory(prev => {
+                            const newInv = prev.filter(i => !tradeOffer.some(o => o.id === i.id));
+                            const newItem = {
+                                id: Math.random().toString(36).substr(2, 9),
+                                themeId: currentThemeId,
+                                name: tradeRequest.name,
+                                rarity: tradeRequest.rarity || THEMES[currentThemeId].RARITIES.find(r => r.id === getDbItem(tradeRequest.name).rarityId),
+                                mutation: tradeRequest.mutation || 'none',
+                                currency: tradeRequest.currency || 'primary',
+                                cps: tradeRequest.cps || (tradeRequest.rarity ? tradeRequest.rarity.incomeBase : 0),
+                                value: tradeRequest.value || requestBaseValue
+                            };
+                            return [newItem, ...newInv];
+                        });
+                        setTradeResultMsg(`SUCCESS! ${tradeTarget.username} accepted your offer.`);
+                    } else {
+                        setTradeResultMsg(`REJECTED! ${tradeTarget.username} demands a higher value exchange.`);
+                    }
+                    setTradeStep('result');
+                }, 2000);
             };
 
             const toggleFriend = async (targetUid) => {
@@ -1044,9 +1182,36 @@
                 setTimeout(() => setFriendSearchMessage(''), 3000);
             };
 
-            const generateBounty = () => {
-                const target = 50 + Math.floor(Math.random() * 50);
-                return { type: 'packs', target, progress: 0, claimedBy: [] };
+            const generateMonolithDemand = () => {
+                const difficulties = [
+                    { label: 'Extremely Easy', color: 'text-green-400', xp: 25, rars: ['common'], targets: [20] },
+                    { label: 'Easy', color: 'text-lime-400', xp: 50, rars: ['uncommon'], targets: [25] },
+                    { label: 'Normal', color: 'text-yellow-400', xp: 100, rars: ['rare'], targets: [30] },
+                    { label: 'Hard', color: 'text-orange-400', xp: 250, rars: ['epic'], targets: [20] },
+                    { label: 'Impossible', color: 'text-red-500', xp: 500, rars: ['legendary', 'mythic'], targets: [10, 3] }
+                ];
+                
+                const rand = Math.random();
+                let diff;
+                if (rand < 0.25) diff = difficulties[0];
+                else if (rand < 0.55) diff = difficulties[1];
+                else if (rand < 0.85) diff = difficulties[2];
+                else if (rand < 0.98) diff = difficulties[3];
+                else diff = difficulties[4]; // 2% chance for impossible
+
+                const rarChoiceIdx = Math.floor(Math.random() * diff.rars.length);
+                const targetRarityId = diff.rars[rarChoiceIdx];
+                const target = diff.targets[rarChoiceIdx];
+
+                return { 
+                    targetRarityId, 
+                    target, 
+                    current: 0, 
+                    claimedBy: [],
+                    difficulty: diff.label,
+                    xpReward: diff.xp,
+                    color: diff.color
+                };
             }
 
             const handleCreateClub = async () => {
@@ -1054,7 +1219,7 @@
                 const newClubId = Math.random().toString(36).substr(2, 9);
                 const newClubData = {
                     id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
-                    ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
+                    ownerId: user.uid, xp: 0, monolith: generateMonolithDemand(), createdAt: new Date().toISOString()
                 };
                 
                 // 1. Instant Local Update
@@ -1100,49 +1265,74 @@
                 }
             };
 
-            const handleDonateClub = async () => {
-                const cost = currentThemeId === 'cosmos' ? 5e34 : currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e24 : 100000);
-                if (currency1 < cost || !activeClub) return;
-                setCurrency1(c => c - cost);
+            const handleSacrificeToMonolith = () => {
+                if (!activeClub) return;
+                const m = activeClub.monolith || generateMonolithDemand();
+                if (m.current >= m.target) return;
+
+                const dupes = getDuplicatesForRarity(m.targetRarityId);
+                if (dupes.length === 0) return;
                 
-                // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
+                // Take the lowest value duplicate to be nice to the player
+                const itemToSacrifice = dupes.sort((a, b) => (a.value || 0) - (b.value || 0))[0];
                 
-                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                setInventory(prev => prev.filter(i => i.id !== itemToSacrifice.id));
+                
+                // Personal Reward for sacrificing
+                const reward = (itemToSacrifice.value || 10) * 10;
+                setCurrency1(c => c + reward);
+
+                const newCurrent = (m.current || 0) + 1;
+                const isNowFull = newCurrent >= m.target;
+                const xpGain = isNowFull ? (m.xpReward || 2500) : 5; // Reduced per-sacrifice XP so the completion reward shines
+
+                setClubsList(prev => prev.map(c => c.id === clubId ? { 
+                    ...c, 
+                    xp: (c.xp || 0) + xpGain, 
+                    monolith: { ...m, current: newCurrent } 
+                } : c));
+
+                if (window.db && window.FirebaseAPI && user?.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true }).catch(()=>{});
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                        xp: (activeClub.xp || 0) + xpGain,
+                        monolith: { ...m, current: newCurrent }
+                    }, { merge: true }).catch(()=>{});
                 }
             };
 
-            const claimBounty = async () => {
-                if (!activeClub || !activeClub.bounty || !user) return;
-                const bountyPrize = currentThemeId === 'cosmos' ? 5e38 : currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
-                setCurrency2(c => c + bountyPrize);
+            const claimMonolithBlessing = async () => {
+                if (!activeClub || !user) return;
+                const m = activeClub.monolith || generateMonolithDemand();
+                
+                // Massive secondary currency reward
+                const prize = currentThemeId === 'cosmos' ? 5e39 : currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000);
+                setCurrency2(c => c + prize);
                 
                 // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: { ...m, claimedBy: [...(m.claimedBy || []), user.uid] } } : c));
                 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
-                        bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
+                        monolith: { ...m, claimedBy: [...(m.claimedBy || []), user.uid] }
                     }, { merge: true }).catch(()=>{});
                 }
             };
 
-            const rollNewBounty = async () => {
+            const rollNewMonolith = async () => {
                 if (!activeClub) return;
-                const newB = generateBounty();
+                const newM = generateMonolithDemand();
                 
                 // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: newB } : c));
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: newM } : c));
 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: newB }, { merge: true }).catch(()=>{});
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newM }, { merge: true }).catch(()=>{});
                 }
             };
 
@@ -1568,7 +1758,8 @@
                                                             const mData = p.pinnedItem ? getMutData(p.currentRealm || 'abyssal', p.pinnedItem.mutation) : null;
                                                             const isMe = p.id === user?.uid;
                                                             const isFriend = friendsList.includes(p.id);
-                                                            const canTrade = isFriend || (clubId && p.clubId === clubId);
+                                                            const isOnline = p.lastActive ? (Date.now() - new Date(p.lastActive).getTime() < 40000) : false;
+                                                            const canTrade = (isFriend || (clubId && p.clubId === clubId)) && isOnline && !isMe;
 
                                                             return (
                                                                 <div key={p.id} className={`flex items-center gap-2 p-2 rounded-xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
@@ -1577,7 +1768,8 @@
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className={`text-[10px] font-black uppercase truncate ${isMe ? 'text-white' : 'text-white/70'}`}>{p.username}</span>
+                                                                            {!isMe && <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOnline ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-white/20'}`} title={isOnline ? 'Online' : 'Offline'} />}
+                                                                            <span className={`text-[10px] font-black uppercase truncate ${isMe ? 'text-white' : (isOnline ? 'text-white/90' : 'text-white/40')}`}>{p.username}</span>
                                                                             {p.currentRealm === 'olympian' && <Icon name="Sun" size={8} className="text-amber-500" />}
                                                                             {p.currentRealm === 'canopy' && <Icon name="Leaf" size={8} className="text-lime-500" />}
                                                                             {p.currentRealm === 'abyssal' && <Icon name="Anchor" size={8} className="text-cyan-500" />}
@@ -1591,7 +1783,7 @@
                                                                     
                                                                     {!isMe && (
                                                                         <div className="flex gap-1 ml-auto shrink-0">
-                                                                            <button onClick={() => canTrade ? setTradeTarget(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be friends or in same club to trade"}>
+                                                                            <button onClick={() => canTrade ? initiateTrade(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be friends/clubmates and ONLINE to trade"}>
                                                                                 <Icon name="Trade" size={10} />
                                                                             </button>
                                                                             <button onClick={() => toggleFriend(p.id)} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors shadow-inner ${isFriend ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' : 'bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30'}`} title={isFriend ? "Remove Friend" : "Add Friend"}>
@@ -1619,17 +1811,25 @@
                                                     (() => {
                                                         const activeClub = clubsList.find(c => c.id === clubId);
                                                         if (!activeClub) return <div className="text-center text-white/50 text-xs font-black p-4">Syncing club data...</div>;
-                                                        const members = leaderboard.filter(p => p.clubId === clubId);
+                                                        
+                                                        let members = leaderboard.filter(p => p.clubId === clubId);
+                                                        if (username && !members.some(m => m.id === user?.uid)) {
+                                                            members.push({ id: user?.uid, username: username, wealth: currency1 + (currency2 * 5), cpsPrimary: incomeFlow?.income?.c1 || 0, clubId: clubId });
+                                                            members.sort((a, b) => (b.wealth || 0) - (a.wealth || 0));
+                                                        }
                                                         
                                                         const cLvl = getClubLevel(activeClub.xp || 0);
                                                         const nxtLvlXp = CLUB_LEVEL_CAPS[cLvl] || (activeClub.xp || 0);
                                                         const curLvlXp = CLUB_LEVEL_CAPS[cLvl-1] || 0;
-                                                        const xpProgress = cLvl >= 5 ? 100 : Math.max(0, Math.min(100, ((activeClub.xp || 0) - curLvlXp) / (nxtLvlXp - curLvlXp) * 100));
+                                                        const xpProgress = cLvl >= 6 ? 100 : Math.max(0, Math.min(100, ((activeClub.xp || 0) - curLvlXp) / (nxtLvlXp - curLvlXp) * 100));
 
-                                                        const bounty = activeClub.bounty || { target: 100, progress: 0, claimedBy: [] };
-                                                        const bountyDone = bounty.progress >= bounty.target;
-                                                        const hasClaimed = bounty.claimedBy && bounty.claimedBy.includes(user?.uid);
-                                                        const allClaimed = members.every(m => bounty.claimedBy && bounty.claimedBy.includes(m.id));
+                                                        const monolith = activeClub.monolith || { targetRarityId: 'epic', target: 10, current: 0, claimedBy: [] };
+                                                        const monolithDone = monolith.current >= monolith.target;
+                                                        const hasClaimed = monolith.claimedBy && monolith.claimedBy.includes(user?.uid);
+                                                        const allClaimed = members.every(m => monolith.claimedBy && monolith.claimedBy.includes(m.id));
+                                                        
+                                                        const targetRarity = RARITIES.find(r => r.id === monolith.targetRarityId) || RARITIES[1];
+                                                        const availableDupes = getDuplicatesForRarity(monolith.targetRarityId).length;
 
                                                         return (
                                                             <div className="flex flex-col gap-3 animate-in fade-in">
@@ -1641,91 +1841,41 @@
                                                                     <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 mt-2 relative z-10">
                                                                         <div className="flex justify-between items-end mb-1.5">
                                                                             <span className="text-[9px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
-                                                                            <span className="text-[8px] font-black uppercase text-white/50">{cLvl >= 5 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
+                                                                            <span className="text-[8px] font-black uppercase text-white/50">{cLvl >= 6 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
                                                                         </div>
                                                                         <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
                                                                             <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
                                                                         </div>
-                                                                        
-                                                                        {cLvl < 5 && (
-                                                                            <button onClick={handleDonateClub} className="w-full py-1.5 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[8px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
-                                                                                Donate 100k <Icon name={terms.primaryIcon} size={8} /> for +100 XP
-                                                                            </button>
-                                                                        )}
                                                                     </div>
 
                                                                     <div className="flex gap-2 justify-center mt-2 relative z-10">
-                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-colors shadow-inner">Leave</button>
+                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-colors shadow-inner active:scale-95">Leave Club</button>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                                    <div className="flex items-center gap-1.5 mb-2">
-                                                                        <Icon name="ScrollText" size={12} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
-                                                                        <h3 className="text-[10px] font-black uppercase text-white/80">Active Club Bounty</h3>
-                                                                    </div>
-                                                                    <div className="bg-black/40 border border-white/5 p-2 rounded-xl">
-                                                                        <div className="text-[9px] font-black uppercase text-white/70 mb-1.5">Open {bounty.target} Dimensional Caches</div>
-                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
-                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${bountyDone ? 'bg-green-500' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-500')}`} style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }} />
-                                                                            <div className="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
-                                                                        </div>
-                                                                        
-                                                                        {bountyDone && !hasClaimed && (
-                                                                            <button onClick={claimBounty} className="mt-2 w-full py-1.5 bg-green-500 text-white rounded-lg text-[9px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Reward!</button>
-                                                                        )}
-                                                                        {bountyDone && hasClaimed && !allClaimed && (
-                                                                            <div className="mt-2 text-center text-[8px] font-black uppercase text-white/40">Waiting for other members...</div>
-                                                                        )}
-                                                                        {bountyDone && allClaimed && (
-                                                                            <button onClick={rollNewBounty} className="mt-2 w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black uppercase transition-colors">Roll New Bounty</button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <Icon name="Star" size={12} className="text-yellow-400" />
-                                                                            <h3 className="text-[10px] font-black uppercase text-white/80">Club Museum</h3>
-                                                                        </div>
-                                                                        <div className="text-[8px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
-                                                                    </div>
-                                                                    
-                                                                    {(activeClub.museum || []).length === 0 ? (
-                                                                        <div className="text-center text-[8px] font-black uppercase text-white/30 py-3 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
-                                                                    ) : (
-                                                                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                                                                            {(activeClub.museum || []).map((itemName, i) => {
-                                                                                const dbItem = getDbItem(itemName);
-                                                                                const r = RARITIES.find(x => x.id === dbItem.rarityId);
-                                                                                return (
-                                                                                    <div key={i} className="shrink-0 w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-lg shadow-inner relative group" title={itemName}>
-                                                                                        {dbItem.e}
-                                                                                        <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
-                                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Roster</h3>
-                                                                    <div className="space-y-1.5">
-                                                                        {members.map(p => (
-                                                                            <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-black/40 border border-white/5">
+                                                                {/* MEMBERS LIST MOVED TO TOP */}
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-1">
+                                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Members</h3>
+                                                                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide">
+                                                                        {members.map(p => {
+                                                                            const isMe = p.id === user?.uid;
+                                                                            const isFriend = friendsList.includes(p.id);
+                                                                            const isOnline = p.lastActive ? (Date.now() - new Date(p.lastActive).getTime() < 40000) : false;
+                                                                            const canTrade = isOnline && !isMe;
+                                                                            return (
+                                                                            <div key={p.id} className={`flex items-center gap-2 p-2 rounded-xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex items-center gap-1.5">
-                                                                                        <span className="font-black uppercase text-white truncate text-[10px]">{p.username}</span>
+                                                                                        {!isMe && <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOnline ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-white/20'}`} title={isOnline ? 'Online' : 'Offline'} />}
+                                                                                        <span className={`font-black uppercase truncate text-[10px] ${isMe ? 'text-white' : (isOnline ? 'text-white/90' : 'text-white/40')}`}>{p.username}</span>
                                                                                         {p.id === activeClub.ownerId && <Icon name="Star" size={8} className="text-yellow-500 shrink-0" title="Club Owner" />}
                                                                                     </div>
                                                                                     <div className="text-[8px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
                                                                                 </div>
                                                                                 
-                                                                                {p.id !== user?.uid && (
+                                                                                {!isMe && (
                                                                                     <div className="flex gap-1 ml-auto shrink-0">
-                                                                                        <button onClick={() => setTradeTarget(p)} className="w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/40 flex items-center justify-center transition-colors shadow-inner" title="Propose Trade">
+                                                                                        <button onClick={() => canTrade ? initiateTrade(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be ONLINE to trade"}>
                                                                                             <Icon name="Trade" size={10} />
                                                                                         </button>
                                                                                         {!friendsList.includes(p.id) && (
@@ -1736,7 +1886,58 @@
                                                                                     </div>
                                                                                 )}
                                                                             </div>
-                                                                        ))}
+                                                                        )})}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
+                                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                                        <Icon name="Flame" size={16} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-fuchsia-500'} />
+                                                                        <h3 className="text-sm font-black uppercase text-white tracking-widest">The Monolith</h3>
+                                                                    </div>
+                                                                    <div className="bg-black/60 border border-white/10 p-4 rounded-xl text-center relative overflow-hidden shadow-inner">
+                                                                        <div className={`absolute inset-0 opacity-20 bg-gradient-to-b from-fuchsia-500 to-transparent pointer-events-none`}></div>
+                                                                        
+                                                                        <div className="flex justify-between items-center mb-2 relative z-10">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current ${monolith.color || 'text-yellow-400'}`}>
+                                                                                {monolith.difficulty || 'Standard'}
+                                                                            </span>
+                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">
+                                                                                +{monolith.xpReward || 2500} Club XP
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <p className="text-[10px] font-black uppercase text-white/70 mb-2 relative z-10">
+                                                                            The Monolith Demands Sacrifice
+                                                                        </p>
+                                                                        <div className={`text-lg font-black uppercase tracking-widest mb-3 relative z-10 ${targetRarity.color} drop-shadow-md`}>
+                                                                            {monolith.target} {targetRarity.label} Items
+                                                                        </div>
+                                                                        
+                                                                        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/10 relative z-10 mb-4 shadow-inner">
+                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${monolithDone ? 'bg-green-500' : 'bg-fuchsia-600'}`} style={{ width: `${Math.min(100, (monolith.current / monolith.target) * 100)}%` }} />
+                                                                            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white mix-blend-difference">{monolith.current} / {monolith.target}</div>
+                                                                        </div>
+
+                                                                        {!monolithDone && (
+                                                                            <button 
+                                                                                onClick={handleSacrificeToMonolith} 
+                                                                                disabled={availableDupes <= 0}
+                                                                                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all shadow-lg border relative z-10 ${availableDupes > 0 ? 'bg-red-900/40 border-red-500/50 text-red-400 hover:bg-red-900/60 active:scale-95' : 'bg-slate-900 border-white/10 text-white/30'}`}
+                                                                            >
+                                                                                {availableDupes > 0 ? `Sacrifice 1 Duplicate (${availableDupes} Available)` : `No ${targetRarity.label} Duplicates Available`}
+                                                                            </button>
+                                                                        )}
+
+                                                                        {monolithDone && !hasClaimed && (
+                                                                            <button onClick={claimMonolithBlessing} className="w-full py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse relative z-10 active:scale-95">Claim Monolith Blessing!</button>
+                                                                        )}
+                                                                        {monolithDone && hasClaimed && !allClaimed && (
+                                                                            <div className="text-center text-[9px] font-black uppercase text-white/40 py-2 relative z-10 border border-dashed border-white/10 rounded-xl">Waiting for other members...</div>
+                                                                        )}
+                                                                        {monolithDone && allClaimed && (
+                                                                            <button onClick={rollNewMonolith} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase transition-colors relative z-10 active:scale-95">Ignite New Monolith</button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -2070,17 +2271,164 @@
                         </div>
                     )}
 
-                    {tradeTarget && (
-                        <div className="fixed inset-0 z-[600] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 sm:p-8 animate-in zoom-in-95" onClick={() => setTradeTarget(null)}>
-                            <div className="bg-slate-900 w-full max-w-sm rounded-[2rem] sm:rounded-3xl border-2 border-cyan-500/30 p-6 sm:p-8 shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
-                                <button className="absolute top-3 right-3 text-white/20 hover:text-white transition-colors" onClick={() => setTradeTarget(null)}><Icon name="X" size={20} className="sm:scale-125" /></button>
-                                <Icon name="Trade" size={48} className="text-cyan-400 mx-auto mb-4 animate-pulse drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
-                                <h3 className="text-lg font-black uppercase mb-2 text-white">Dimensional Exchange</h3>
-                                <p className="text-[10px] text-cyan-200/70 mb-6 uppercase font-black tracking-widest">Initiating link with <span className="text-cyan-400">{tradeTarget.username}</span>...</p>
-                                <div className="bg-black/40 border border-white/5 rounded-2xl p-5 mb-6 shadow-inner">
-                                    <p className="text-[9px] sm:text-[10px] uppercase font-black text-white/50 leading-relaxed">Trade module is spinning up.<br/><br/>You will be able to select items to offer and request from {tradeTarget.username}'s inventory in the next update!</p>
+                    {activeTrade && (
+                        <div className="fixed inset-0 z-[600] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 animate-in zoom-in-95">
+                            <div className={`bg-slate-900 w-full max-w-lg rounded-[2rem] sm:rounded-3xl border-2 ${currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'} p-4 sm:p-6 shadow-2xl relative flex flex-col`} onClick={e => e.stopPropagation()}>
+                                {['completed', 'cancelled', 'rejected'].includes(activeTrade.status) && (
+                                    <button className="absolute top-4 right-4 text-white/20 hover:text-white transition-colors" onClick={() => setActiveTrade(null)}><Icon name="X" size={20} /></button>
+                                )}
+                                
+                                <div className="flex items-center gap-3 mb-4 sm:mb-6 border-b border-white/10 pb-4">
+                                    <Icon name="Trade" size={24} className={currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'} />
+                                    <div>
+                                        <h3 className="text-sm font-black uppercase text-white">Dimensional Exchange</h3>
+                                        <p className="text-[10px] text-white/50 uppercase font-black tracking-widest">
+                                            Link Established: <span className={currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'}>{activeTrade.senderName} ↔ {activeTrade.receiverName}</span>
+                                        </p>
+                                    </div>
                                 </div>
-                                <button onClick={() => setTradeTarget(null)} className="w-full bg-cyan-600 text-white py-3 sm:py-4 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform shadow-lg shadow-cyan-500/20">Close Uplink</button>
+
+                                {activeTrade.status === 'pending' && activeTrade.senderId === user?.uid && (
+                                    <div className="py-12 flex flex-col items-center justify-center gap-4 text-center">
+                                        <div className={`w-12 h-12 rounded-full border-4 border-t-transparent animate-spin ${currentThemeId === 'cosmos' ? 'border-fuchsia-500' : 'border-cyan-500'}`} />
+                                        <h3 className="text-sm font-black uppercase text-white tracking-widest animate-pulse">Awaiting Response...</h3>
+                                        <p className="text-[10px] text-white/50 uppercase font-black mb-4">Waiting for {activeTrade.receiverName} to accept the uplink.</p>
+                                        <button onClick={cancelTrade} className="px-6 py-2 rounded-xl border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 font-black uppercase text-[10px]">Cancel Trade</button>
+                                    </div>
+                                )}
+
+                                {activeTrade.status === 'pending' && activeTrade.receiverId === user?.uid && (
+                                    <div className="py-8 flex flex-col items-center justify-center gap-4 text-center">
+                                        <Icon name="Zap" size={48} className={`animate-pulse ${currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_rgba(217,70,239,0.5)]' : 'text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]'}`} />
+                                        <h3 className="text-sm font-black uppercase text-white tracking-widest">Incoming Request!</h3>
+                                        <p className="text-[10px] text-white/50 uppercase font-black mb-4">{activeTrade.senderName} wants to trade with you.</p>
+                                        <div className="flex gap-4 w-full px-4">
+                                            <button onClick={() => respondToTrade(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 bg-white/5 hover:bg-white/10 font-black uppercase text-[10px]">Decline</button>
+                                            <button onClick={() => respondToTrade(true)} className={`flex-1 py-3 rounded-xl font-black uppercase text-[10px] text-white shadow-lg ${currentThemeId === 'cosmos' ? 'bg-fuchsia-600 shadow-fuchsia-500/20 hover:bg-fuchsia-500' : 'bg-cyan-600 shadow-cyan-500/20 hover:bg-cyan-500'}`}>Accept</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTrade.status === 'active' && (() => {
+                                    const isSender = activeTrade.senderId === user?.uid;
+                                    const myOffer = isSender ? (activeTrade.senderOffer || []) : (activeTrade.receiverOffer || []);
+                                    const theirOffer = isSender ? (activeTrade.receiverOffer || []) : (activeTrade.senderOffer || []);
+                                    const myConfirmed = isSender ? activeTrade.senderConfirmed : activeTrade.receiverConfirmed;
+                                    const theirConfirmed = isSender ? activeTrade.receiverConfirmed : activeTrade.senderConfirmed;
+                                    
+                                    return (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex gap-2 sm:gap-4 items-stretch h-56 sm:h-64">
+                                            {/* MY OFFER */}
+                                            <div className={`flex-1 flex flex-col border rounded-2xl p-2 sm:p-3 shadow-inner transition-colors ${myConfirmed ? 'bg-green-950/40 border-green-500/50' : 'bg-black/40 border-white/5'}`}>
+                                                <div className="flex justify-between items-center mb-2 px-1">
+                                                    <h4 className="text-[9px] font-black uppercase text-white/50">My Offer</h4>
+                                                    {myConfirmed && <span className="text-[7px] text-green-400 font-black uppercase tracking-widest animate-pulse border border-green-500/30 px-1.5 py-0.5 rounded">Ready</span>}
+                                                </div>
+                                                <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto scrollbar-hide pr-1">
+                                                    {myOffer.map(item => {
+                                                        const mData = getMutData(item.themeId, item.mutation);
+                                                        return (
+                                                            <div key={item.id} className={`p-1.5 sm:p-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2 ${mData.glow} relative`}>
+                                                                {!myConfirmed && <button onClick={() => updateTradeOffer(myOffer.filter(i => i.id !== item.id))} className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center text-white shadow-md z-10"><Icon name="X" size={10} /></button>}
+                                                                <span className="text-xl shrink-0">{getDbItem(item.name).e}</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="text-[8px] sm:text-[9px] font-black text-white truncate">{item.name}</div>
+                                                                    <div className={`text-[6px] sm:text-[7px] font-black uppercase ${mData.color} truncate`}>{mData.label || 'Base'}</div>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                    {myOffer.length < 3 && !myConfirmed && (
+                                                        <button onClick={() => setTradePicker('offer')} className="flex-1 min-h-[40px] rounded-xl border-2 border-dashed border-white/20 text-white/30 flex flex-col items-center justify-center hover:bg-white/5 transition-colors gap-1">
+                                                            <Icon name="UserPlus" size={14} />
+                                                            <span className="text-[7px] uppercase font-black">Add Item</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col items-center justify-center text-white/30 px-1 shrink-0">
+                                                <Icon name="Trade" size={20} className={currentThemeId === 'cosmos' ? 'text-fuchsia-400/50' : 'text-cyan-400/50'} />
+                                            </div>
+
+                                            {/* THEIR OFFER */}
+                                            <div className={`flex-1 flex flex-col border rounded-2xl p-2 sm:p-3 shadow-inner transition-colors ${theirConfirmed ? 'bg-green-950/40 border-green-500/50' : 'bg-black/40 border-white/5'}`}>
+                                                <div className="flex justify-between items-center mb-2 px-1">
+                                                    <h4 className="text-[9px] font-black uppercase text-white/50 truncate pr-1">Their Offer</h4>
+                                                    {theirConfirmed && <span className="text-[7px] text-green-400 font-black uppercase tracking-widest animate-pulse border border-green-500/30 px-1.5 py-0.5 rounded shrink-0">Ready</span>}
+                                                </div>
+                                                <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto scrollbar-hide pr-1">
+                                                    {theirOffer.length === 0 ? (
+                                                        <div className="flex-1 flex items-center justify-center text-[8px] font-black uppercase text-white/20 text-center px-2">Waiting for items...</div>
+                                                    ) : (
+                                                        theirOffer.map(item => {
+                                                            const mData = getMutData(item.themeId, item.mutation);
+                                                            return (
+                                                                <div key={item.id} className={`p-1.5 sm:p-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2 ${mData.glow}`}>
+                                                                    <span className="text-xl shrink-0">{getDbItem(item.name).e}</span>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="text-[8px] sm:text-[9px] font-black text-white truncate">{item.name}</div>
+                                                                        <div className={`text-[6px] sm:text-[7px] font-black uppercase ${mData.color} truncate`}>{mData.label || 'Base'}</div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3 mt-2">
+                                            <button onClick={cancelTrade} className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 font-black uppercase text-[9px] sm:text-[10px] active:scale-95 transition-all">Cancel</button>
+                                            <button 
+                                                disabled={myConfirmed || (myOffer.length === 0 && theirOffer.length === 0)} 
+                                                onClick={confirmTrade}
+                                                className={`flex-1 py-3 sm:py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-transform shadow-lg ${myConfirmed ? 'bg-green-600/50 text-white/50 cursor-not-allowed border border-green-500/30' : (myOffer.length === 0 && theirOffer.length === 0) ? 'bg-slate-800 text-white/30' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-fuchsia-500/20 hover:bg-fuchsia-500 active:scale-95' : 'bg-cyan-600 text-white shadow-cyan-500/20 hover:bg-cyan-500 active:scale-95')}`}
+                                            >
+                                                {myConfirmed ? 'Waiting for Partner...' : 'Confirm Trade'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )})()}
+
+                                {['completed', 'cancelled', 'rejected'].includes(activeTrade.status) && (
+                                    <div className="py-8 flex flex-col items-center justify-center gap-4 text-center animate-in zoom-in-75">
+                                        <Icon name={activeTrade.status === 'completed' ? 'Check' : 'X'} size={48} className={activeTrade.status === 'completed' ? 'text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]' : 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]'} />
+                                        <h3 className={`text-lg font-black uppercase tracking-widest ${activeTrade.status === 'completed' ? 'text-green-400' : 'text-red-400'}`}>
+                                            {activeTrade.status === 'completed' ? 'Trade Successful!' : `Trade ${activeTrade.status}`}
+                                        </h3>
+                                        <button onClick={() => setActiveTrade(null)} className="mt-4 px-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-black text-[10px] uppercase transition-colors">Close</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {tradePicker && activeTrade && (
+                        <div className="fixed inset-0 z-[700] bg-slate-950/95 flex flex-col p-4 animate-in fade-in zoom-in-95" onClick={() => setTradePicker(null)}>
+                            <div className="bg-slate-900 flex-1 rounded-3xl border border-white/10 p-4 flex flex-col overflow-hidden shadow-2xl max-w-md mx-auto w-full" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xs font-black uppercase text-white tracking-[0.2em]">Select Item to Offer</h3>
+                                    <button onClick={() => setTradePicker(null)} className="p-1.5 bg-white/5 rounded-full"><Icon name="X" size={16} /></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide">
+                                    {(() => {
+                                        const isSender = activeTrade.senderId === user?.uid;
+                                        const currentOffer = isSender ? (activeTrade.senderOffer || []) : (activeTrade.receiverOffer || []);
+                                        return activeInventory.filter(i => !currentOffer.some(o => o.id === i.id)).sort(sortItemsThemeAware).map(item => {
+                                            const mData = getMutData(currentThemeId, item.mutation);
+                                            return (
+                                                <div key={item.id} onClick={() => { 
+                                                    updateTradeOffer([...currentOffer, item]);
+                                                    setTradePicker(null); 
+                                                }} className={`p-3 rounded-2xl flex justify-between items-center bg-white/5 border border-white/5 active:scale-95 cursor-pointer transition-all hover:bg-white/10 ${mData.glow}`}>
+                                                    <div className="flex items-center gap-3"><span className="text-2xl">{getDbItem(item.name).e}</span><div><div className="text-[10px] font-black text-white">{item.name}</div><div className={`text-[8px] font-black uppercase tracking-wider ${item.mutation === 'none' ? 'text-white/50' : mData.color}`}>{mData.label || 'Base'} • {item.rarity?.label || 'Artifact'}</div></div></div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
                             </div>
                         </div>
                     )}
