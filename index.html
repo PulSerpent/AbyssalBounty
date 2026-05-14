@@ -64,6 +64,33 @@
         @keyframes void-pulse { 0%, 100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: scale(1.1) rotate(180deg); filter: hue-rotate(90deg); } }
         @keyframes heavenly-sky { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         
+        /* Cyberpunk Effects */
+        .neon-scanlines {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(34, 211, 238, 0.05) 50%, rgba(34, 211, 238, 0.05));
+            background-size: 100% 4px;
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+        @keyframes cyber-glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .animate-glitch {
+            animation: cyber-glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+        }
+        @keyframes matrix-fall {
+            0% { transform: translateY(-10vh); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(110vh); opacity: 0; }
+        }
+
         /* Cinematic Encounter Animations */
         @keyframes tentacle-writhe { 
             0% { transform: rotate(-10deg) translateY(0) scale(1); } 
@@ -107,6 +134,11 @@
             background: linear-gradient(135deg, #09090b, #1e1b4b, #3b0764, #000000);
             background-size: 400% 400%;
             animation: heavenly-sky 40s ease-in-out infinite;
+        }
+        .bg-theme-neon {
+            background: linear-gradient(135deg, #020617, #082f49, #4a044e, #020617);
+            background-size: 400% 400%;
+            animation: heavenly-sky 20s ease-in-out infinite;
         }
     </style>
 </head>
@@ -165,7 +197,8 @@
                 UserPlus: <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M20 8v6 M23 11h-6"/>,
                 UserMinus: <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M23 11h-6"/>,
                 Trade: <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />,
-                Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+                Eye: <React.Fragment><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></React.Fragment>
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -414,6 +447,66 @@
                     { id: 'cosmic', name: 'Cosmic', icon: 'Globe', color: 'from-fuchsia-400 to-fuchsia-600', glow: 'shadow-fuchsia-500/20' },
                     { id: 'universal', name: 'Universal', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
                 ]
+            },
+            neon: {
+                id: 'neon', name: 'Neon Nexus', bgClass: 'bg-theme-neon', icon: 'Hexagon',
+                terms: { primary: 'Data', primaryIcon: 'Boxes', secondary: 'Core Fragments', secondaryIcon: 'ZapFast', packMenu: 'Decrypt', log: 'Database', beast: '🤖', beastName: 'Mainframe AI', merchant: 'Rogue Hacker' },
+                RARITIES: [
+                    { id: 'trash', label: 'Corrupted', color: 'text-stone-400', bg: 'bg-stone-800/90', multiplier: 0.5, incomeBase: 1e40, secondaryChance: 0.01, setPrize: { amt: 2.5e45, curr: 'primary' } },
+                    { id: 'common', label: 'Basic', color: 'text-gray-300', bg: 'bg-gray-800/90', multiplier: 1, incomeBase: 5e40, secondaryChance: 0.02, setPrize: { amt: 2.5e46, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Upgraded', color: 'text-green-400', bg: 'bg-green-900/90', multiplier: 3, incomeBase: 2.5e41, secondaryChance: 0.05, setPrize: { amt: 2.5e47, curr: 'primary' } },
+                    { id: 'rare', label: 'Advanced', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 1.5e42, secondaryChance: 0.10, setPrize: { amt: 2.5e48, curr: 'primary' } },
+                    { id: 'epic', label: 'Encrypted', color: 'text-pink-400', bg: 'bg-pink-900/90', multiplier: 20, incomeBase: 1e43, secondaryChance: 0.15, setPrize: { amt: 2.5e49, curr: 'primary' } },
+                    { id: 'legendary', label: 'Quantum', color: 'text-purple-400', bg: 'bg-purple-900/95', multiplier: 60, incomeBase: 8e43, secondaryChance: 0.25, setPrize: { amt: 2.5e50, curr: 'primary' } },
+                    { id: 'mythic', label: 'Sentient', color: 'text-red-400', bg: 'bg-red-900/90', multiplier: 200, incomeBase: 5e44, secondaryChance: 0.40, setPrize: { amt: 2.5e51, curr: 'primary' } },
+                    { id: 'celestial', label: 'Virtual', color: 'text-cyan-300', bg: 'bg-cyan-900/95', multiplier: 800, incomeBase: 5e45, secondaryChance: 0.60, setPrize: { amt: 5e45, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Root', color: 'text-emerald-400', bg: 'bg-emerald-950/95', multiplier: 3500, incomeBase: 5e46, secondaryChance: 0.80, setPrize: { amt: 5e47, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Admin', color: 'text-white', bg: 'bg-slate-900/95', multiplier: 15000, incomeBase: 5e47, secondaryChance: 1.0, setPrize: { amt: 5e49, curr: 'secondary' } },
+                ],
+                MUTATION_ORDER: ['none', 'glitched', 'overclocked', 'holographic', 'cybernetic', 'synthetic', 'neon_infused', 'digital_ascended'],
+                MUTATIONS: {
+                    none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+                    glitched: { label: 'Glitched', mult: 1.5, bg: 'bg-zinc-900/90', color: 'text-green-500', glow: 'shadow-[0_0_15px_rgba(34,197,94,0.6)]' },
+                    overclocked: { label: 'Overclocked', mult: 3, bg: 'bg-red-950/90', color: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(248,113,113,0.6)]' },
+                    holographic: { label: 'Holographic', mult: 7, bg: 'bg-cyan-950/90', color: 'text-cyan-300', glow: 'shadow-[0_0_15px_rgba(103,232,249,0.6)]' },
+                    cybernetic: { label: 'Cybernetic', mult: 15, bg: 'bg-blue-950/90', color: 'text-blue-400', glow: 'shadow-[0_0_15px_rgba(96,165,250,0.6)]' },
+                    synthetic: { label: 'Synthetic', mult: 35, bg: 'bg-purple-950/90', color: 'text-purple-300', glow: 'shadow-[0_0_15px_rgba(192,132,252,0.4)]' },
+                    neon_infused: { label: 'Neon-Infused', mult: 100, bg: 'bg-pink-950/90', color: 'text-pink-400', glow: 'shadow-[0_0_15px_rgba(244,114,182,0.6)]' },
+                    digital_ascended: { label: 'Digital', mult: 500, bg: 'bg-white/95', color: 'text-slate-900', glow: 'shadow-[0_0_20px_rgba(255,255,255,0.8)]' }
+                },
+                MASTER_ITEM_DB: [
+                    { name: "Frayed Wire", rarityId: "trash", e: "🔌" }, { name: "Dead Pixel", rarityId: "trash", e: "⬛" }, { name: "Rusted Gear", rarityId: "trash", e: "⚙️" }, { name: "Broken Keycap", rarityId: "trash", e: "⌨️" }, { name: "Burned Diode", rarityId: "trash", e: "💡" }, { name: "Static Screen", rarityId: "trash", e: "📺" }, { name: "Floppy Disk", rarityId: "trash", e: "💾" }, { name: "Scratched CD", rarityId: "trash", e: "💿" }, { name: "Empty Battery", rarityId: "trash", e: "🪫" }, { name: "Corrupted File", rarityId: "trash", e: "📄" },
+                    { name: "Copper Trace", rarityId: "common", e: "〰️" }, { name: "Logic Gate", rarityId: "common", e: "⛩️" }, { name: "Silicon Scrap", rarityId: "common", e: "🪨" }, { name: "LED Bulb", rarityId: "common", e: "🚥" }, { name: "Aux Cable", rarityId: "common", e: "🔌" }, { name: "Cooling Fan", rarityId: "common", e: "🌬️" }, { name: "Keyboard Switch", rarityId: "common", e: "🕹️" }, { name: "Optical Lens", rarityId: "common", e: "👁️" }, { name: "Circuit Board", rarityId: "common", e: "🟩" }, { name: "Plasma Cell", rarityId: "common", e: "🔋" },
+                    { name: "Data Cache", rarityId: "uncommon", e: "📦" }, { name: "Fiber Optic", rarityId: "uncommon", e: "🧶" }, { name: "Hologram Lens", rarityId: "uncommon", e: "📽️" }, { name: "Quantum Chip", rarityId: "uncommon", e: "🔲" }, { name: "Neon Tube", rarityId: "uncommon", e: "🪩" }, { name: "Memory Bank", rarityId: "uncommon", e: "🗄️" }, { name: "Server Rack", rarityId: "uncommon", e: "🗄️" }, { name: "Antenna", rarityId: "uncommon", e: "📡" }, { name: "Neural Net", rarityId: "uncommon", e: "🧠" }, { name: "Heat Sink", rarityId: "uncommon", e: "🧊" },
+                    { name: "AI Node", rarityId: "rare", e: "🤖" }, { name: "Crypto Key", rarityId: "rare", e: "🔑" }, { name: "Overdrive Core", rarityId: "rare", e: "⚡" }, { name: "Firewall Shield", rarityId: "rare", e: "🛡️" }, { name: "Proxy Server", rarityId: "rare", e: "🌐" }, { name: "Logic Matrix", rarityId: "rare", e: "🧩" }, { name: "Root Access", rarityId: "rare", e: "🚪" }, { name: "Mainframe Blade", rarityId: "rare", e: "🗡️" }, { name: "Cyber Arm", rarityId: "rare", e: "🦾" }, { name: "Synapse Link", rarityId: "rare", e: "🔗" },
+                    { name: "Cyber-Brain", rarityId: "epic", e: "🧠" }, { name: "Plasma Cannon", rarityId: "epic", e: "🔫" }, { name: "Quantum Core", rarityId: "epic", e: "🔮" }, { name: "Sentient Virus", rarityId: "epic", e: "🦠" }, { name: "Ghost Protocol", rarityId: "epic", e: "👻" }, { name: "Zero-Day Exploit", rarityId: "epic", e: "🔓" }, { name: "Hack Deck", rarityId: "epic", e: "💻" }, { name: "Dark Web Node", rarityId: "epic", e: "🕸️" }, { name: "Synth-Blood", rarityId: "epic", e: "🩸" }, { name: "Neon Heart", rarityId: "epic", e: "💖" },
+                    { name: "The Architect", rarityId: "legendary", e: "🏛️" }, { name: "Oracle Engine", rarityId: "legendary", e: "👁️" }, { name: "Singularity Drive", rarityId: "legendary", e: "🕳️" }, { name: "Digital Soul", rarityId: "legendary", e: "👻" }, { name: "Nexus Key", rarityId: "legendary", e: "🗝️" }, { name: "Virtual Reality", rarityId: "legendary", e: "🌌" }, { name: "Hyper-Thread", rarityId: "legendary", e: "🧶" }, { name: "Cyber-Dragon", rarityId: "legendary", e: "🐉" }, { name: "Omni-Tool", rarityId: "legendary", e: "🛠️" }, { name: "Alpha Code", rarityId: "legendary", e: "🅰️" },
+                    { name: "Binary God", rarityId: "mythic", e: "0️⃣" }, { name: "The Grid", rarityId: "mythic", e: "🌐" }, { name: "Source Code", rarityId: "mythic", e: "📜" }, { name: "Machine Spirit", rarityId: "mythic", e: "🤖" }, { name: "Infinite Loop", rarityId: "mythic", e: "♾️" }, { name: "Absolute Override", rarityId: "mythic", e: "🛑" }, { name: "Root Command", rarityId: "mythic", e: "👑" }, { name: "Sentient Web", rarityId: "mythic", e: "🕸️" }, { name: "Cyber-Leviathan", rarityId: "mythic", e: "🦕" }, { name: "Time Dilator", rarityId: "mythic", e: "⏳" },
+                    { name: "Entanglement", rarityId: "celestial", e: "〰️" }, { name: "Astral Network", rarityId: "celestial", e: "🌌" }, { name: "Holo Universe", rarityId: "celestial", e: "🌍" }, { name: "Data Stars", rarityId: "celestial", e: "✨" }, { name: "Memory Galaxy", rarityId: "celestial", e: "🌠" }, { name: "Aether Wire", rarityId: "celestial", e: "🔌" }, { name: "Celestial Node", rarityId: "celestial", e: "📡" }, { name: "Code Nebula", rarityId: "celestial", e: "☁️" }, { name: "Zenith Server", rarityId: "celestial", e: "🏢" }, { name: "Virtual Cosmos", rarityId: "celestial", e: "🔭" },
+                    { name: "The First Bit", rarityId: "primordial", e: "1️⃣" }, { name: "Origin Algorithm", rarityId: "primordial", e: "🧮" }, { name: "Genesis Code", rarityId: "primordial", e: "🌱" }, { name: "Proto Mainframe", rarityId: "primordial", e: "🖥️" }, { name: "Core Matrix", rarityId: "primordial", e: "🟩" }, { name: "Alpha Protocol", rarityId: "primordial", e: "🅰️" }, { name: "Creator Terminal", rarityId: "primordial", e: "⌨️" }, { name: "Binary Void", rarityId: "primordial", e: "⬛" }, { name: "Source Energy", rarityId: "primordial", e: "⚡" }, { name: "Machine Ancestor", rarityId: "primordial", e: "🧓" },
+                    { name: "Absolute Data", rarityId: "transcendent", e: "📊" }, { name: "The Singularity", rarityId: "transcendent", e: "🕳️" }, { name: "Omniscient AI", rarityId: "transcendent", e: "👁️" }, { name: "Sentient Nexus", rarityId: "transcendent", e: "🧠" }, { name: "Infinity Engine", rarityId: "transcendent", e: "♾️" }, { name: "Beyond the Grid", rarityId: "transcendent", e: "🌌" }, { name: "Ultimate Protocol", rarityId: "transcendent", e: "👑" }, { name: "Cyber Ascension", rarityId: "transcendent", e: "✨" }, { name: "The One Matrix", rarityId: "transcendent", e: "1️⃣" }, { name: "Reality Overwrite", rarityId: "transcendent", e: "✏️" }
+                ],
+                STANDARD_PACKS: [
+                    { id: 'pack1', name: 'Scrap Bin', cost: 5e44, currency: 'primary', icon: 'Box', color: 'from-stone-800 to-stone-950', glow: 'shadow-stone-500/20', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+                    { id: 'pack2', name: 'Data Drive', cost: 5e45, currency: 'primary', icon: 'Boxes', color: 'from-gray-700 to-gray-900', glow: 'shadow-gray-500/20', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Hacker Cache', cost: 5e46, currency: 'primary', icon: 'Zap', color: 'from-green-700 to-green-950', glow: 'shadow-green-500/20', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Secure Server', cost: 5e47, currency: 'primary', icon: 'Lock', color: 'from-sky-700 to-sky-950', glow: 'shadow-sky-500/50', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Encrypted Node', cost: 5e48, currency: 'primary', icon: 'Shield', color: 'from-pink-700 to-pink-950', glow: 'shadow-pink-500/50', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Quantum Vault', cost: 5e49, currency: 'primary', icon: 'Hexagon', color: 'from-purple-800 to-purple-950', glow: 'shadow-purple-500/50', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'AI Mainframe', cost: 5e50, currency: 'primary', icon: 'Globe', color: 'from-red-800 to-red-950', glow: 'shadow-red-500/50', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Virtual Core', cost: 5e51, currency: 'primary', icon: 'Flame', color: 'from-cyan-700 to-blue-950', glow: 'shadow-cyan-400/80', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Root Directory', cost: 5e52, currency: 'primary', icon: 'Sparkles', color: 'from-emerald-800 to-teal-950', glow: 'shadow-emerald-400/80', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Admin Override', cost: 5e53, currency: 'primary', icon: 'Infinity', color: 'from-slate-800 to-black', glow: 'shadow-white/80', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
+                ],
+                SHRINE_CATEGORIES: [
+                    { id: 'glitched', name: 'Glitched', icon: 'ZapFast', color: 'from-green-400 to-green-600', glow: 'shadow-green-500/20' },
+                    { id: 'overclocked', name: 'Overclocked', icon: 'Flame', color: 'from-red-400 to-red-600', glow: 'shadow-red-500/20' },
+                    { id: 'holographic', name: 'Holographic', icon: 'Eye', color: 'from-cyan-400 to-cyan-600', glow: 'shadow-cyan-500/20' },
+                    { id: 'cybernetic', name: 'Cybernetic', icon: 'Hexagon', color: 'from-blue-500 to-blue-700', glow: 'shadow-blue-500/20' },
+                    { id: 'synthetic', name: 'Synthetic', icon: 'Boxes', color: 'from-purple-500 to-purple-700', glow: 'shadow-purple-500/20' },
+                    { id: 'neon_infused', name: 'Neon-Infused', icon: 'Sparkles', color: 'from-pink-400 to-pink-600', glow: 'shadow-pink-500/20' },
+                    { id: 'digital_ascended', name: 'Digital', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
+                ]
             }
         };
 
@@ -429,7 +522,7 @@
 
         const App = () => {
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
-            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy', 'cosmos']);
+            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy', 'cosmos', 'neon']);
             const [currency1, setCurrency1] = useState(100);
             const [currency2, setCurrency2] = useState(0);
             const [inventory, setInventory] = useState([]);
@@ -498,6 +591,9 @@
             const isSwiping = useRef(false);
             const gameStateRef = useRef({});
             const processedRef = useRef(processedTrades);
+            
+            // Generate standard active App ID for UI display
+            const activeAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
             useEffect(() => { processedRef.current = processedTrades; }, [processedTrades]);
 
@@ -1174,7 +1270,7 @@
                 }
 
                 const targetProfile = leaderboard.find(p => (p.username || '').toLowerCase() === targetUsername);
-                if (!targetProfile) { setFriendSearchMessage("Player not found."); return; }
+                if (!targetProfile) { setFriendSearchMessage("Player not found. Check Server ID!"); return; }
                 if (friendsList.includes(targetProfile.id)) { setFriendSearchMessage("Already in friends list."); return; }
 
                 toggleFriend(targetProfile.id);
@@ -1426,11 +1522,29 @@
             return (
                 <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
-                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                        {[...Array(25)].map((_, i) => (
-                            <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : (currentThemeId === 'cosmos' ? 'bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/10 rounded-full'))} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'cosmos' ? 'animate-[orb-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]'))}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none'), borderRadius: currentThemeId === 'cosmos' ? '50%' : 'auto' }} />
-                        ))}
-                    </div>
+                    {currentThemeId === 'neon' ? (
+                        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden neon-scanlines">
+                            {[...Array(40)].map((_, i) => (
+                                <div key={`neon-${i}`} className="absolute font-mono text-[10px] sm:text-xs font-black animate-[matrix-fall_linear_infinite]" 
+                                     style={{ 
+                                         left: `${Math.random() * 100}vw`, 
+                                         animationDuration: `${Math.random() * 4 + 3}s`, 
+                                         animationDelay: `${Math.random() * 5}s`,
+                                         color: Math.random() > 0.5 ? '#22d3ee' : '#f472b6',
+                                         opacity: Math.random() * 0.5 + 0.2,
+                                         textShadow: '0 0 5px currentColor'
+                                     }}>
+                                    {Math.random() > 0.5 ? '1' : '0'}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                            {[...Array(25)].map((_, i) => (
+                                <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : (currentThemeId === 'cosmos' ? 'bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/10 rounded-full'))} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'cosmos' ? 'animate-[orb-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]'))}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none'), borderRadius: currentThemeId === 'cosmos' ? '50%' : 'auto' }} />
+                            ))}
+                        </div>
+                    )}
 
                     {anomalyVisible && (
                         <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
@@ -1554,14 +1668,14 @@
 
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
-                                    <div className="bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
-                                        <h2 className="text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter">{krakenFeedback}</h2>
-                                        <div className="text-6xl sm:text-8xl drop-shadow-[0_0_20px_white]">{terms.beast}</div>
+                                    <div className={`bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50 ${currentThemeId === 'neon' ? 'animate-glitch border-pink-500/50' : ''}`}>
+                                        <h2 className={`text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter ${currentThemeId === 'neon' ? 'text-cyan-400 drop-shadow-[2px_2px_0_#f472b6]' : ''}`}>{krakenFeedback}</h2>
+                                        <div className={`text-6xl sm:text-8xl drop-shadow-[0_0_20px_white] ${currentThemeId === 'neon' ? 'drop-shadow-[0_0_20px_#22d3ee]' : ''}`}>{terms.beast}</div>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 sm:gap-10">
-                                        <div className="bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
-                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                        <div className={`bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)] ${currentThemeId === 'neon' ? 'border-cyan-500/30' : ''}`}>
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : (currentThemeId === 'neon' ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.8)] animate-glitch' : 'text-orange-500 drop-shadow-[0_0_15px_red]')))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
                                             <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
                                             <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
                                                 <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : (currentThemeId === 'cosmos' ? 'bg-gradient-to-r from-purple-800 via-fuchsia-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'))}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
@@ -1655,10 +1769,15 @@
 
                         {view === 'social' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'))} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
-                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))} mx-auto mb-2`} />
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : (currentThemeId === 'neon' ? 'border-pink-500/30' : 'border-cyan-500/30')))} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
+                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : (currentThemeId === 'neon' ? 'text-pink-400' : 'text-cyan-400')))} mx-auto mb-2`} />
                                     <h2 className={`text-lg sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
                                     <p className={`text-[8px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
+                                    
+                                    <div className="mt-3 inline-flex items-center gap-1.5 bg-black/60 border border-white/10 px-3 py-1.5 rounded-full shadow-inner">
+                                        <span className="text-[7px] text-white/50 uppercase font-black tracking-widest">Server ID:</span>
+                                        <span className={`text-[9px] font-mono font-black ${currentThemeId === 'neon' ? 'text-pink-400' : 'text-cyan-400'}`}>{activeAppId.length > 15 ? activeAppId.substring(0,8) + '...' : activeAppId}</span>
+                                    </div>
                                 </div>
 
                                 {!username ? (
