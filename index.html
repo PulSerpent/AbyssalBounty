@@ -384,6 +384,8 @@
             const [transferTarget, setTransferTarget] = useState(null);
             const [inventoryModal, setInventoryModal] = useState(null);
             const [inspectedPack, setInspectedPack] = useState(null);
+            const [usernameError, setUsernameError] = useState('');
+            const [clubCreateError, setClubCreateError] = useState('');
             
             // Events
             const [merchantVisible, setMerchantVisible] = useState(false);
@@ -641,10 +643,10 @@
             // Compute Global Club Buffs
             const activeClub = useMemo(() => clubsList.find(c => c.id === clubId), [clubsList, clubId]);
             const clubLevel = useMemo(() => activeClub ? getClubLevel(activeClub.xp || 0) : 1, [activeClub]);
-            const clubMuseumBonus = useMemo(() => activeClub ? ((activeClub.museum || []).length * 0.01) : 0, [activeClub]);
             
-            const clubCpsBuff = 1 + (clubLevel >= 2 ? 0.05 : 0) + (clubLevel >= 4 ? 0.05 : 0) + clubMuseumBonus;
-            const clubDiscount = clubLevel >= 5 ? 0.9 : (clubLevel >= 3 ? 0.95 : 1);
+            // Balanced Club Buffs: +2% per level (Max 8% at lvl 5). Removed OP Museum!
+            const clubCpsBuff = 1 + ((clubLevel - 1) * 0.02);
+            const clubDiscount = 1 - ((clubLevel - 1) * 0.02);
 
             const getMutData = useCallback((tId, mId) => {
                 const t = THEMES[tId] || THEMES['abyssal'];
@@ -815,30 +817,8 @@
                         currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                     });
 
-                    // Update Club Bounty & Museum
-                    if (activeClub) {
-                        const updateData = {};
-                        if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
-                            updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
-                        }
-                        const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
-                        if (rareIndexes.includes(rarity.id)) {
-                            const museumList = activeClub.museum || [];
-                            if (!museumList.includes(item.name)) updateData.museum = [...museumList, item.name];
-                        }
-
-                        if (Object.keys(updateData).length > 0) {
-                            // Instant Local Update
-                            setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, ...updateData } : c));
-
-                            if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
-                                const { doc, setDoc } = window.FirebaseAPI;
-                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                                setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
-                            }
-                        }
-                    }
-
+                    // Removed overpowered automatic club progression.
+                    // Monoliths must be manually funded via the Club Hub using artifacts!
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
                 return true;
@@ -957,17 +937,34 @@
                 setTimeout(() => setFriendSearchMessage(''), 3000);
             };
 
-            const generateBounty = () => {
-                const target = 50 + Math.floor(Math.random() * 50);
-                return { type: 'packs', target, progress: 0, claimedBy: [] };
-            }
+            const generateMonolith = () => {
+                const rarities = ['trash', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+                const rIdx = Math.floor(Math.random() * 4) + 2; // uncommon to legendary
+                const targets = { 'uncommon': 150, 'rare': 50, 'epic': 15, 'legendary': 3 };
+                const reqRarity = rarities[rIdx];
+                return { rarityId: reqRarity, target: targets[reqRarity], progress: 0, claimedBy: [] };
+            };
 
             const handleCreateClub = async () => {
                 if (!createClubName.trim() || !createClubTag.trim() || !user) return;
+                
+                const nameTaken = clubsList.some(c => c.name.toLowerCase() === createClubName.trim().toLowerCase());
+                const tagTaken = clubsList.some(c => c.tag.toLowerCase() === createClubTag.trim().toLowerCase());
+
+                if (nameTaken) {
+                    setClubCreateError("Club name is already taken!");
+                    return;
+                }
+                if (tagTaken) {
+                    setClubCreateError("Club tag is already taken!");
+                    return;
+                }
+                setClubCreateError('');
+
                 const newClubId = Math.random().toString(36).substr(2, 9);
                 const newClubData = {
                     id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
-                    ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
+                    ownerId: user.uid, xp: 0, monolith: generateMonolith(), createdAt: new Date().toISOString()
                 };
                 
                 // 1. Instant Local Update
@@ -1013,49 +1010,59 @@
                 }
             };
 
-            const handleDonateClub = async () => {
-                const cost = currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e24 : 100000);
-                if (currency1 < cost || !activeClub) return;
-                setCurrency1(c => c - cost);
-                
-                // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
-                
-                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
-                    const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true }).catch(()=>{});
-                }
-            };
-
-            const claimBounty = async () => {
-                if (!activeClub || !activeClub.bounty || !user) return;
-                const bountyPrize = currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
-                setCurrency2(c => c + bountyPrize);
-                
-                // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
-                
-                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
-                    const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
-                        bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
-                    }, { merge: true }).catch(()=>{});
-                }
-            };
-
-            const rollNewBounty = async () => {
+            const handleSacrificeToMonolith = async () => {
                 if (!activeClub) return;
-                const newB = generateBounty();
+                const currentMonolith = activeClub.monolith || generateMonolith();
+                const reqRarity = currentMonolith.rarityId;
+                const itemToSacrifice = inventory.find(i => i.rarity?.id === reqRarity && (!pinnedItem || i.id !== pinnedItem.id));
                 
-                // Local Update
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: newB } : c));
+                if (!itemToSacrifice) return;
 
-                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                // Burn the artifact from the player's inventory
+                setInventory(prev => prev.filter(i => i.id !== itemToSacrifice.id));
+                
+                const newXp = (activeClub.xp || 0) + 50;
+                const newProg = currentMonolith.progress + 1;
+                const newMonolith = { ...currentMonolith, progress: newProg };
+
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: newXp, monolith: newMonolith } : c));
+                
+                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: newB }, { merge: true }).catch(()=>{});
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: newXp, monolith: newMonolith }, { merge: true }).catch(()=>{});
+                }
+            };
+
+            const claimMonolith = async () => {
+                if (!activeClub || !user) return;
+                const currentMonolith = activeClub.monolith;
+                if (!currentMonolith) return;
+
+                const rIdx = Math.max(1, RARITIES.findIndex(r => r.id === currentMonolith.rarityId));
+                const prize = 500000 * Math.pow(10, rIdx); // Huge secondary currency prize based on rarity
+                
+                setCurrency2(c => c + prize);
+                
+                const newMonolith = { ...currentMonolith, claimedBy: [...(currentMonolith.claimedBy || []), user.uid] };
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: newMonolith } : c));
+                
+                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newMonolith }, { merge: true }).catch(()=>{});
+                }
+            };
+
+            const rollNewMonolith = async () => {
+                if (!activeClub) return;
+                const newM = generateMonolith();
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: newM } : c));
+
+                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newM }, { merge: true }).catch(()=>{});
                 }
             };
 
@@ -1368,19 +1375,25 @@
                                 {!username ? (
                                     <div className="bg-slate-900/90 backdrop-blur border border-white/10 p-5 rounded-3xl text-center">
                                         <h3 className="font-black uppercase mb-4 text-white text-xs">Join the Network</h3>
+                                        {usernameError && <div className="text-red-400 text-[9px] font-black uppercase mb-2 animate-pulse">{usernameError}</div>}
                                         <input 
                                             type="text" 
                                             placeholder="Enter Username" 
                                             className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-white mb-4 text-center font-black uppercase text-xs focus:outline-none focus:border-cyan-500"
                                             maxLength={12}
                                             value={tempUsername}
-                                            onChange={(e) => setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                                            onChange={(e) => { setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setUsernameError(''); }}
                                         />
                                         <button 
                                             disabled={tempUsername.length < 3}
                                             onClick={() => {
+                                                const isTaken = leaderboard.some(p => p.username && p.username.toLowerCase() === tempUsername.toLowerCase());
+                                                if (isTaken) {
+                                                    setUsernameError("Username is already taken!");
+                                                    return;
+                                                }
                                                 setUsername(tempUsername);
-                                                if (user && window.db && window.FirebaseAPI) {
+                                                if (user && window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                                                     const { doc, setDoc } = window.FirebaseAPI;
                                                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                                                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -1539,12 +1552,6 @@
                                                                         <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
                                                                             <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
                                                                         </div>
-                                                                        
-                                                                        {cLvl < 5 && (
-                                                                            <button onClick={handleDonateClub} className="w-full py-1.5 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[8px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
-                                                                                Donate 100k <Icon name={terms.primaryIcon} size={8} /> for +100 XP
-                                                                            </button>
-                                                                        )}
                                                                     </div>
 
                                                                     <div className="flex gap-2 justify-center mt-2 relative z-10">
@@ -1552,55 +1559,52 @@
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                                    <div className="flex items-center gap-1.5 mb-2">
-                                                                        <Icon name="ScrollText" size={12} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
-                                                                        <h3 className="text-[10px] font-black uppercase text-white/80">Active Club Bounty</h3>
-                                                                    </div>
-                                                                    <div className="bg-black/40 border border-white/5 p-2 rounded-xl">
-                                                                        <div className="text-[9px] font-black uppercase text-white/70 mb-1.5">Open {bounty.target} Dimensional Caches</div>
-                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
-                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${bountyDone ? 'bg-green-500' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-500')}`} style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }} />
-                                                                            <div className="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
-                                                                        </div>
-                                                                        
-                                                                        {bountyDone && !hasClaimed && (
-                                                                            <button onClick={claimBounty} className="mt-2 w-full py-1.5 bg-green-500 text-white rounded-lg text-[9px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Reward!</button>
-                                                                        )}
-                                                                        {bountyDone && hasClaimed && !allClaimed && (
-                                                                            <div className="mt-2 text-center text-[8px] font-black uppercase text-white/40">Waiting for other members...</div>
-                                                                        )}
-                                                                        {bountyDone && allClaimed && (
-                                                                            <button onClick={rollNewBounty} className="mt-2 w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black uppercase transition-colors">Roll New Bounty</button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <Icon name="Star" size={12} className="text-yellow-400" />
-                                                                            <h3 className="text-[10px] font-black uppercase text-white/80">Club Museum</h3>
-                                                                        </div>
-                                                                        <div className="text-[8px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl">
+                                                                    <div className="flex flex-col items-center gap-2 mb-3">
+                                                                        <Icon name="Flame" size={24} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-fuchsia-400'} />
+                                                                        <h3 className="text-sm font-black uppercase text-white/90 tracking-tighter">The Monolith</h3>
+                                                                        <p className="text-[8px] uppercase font-black text-white/50 text-center leading-relaxed max-w-[200px]">Sacrifice your duplicate artifacts to power the monolith. Earn massive secondary wealth for the whole club!</p>
                                                                     </div>
                                                                     
-                                                                    {(activeClub.museum || []).length === 0 ? (
-                                                                        <div className="text-center text-[8px] font-black uppercase text-white/30 py-3 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
-                                                                    ) : (
-                                                                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                                                                            {(activeClub.museum || []).map((itemName, i) => {
-                                                                                const dbItem = getDbItem(itemName);
-                                                                                const r = RARITIES.find(x => x.id === dbItem.rarityId);
-                                                                                return (
-                                                                                    <div key={i} className="shrink-0 w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-lg shadow-inner relative group" title={itemName}>
-                                                                                        {dbItem.e}
-                                                                                        <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
+                                                                    {(() => {
+                                                                        const monolith = activeClub.monolith || { rarityId: 'uncommon', target: 150, progress: 0, claimedBy: [] };
+                                                                        const isFinished = monolith.progress >= monolith.target;
+                                                                        const hasClaimed = monolith.claimedBy.includes(user?.uid);
+                                                                        const rData = RARITIES.find(r => r.id === monolith.rarityId);
+                                                                        const ownedValid = inventory.filter(i => i.rarity?.id === monolith.rarityId && (!pinnedItem || i.id !== pinnedItem.id)).length;
+                                                                        
+                                                                        return (
+                                                                            <div className="bg-black/40 border border-white/5 p-3 rounded-xl flex flex-col items-center">
+                                                                                <div className="text-[9px] font-black uppercase text-white/70 mb-2">
+                                                                                    Target: <span className={rData?.color}>{monolith.target} {rData?.label} Items</span>
+                                                                                </div>
+                                                                                
+                                                                                <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative mb-3">
+                                                                                    <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${isFinished ? 'bg-green-500' : rData?.bg.split('/')[0] || 'bg-slate-500'}`} style={{ width: `${Math.min(100, (monolith.progress / monolith.target) * 100)}%` }} />
+                                                                                    <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white mix-blend-difference">{monolith.progress} / {monolith.target}</div>
+                                                                                </div>
+                                                                                
+                                                                                {!isFinished ? (
+                                                                                    <button disabled={ownedValid <= 0} onClick={handleSacrificeToMonolith} className={`w-full py-2 rounded-lg text-[9px] font-black uppercase transition-all shadow-md active:scale-95 ${ownedValid > 0 ? (currentThemeId === 'olympian' ? 'bg-amber-600 text-white' : 'bg-fuchsia-600 text-white') : 'bg-slate-800 text-white/30'}`}>
+                                                                                        Sacrifice 1 {rData?.label} ({ownedValid} Available)
+                                                                                    </button>
+                                                                                ) : !hasClaimed ? (
+                                                                                    <button onClick={claimMonolith} className="w-full py-2 bg-green-500 text-white rounded-lg text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse active:scale-95">
+                                                                                        Claim Monolith Power!
+                                                                                    </button>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center w-full gap-2">
+                                                                                        <div className="text-[9px] font-black uppercase text-white/40">Reward Claimed!</div>
+                                                                                        {user?.uid === activeClub.ownerId && (
+                                                                                            <button onClick={rollNewMonolith} className="w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[8px] font-black uppercase transition-colors">
+                                                                                                Ignite New Monolith
+                                                                                            </button>
+                                                                                        )}
                                                                                     </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })()}
                                                                 </div>
 
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
@@ -1639,9 +1643,10 @@
                                                     <div className="flex flex-col gap-3 animate-in fade-in">
                                                         <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
                                                             <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Found a Club</h3>
+                                                            {clubCreateError && <div className="text-[9px] font-black uppercase text-red-400 mb-2 animate-pulse">{clubCreateError}</div>}
                                                             <div className="flex gap-2 mb-2">
-                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
-                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
+                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => { setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, '')); setClubCreateError(''); }} />
+                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => { setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setClubCreateError(''); }} />
                                                             </div>
                                                             <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-2 rounded-lg text-[9px] transition-colors disabled:opacity-50">Create Club</button>
                                                         </div>
