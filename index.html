@@ -987,10 +987,10 @@
                 let discount = isShrine ? 0.75 : 1;
                 if (merchantSaleActive) discount *= 0.5;
                 if (isShrine) {
-                    // FIX: Make Shrines progress with a base x12 multiplier instead of x50
                     const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
                     const safeIdx = Math.max(0, shrineIndex);
-                    const realmBase = currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000));
+                    // NEON UPDATE
+                    const realmBase = currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000)));
                     return Math.floor(realmBase * Math.pow(12, safeIdx) * discount * clubDiscount);
                 }
                 return Math.floor(p.cost * discount * clubDiscount); 
@@ -1036,8 +1036,6 @@
                         currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                     });
 
-                    // Removed legacy passive Museum/Bounty updates. Replaced by Monolith active sacrifices.
-
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
                 return true;
@@ -1078,7 +1076,8 @@
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
                 const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
-                const realmMultiplier = currentThemeId === 'cosmos' ? 1e30 : currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1); 
+                // NEON UPDATE
+                const realmMultiplier = currentThemeId === 'neon' ? 1e40 : (currentThemeId === 'cosmos' ? 1e30 : (currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1))); 
                 const baseCost = Math.pow(5, tgtRarityIdx) * 50 * realmMultiplier; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
@@ -1089,7 +1088,8 @@
                 const rIdx = RARITIES.findIndex(x => x.id === rarityId);
                 let basePackCost = STANDARD_PACKS[rIdx]?.cost;
                 if (!basePackCost || basePackCost === 0) {
-                    basePackCost = currentThemeId === 'cosmos' ? 1e34 : currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50);
+                    // NEON UPDATE
+                    basePackCost = currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50)));
                 }
                 return basePackCost * 5; 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
@@ -1402,8 +1402,8 @@
                 if (!activeClub || !user) return;
                 const m = activeClub.monolith || generateMonolithDemand();
                 
-                // Massive secondary currency reward
-                const prize = currentThemeId === 'cosmos' ? 5e39 : currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000);
+                // Massive secondary currency reward - NEON UPDATE
+                const prize = currentThemeId === 'neon' ? 5e49 : (currentThemeId === 'cosmos' ? 5e39 : (currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000)));
                 setCurrency2(c => c + prize);
                 
                 // Local Update
@@ -1432,7 +1432,6 @@
                 }
             };
 
-            // FIX 1: Larger packs in the unboxing animation area
             const renderUnboxingArea = () => {
                 let isLight = false;
                 if (lastPull) {
@@ -1452,7 +1451,6 @@
                                     setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
                                 }, pendingLoot.rarity?.id === 'trash' ? 400 : 1200);
                             }}>
-                                {/* FIX: Replaced w-28 h-36 with much larger dimensions w-40 h-56 sm:w-52 sm:h-72 */}
                                 <div className={`w-40 h-56 sm:w-52 sm:h-72 rounded-2xl border-4 sm:border-8 border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
                                     <div className="absolute top-8 left-0 right-0 h-14 flex items-center justify-center z-10">
                                         <div className="relative w-full h-full">
@@ -1923,178 +1921,6 @@
                                                 </div>
                                             </React.Fragment>
                                         )}
-
-                                        {hubTab === 'club' && (
-                                            <React.Fragment>
-                                                {clubId ? (
-                                                    (() => {
-                                                        const activeClub = clubsList.find(c => c.id === clubId);
-                                                        if (!activeClub) return <div className="text-center text-white/50 text-xs font-black p-4">Syncing club data...</div>;
-                                                        
-                                                        let members = leaderboard.filter(p => p.clubId === clubId);
-                                                        if (username && !members.some(m => m.id === user?.uid)) {
-                                                            members.push({ id: user?.uid, username: username, wealth: currency1 + (currency2 * 5), cpsPrimary: incomeFlow?.income?.c1 || 0, clubId: clubId });
-                                                            members.sort((a, b) => (b.wealth || 0) - (a.wealth || 0));
-                                                        }
-                                                        
-                                                        const cLvl = getClubLevel(activeClub.xp || 0);
-                                                        const nxtLvlXp = CLUB_LEVEL_CAPS[cLvl] || (activeClub.xp || 0);
-                                                        const curLvlXp = CLUB_LEVEL_CAPS[cLvl-1] || 0;
-                                                        const xpProgress = cLvl >= 6 ? 100 : Math.max(0, Math.min(100, ((activeClub.xp || 0) - curLvlXp) / (nxtLvlXp - curLvlXp) * 100));
-
-                                                        const monolith = activeClub.monolith || { targetRarityId: 'epic', target: 10, current: 0, claimedBy: [] };
-                                                        const monolithDone = monolith.current >= monolith.target;
-                                                        const hasClaimed = monolith.claimedBy && monolith.claimedBy.includes(user?.uid);
-                                                        const allClaimed = members.every(m => monolith.claimedBy && monolith.claimedBy.includes(m.id));
-                                                        
-                                                        const targetRarity = RARITIES.find(r => r.id === monolith.targetRarityId) || RARITIES[1];
-                                                        const availableDupes = getDuplicatesForRarity(monolith.targetRarityId).length;
-
-                                                        return (
-                                                            <div className="flex flex-col gap-3 animate-in fade-in">
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl text-center relative overflow-hidden">
-                                                                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
-                                                                    <Icon name="Shield" size={32} className="mx-auto text-yellow-500 mb-1 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
-                                                                    <h3 className="text-lg font-black uppercase text-white tracking-tighter relative z-10">[{activeClub.tag}] {activeClub.name}</h3>
-                                                                    
-                                                                    <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 mt-2 relative z-10">
-                                                                        <div className="flex justify-between items-end mb-1.5">
-                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
-                                                                            <span className="text-[8px] font-black uppercase text-white/50">{cLvl >= 6 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
-                                                                        </div>
-                                                                        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                            <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex gap-2 justify-center mt-2 relative z-10">
-                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-colors shadow-inner active:scale-95">Leave Club</button>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* MEMBERS LIST MOVED TO TOP */}
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-1">
-                                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Members</h3>
-                                                                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide">
-                                                                        {members.map(p => {
-                                                                            const isMe = p.id === user?.uid;
-                                                                            const isFriend = friendsList.includes(p.id);
-                                                                            const isOnline = p.lastActive ? (Date.now() - new Date(p.lastActive).getTime() < 40000) : false;
-                                                                            const canTrade = isOnline && !isMe;
-                                                                            return (
-                                                                            <div key={p.id} className={`flex items-center gap-2 p-2 rounded-xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center gap-1.5">
-                                                                                        {!isMe && <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOnline ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-white/20'}`} title={isOnline ? 'Online' : 'Offline'} />}
-                                                                                        <span className={`font-black uppercase truncate text-[10px] ${isMe ? 'text-white' : (isOnline ? 'text-white/90' : 'text-white/40')}`}>{p.username}</span>
-                                                                                        {p.id === activeClub.ownerId && <Icon name="Star" size={8} className="text-yellow-500 shrink-0" title="Club Owner" />}
-                                                                                    </div>
-                                                                                    <div className="text-[8px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
-                                                                                </div>
-                                                                                
-                                                                                {!isMe && (
-                                                                                    <div className="flex gap-1 ml-auto shrink-0">
-                                                                                        <button onClick={() => canTrade ? initiateTrade(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be ONLINE to trade"}>
-                                                                                            <Icon name="Trade" size={10} />
-                                                                                        </button>
-                                                                                        {!friendsList.includes(p.id) && (
-                                                                                            <button onClick={() => toggleFriend(p.id)} className="w-7 h-7 rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 flex items-center justify-center transition-colors shadow-inner" title="Add Friend">
-                                                                                                <Icon name="UserPlus" size={10} />
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        )})}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
-                                                                    <div className="flex items-center gap-1.5 mb-2">
-                                                                        <Icon name="Flame" size={16} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-fuchsia-500'} />
-                                                                        <h3 className="text-sm font-black uppercase text-white tracking-widest">The Monolith</h3>
-                                                                    </div>
-                                                                    <div className="bg-black/60 border border-white/10 p-4 rounded-xl text-center relative overflow-hidden shadow-inner">
-                                                                        <div className={`absolute inset-0 opacity-20 bg-gradient-to-b from-fuchsia-500 to-transparent pointer-events-none`}></div>
-                                                                        
-                                                                        <div className="flex justify-between items-center mb-2 relative z-10">
-                                                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current ${monolith.color || 'text-yellow-400'}`}>
-                                                                                {monolith.difficulty || 'Standard'}
-                                                                            </span>
-                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">
-                                                                                +{monolith.xpReward || 2500} Club XP
-                                                                            </span>
-                                                                        </div>
-
-                                                                        <p className="text-[10px] font-black uppercase text-white/70 mb-2 relative z-10">
-                                                                            The Monolith Demands Sacrifice
-                                                                        </p>
-                                                                        <div className={`text-lg font-black uppercase tracking-widest mb-3 relative z-10 ${targetRarity.color} drop-shadow-md`}>
-                                                                            {monolith.target} {targetRarity.label} Items
-                                                                        </div>
-                                                                        
-                                                                        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/10 relative z-10 mb-4 shadow-inner">
-                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${monolithDone ? 'bg-green-500' : 'bg-fuchsia-600'}`} style={{ width: `${Math.min(100, (monolith.current / monolith.target) * 100)}%` }} />
-                                                                            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white mix-blend-difference">{monolith.current} / {monolith.target}</div>
-                                                                        </div>
-
-                                                                        {!monolithDone && (
-                                                                            <button 
-                                                                                onClick={handleSacrificeToMonolith} 
-                                                                                disabled={availableDupes <= 0}
-                                                                                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all shadow-lg border relative z-10 ${availableDupes > 0 ? 'bg-red-900/40 border-red-500/50 text-red-400 hover:bg-red-900/60 active:scale-95' : 'bg-slate-900 border-white/10 text-white/30'}`}
-                                                                            >
-                                                                                {availableDupes > 0 ? `Sacrifice 1 Duplicate (${availableDupes} Available)` : `No ${targetRarity.label} Duplicates Available`}
-                                                                            </button>
-                                                                        )}
-
-                                                                        {monolithDone && !hasClaimed && (
-                                                                            <button onClick={claimMonolithBlessing} className="w-full py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse relative z-10 active:scale-95">Claim Monolith Blessing!</button>
-                                                                        )}
-                                                                        {monolithDone && hasClaimed && !allClaimed && (
-                                                                            <div className="text-center text-[9px] font-black uppercase text-white/40 py-2 relative z-10 border border-dashed border-white/10 rounded-xl">Waiting for other members...</div>
-                                                                        )}
-                                                                        {monolithDone && allClaimed && (
-                                                                            <button onClick={rollNewMonolith} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase transition-colors relative z-10 active:scale-95">Ignite New Monolith</button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })()
-                                                ) : (
-                                                    <div className="flex flex-col gap-3 animate-in fade-in">
-                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Found a Club</h3>
-                                                            <div className="flex gap-2 mb-2">
-                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
-                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
-                                                            </div>
-                                                            <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-2 rounded-lg text-[9px] transition-colors disabled:opacity-50">Create Club</button>
-                                                        </div>
-                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
-                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Join a Club</h3>
-                                                            <input type="text" placeholder="Search by name or tag..." className="w-full bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-cyan-500 mb-2 transition-colors" value={clubSearchQuery} onChange={e => setClubSearchQuery(e.target.value.toLowerCase())} />
-                                                            <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-hide">
-                                                                {clubsList.filter(c => c.name.toLowerCase().includes(clubSearchQuery) || c.tag.toLowerCase().includes(clubSearchQuery)).map(c => {
-                                                                    const memberCount = leaderboard.filter(p => p.clubId === c.id).length;
-                                                                    return (
-                                                                        <div key={c.id} className="flex justify-between items-center p-2 rounded-xl bg-black/40 border border-white/5">
-                                                                            <div className="min-w-0 flex-1 pr-2">
-                                                                                <div className="text-[9px] font-black uppercase text-white truncate">[{c.tag}] {c.name}</div>
-                                                                                <div className="text-[7.5px] font-black uppercase text-white/40 mt-0.5">{memberCount} Member{memberCount !== 1 ? 's' : ''}</div>
-                                                                            </div>
-                                                                            <button onClick={() => handleJoinClub(c.id)} className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-colors shrink-0 shadow-inner">Join</button>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                                {clubsList.length === 0 && <div className="text-center text-white/30 text-[9px] font-black uppercase py-3">No clubs discovered.</div>}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </React.Fragment>
-                                        )}
                                     </div>
                                 )}
                             </div>
@@ -2318,7 +2144,8 @@
                                     {SHRINE_CATEGORIES.map((cat, idx) => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
-                                        const baseCost = (currentThemeId === 'cosmos' ? 5e33 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000))) * Math.pow(50, idx); 
+                                        // NEON UPDATE
+                                        const baseCost = (currentThemeId === 'neon' ? 5e43 : (currentThemeId === 'cosmos' ? 5e33 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000)))) * Math.pow(50, idx); 
                                         
                                         const pk = { id: `shrine_${currentThemeId}_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
                                         const discountedCost = getPackCost(pk, true);
