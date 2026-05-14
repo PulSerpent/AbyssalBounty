@@ -34,7 +34,7 @@
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                window.db = db; // Export globally for game functions
+                window.db = db; 
             } else {
                 isOffline = true;
             }
@@ -103,6 +103,11 @@
             background-size: 400% 400%;
             animation: heavenly-sky 30s ease-in-out infinite;
         }
+        .bg-theme-cosmos {
+            background: linear-gradient(135deg, #09090b, #1e1b4b, #3b0764, #000000);
+            background-size: 400% 400%;
+            animation: heavenly-sky 40s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +121,7 @@
             if (n < 1000) return Math.floor(n).toString();
             const power = Math.floor(Math.log10(n));
             const suffixIndex = Math.floor(power / 3);
-            const suffixes = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No'];
+            const suffixes = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', 'Ud', 'Dd', 'Td', 'Qad', 'Qid', 'Sxd', 'Spd'];
             
             if (suffixIndex < suffixes.length) {
                 return (n / Math.pow(10, suffixIndex * 3)).toFixed(2) + suffixes[suffixIndex];
@@ -349,6 +354,66 @@
                     { id: 'spirit_bound', name: 'Spirit-Bound', icon: 'Sparkles', color: 'from-indigo-400 to-indigo-600', glow: 'shadow-indigo-500/20' },
                     { id: 'gaia_touched', name: 'Gaia-Touched', icon: 'Globe', color: 'from-emerald-300 to-emerald-500', glow: 'shadow-emerald-400/30' }
                 ]
+            },
+            cosmos: {
+                id: 'cosmos', name: 'Cosmic Expanse', bgClass: 'bg-theme-cosmos', icon: 'Infinity',
+                terms: { primary: 'Stardust', primaryIcon: 'Sparkles', secondary: 'Dark Matter', secondaryIcon: 'Infinity', packMenu: 'Warp', log: 'Archive', beast: '👾', beastName: 'Void Entity', merchant: 'Comet Trader' },
+                RARITIES: [
+                    { id: 'trash', label: 'Debris', color: 'text-stone-400', bg: 'bg-stone-800/90', multiplier: 0.5, incomeBase: 1e30, secondaryChance: 0.01, setPrize: { amt: 2.5e35, curr: 'primary' } },
+                    { id: 'common', label: 'Lunar', color: 'text-gray-300', bg: 'bg-gray-800/90', multiplier: 1, incomeBase: 5e30, secondaryChance: 0.02, setPrize: { amt: 2.5e36, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Solar', color: 'text-orange-400', bg: 'bg-orange-900/90', multiplier: 3, incomeBase: 2.5e31, secondaryChance: 0.05, setPrize: { amt: 2.5e37, curr: 'primary' } },
+                    { id: 'rare', label: 'Orbital', color: 'text-sky-400', bg: 'bg-sky-900/90', multiplier: 8, incomeBase: 1.5e32, secondaryChance: 0.10, setPrize: { amt: 2.5e38, curr: 'primary' } },
+                    { id: 'epic', label: 'Stellar', color: 'text-yellow-300', bg: 'bg-yellow-900/90', multiplier: 20, incomeBase: 1e33, secondaryChance: 0.15, setPrize: { amt: 2.5e39, curr: 'primary' } },
+                    { id: 'legendary', label: 'Galactic', color: 'text-fuchsia-400', bg: 'bg-fuchsia-900/95', multiplier: 60, incomeBase: 8e33, secondaryChance: 0.25, setPrize: { amt: 2.5e40, curr: 'primary' } },
+                    { id: 'mythic', label: 'Universal', color: 'text-violet-400', bg: 'bg-violet-900/90', multiplier: 200, incomeBase: 5e34, secondaryChance: 0.40, setPrize: { amt: 2.5e41, curr: 'primary' } },
+                    { id: 'celestial', label: 'Dimensional', color: 'text-cyan-300', bg: 'bg-cyan-900/95', multiplier: 800, incomeBase: 5e35, secondaryChance: 0.60, setPrize: { amt: 5e35, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Omniversal', color: 'text-rose-400', bg: 'bg-rose-950/95', multiplier: 3500, incomeBase: 5e36, secondaryChance: 0.80, setPrize: { amt: 5e37, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Absolute', color: 'text-white', bg: 'bg-slate-900/95', multiplier: 15000, incomeBase: 5e37, secondaryChance: 1.0, setPrize: { amt: 5e39, curr: 'secondary' } },
+                ],
+                MUTATION_ORDER: ['none', 'starlit', 'graviton', 'quantum', 'supernova', 'astral', 'cosmic', 'universal'],
+                MUTATIONS: {
+                    none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+                    starlit: { label: 'Starlit', mult: 1.5, bg: 'bg-sky-50/90', color: 'text-sky-700', glow: 'shadow-[0_0_15px_rgba(56,189,248,0.6)]' },
+                    graviton: { label: 'Graviton', mult: 3, bg: 'bg-indigo-50/90', color: 'text-indigo-800', glow: 'shadow-[0_0_15px_rgba(99,102,241,0.6)]' },
+                    quantum: { label: 'Quantum', mult: 7, bg: 'bg-teal-50/90', color: 'text-teal-800', glow: 'shadow-[0_0_15px_rgba(20,184,166,0.6)]' },
+                    supernova: { label: 'Supernova', mult: 15, bg: 'bg-orange-50/90', color: 'text-orange-700', glow: 'shadow-[0_0_15px_rgba(249,115,22,0.6)]' },
+                    astral: { label: 'Astral', mult: 35, bg: 'bg-violet-900/90', color: 'text-violet-200', glow: 'shadow-[0_0_15px_rgba(139,92,246,0.4)]' },
+                    cosmic: { label: 'Cosmic', mult: 100, bg: 'bg-fuchsia-900/90', color: 'text-fuchsia-200', glow: 'shadow-[0_0_15px_rgba(217,70,239,0.6)]' },
+                    universal: { label: 'Universal', mult: 500, bg: 'bg-slate-950/90', color: 'text-white', glow: 'shadow-[0_0_20px_rgba(255,255,255,0.8)]' }
+                },
+                MASTER_ITEM_DB: [
+                    { name: "Space Dust", rarityId: "trash", e: "💨" }, { name: "Broken Probe", rarityId: "trash", e: "📡" }, { name: "Spent Booster", rarityId: "trash", e: "🚀" }, { name: "Frozen Water", rarityId: "trash", e: "🧊" }, { name: "Micro-meteor", rarityId: "trash", e: "🪨" }, { name: "Charred Hull", rarityId: "trash", e: "🛸" }, { name: "Solar Sail Scrap", rarityId: "trash", e: "🪁" }, { name: "Rusty Valve", rarityId: "trash", e: "🔩" }, { name: "Dead Battery", rarityId: "trash", e: "🔋" }, { name: "Signal Flare", rarityId: "trash", e: "🎇" },
+                    { name: "Moon Rock", rarityId: "common", e: "🌕" }, { name: "Crater Dust", rarityId: "common", e: "🌑" }, { name: "Basalt", rarityId: "common", e: "🪨" }, { name: "Lunar Ice", rarityId: "common", e: "🧊" }, { name: "Footprint Cast", rarityId: "common", e: "👢" }, { name: "Regolith", rarityId: "common", e: "🌫️" }, { name: "Anorthosite", rarityId: "common", e: "🌋" }, { name: "Glass Bead", rarityId: "common", e: "🔮" }, { name: "Iron Meteorite", rarityId: "common", e: "☄️" }, { name: "Tektite", rarityId: "common", e: "🪞" },
+                    { name: "Solar Flare", rarityId: "uncommon", e: "🔥" }, { name: "Sunspot Core", rarityId: "uncommon", e: "☀️" }, { name: "Coronal Mass", rarityId: "uncommon", e: "💨" }, { name: "Plasma Loop", rarityId: "uncommon", e: "〰️" }, { name: "Photonic Ray", rarityId: "uncommon", e: "⚡" }, { name: "Neutrino Burst", rarityId: "uncommon", e: "✨" }, { name: "Helium Ash", rarityId: "uncommon", e: "🎈" }, { name: "Solar Wind", rarityId: "uncommon", e: "🌬️" }, { name: "Magnetic Flux", rarityId: "uncommon", e: "🧲" }, { name: "Chromosphere Tear", rarityId: "uncommon", e: "💧" },
+                    { name: "Satellite Core", rarityId: "rare", e: "🛰️" }, { name: "Space Station", rarityId: "rare", e: "🛸" }, { name: "Hab Module", rarityId: "rare", e: "🏠" }, { name: "Ion Thruster", rarityId: "rare", e: "🚀" }, { name: "Telescope Lens", rarityId: "rare", e: "🔭" }, { name: "Gyroscope", rarityId: "rare", e: "🎡" }, { name: "Gravity Tether", rarityId: "rare", e: "⚓" }, { name: "Comm Relay", rarityId: "rare", e: "📡" }, { name: "Heat Shield", rarityId: "rare", e: "🛡️" }, { name: "Solar Array", rarityId: "rare", e: "☀️" },
+                    { name: "Star Fragment", rarityId: "epic", e: "⭐" }, { name: "Red Dwarf Ash", rarityId: "epic", e: "🔴" }, { name: "White Dwarf Core", rarityId: "epic", e: "⚪" }, { name: "Brown Dwarf Cinder", rarityId: "epic", e: "🟤" }, { name: "Binary Spark", rarityId: "epic", e: "♊" }, { name: "Sequence Ray", rarityId: "epic", e: "☀️" }, { name: "Stellar Dew", rarityId: "epic", e: "🌌" }, { name: "Proto-star Seed", rarityId: "epic", e: "🌱" }, { name: "Helium Flash", rarityId: "epic", e: "💥" }, { name: "Lithium Core", rarityId: "epic", e: "⚛️" },
+                    { name: "Spiral Arm", rarityId: "legendary", e: "🌀" }, { name: "Galactic Bulge", rarityId: "legendary", e: "🟡" }, { name: "Halo Globule", rarityId: "legendary", e: "⚪" }, { name: "Dark Nebula", rarityId: "legendary", e: "☁️" }, { name: "Pulsar Beam", rarityId: "legendary", e: "⚡" }, { name: "Magnetar Core", rarityId: "legendary", e: "🧲" }, { name: "Quasar Jet", rarityId: "legendary", e: "🚀" }, { name: "Supermassive Horizon", rarityId: "legendary", e: "🕳️" }, { name: "Accretion Disk", rarityId: "legendary", e: "💿" }, { name: "Seyfert Flare", rarityId: "legendary", e: "🎇" },
+                    { name: "Cosmic Web", rarityId: "mythic", e: "🕸️" }, { name: "Dark Matter", rarityId: "mythic", e: "🌌" }, { name: "Dark Energy Void", rarityId: "mythic", e: "🔮" }, { name: "Baryonic Core", rarityId: "mythic", e: "⚛️" }, { name: "Expansion Wave", rarityId: "mythic", e: "🌊" }, { name: "Microwave Echo", rarityId: "mythic", e: "📻" }, { name: "Filamental Thread", rarityId: "mythic", e: "🧵" }, { name: "Supercluster Node", rarityId: "mythic", e: "🌟" }, { name: "Void Sphere", rarityId: "mythic", e: "🌑" }, { name: "Entropy Crystal", rarityId: "mythic", e: "💎" },
+                    { name: "Tesseract", rarityId: "celestial", e: "🧊" }, { name: "Wormhole", rarityId: "celestial", e: "🌀" }, { name: "Time Dilation", rarityId: "celestial", e: "⏳" }, { name: "Parallel Rift", rarityId: "celestial", e: "🚪" }, { name: "Quantum Foam", rarityId: "celestial", e: "🫧" }, { name: "Hyper-cube", rarityId: "celestial", e: "💠" }, { name: "String Thread", rarityId: "celestial", e: "〰️" }, { name: "Alternate Core", rarityId: "celestial", e: "🪞" }, { name: "Reality Tear", rarityId: "celestial", e: "⚡" }, { name: "Paradox Prism", rarityId: "celestial", e: "🌈" },
+                    { name: "Multiverse Seed", rarityId: "primordial", e: "🌱" }, { name: "Genesis Spark", rarityId: "primordial", e: "✨" }, { name: "Omega Point", rarityId: "primordial", e: "🔚" }, { name: "Alpha Origin", rarityId: "primordial", e: "🔙" }, { name: "Eternity Loop", rarityId: "primordial", e: "♾️" }, { name: "Boundless Void", rarityId: "primordial", e: "🌌" }, { name: "Infinite Matrix", rarityId: "primordial", e: "🟩" }, { name: "Creator's Gaze", rarityId: "primordial", e: "👁️" }, { name: "Architect's Breath", rarityId: "primordial", e: "💨" }, { name: "The Final Equation", rarityId: "primordial", e: "📜" },
+                    { name: "Pure Concept", rarityId: "transcendent", e: "🧠" }, { name: "The Monad", rarityId: "transcendent", e: "⚪" }, { name: "Absolute Truth", rarityId: "transcendent", e: "⚖️" }, { name: "Nothingness", rarityId: "transcendent", e: "⬛" }, { name: "Everything", rarityId: "transcendent", e: "🌠" }, { name: "The First Cause", rarityId: "transcendent", e: "🥇" }, { name: "Unmoved Mover", rarityId: "transcendent", e: "🛑" }, { name: "Transcendental Essence", rarityId: "transcendent", e: "🌟" }, { name: "Beyond Dimension", rarityId: "transcendent", e: "🌌" }, { name: "Ultimate Reality", rarityId: "transcendent", e: "👑" }
+                ],
+                STANDARD_PACKS: [
+                    { id: 'pack1', name: 'Asteroid Belt', cost: 5e34, currency: 'primary', icon: 'Globe', color: 'from-stone-800 to-stone-950', glow: 'shadow-stone-500/20', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+                    { id: 'pack2', name: 'Lunar Lander', cost: 5e35, currency: 'primary', icon: 'Box', color: 'from-gray-700 to-gray-900', glow: 'shadow-gray-500/20', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Solar Flare Box', cost: 5e36, currency: 'primary', icon: 'Sun', color: 'from-orange-700 to-orange-950', glow: 'shadow-orange-500/20', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Orbital Cache', cost: 5e37, currency: 'primary', icon: 'Compass', color: 'from-sky-700 to-sky-950', glow: 'shadow-sky-500/50', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Stellar Vault', cost: 5e38, currency: 'primary', icon: 'Star', color: 'from-yellow-700 to-yellow-950', glow: 'shadow-yellow-500/50', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Galactic Core', cost: 5e39, currency: 'primary', icon: 'Zap', color: 'from-fuchsia-800 to-fuchsia-950', glow: 'shadow-fuchsia-500/50', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'Universal Matrix', cost: 5e40, currency: 'primary', icon: 'Globe', color: 'from-violet-800 to-indigo-950', glow: 'shadow-indigo-500/50', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Dimensional Rift', cost: 5e41, currency: 'primary', icon: 'Flame', color: 'from-cyan-700 to-blue-950', glow: 'shadow-cyan-400/80', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Omniversal Seed', cost: 5e42, currency: 'primary', icon: 'Sparkles', color: 'from-rose-800 to-pink-950', glow: 'shadow-rose-400/80', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Absolute Singularity', cost: 5e43, currency: 'primary', icon: 'Infinity', color: 'from-slate-800 to-black', glow: 'shadow-white/80', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
+                ],
+                SHRINE_CATEGORIES: [
+                    { id: 'starlit', name: 'Starlit', icon: 'Star', color: 'from-sky-400 to-sky-600', glow: 'shadow-sky-500/20' },
+                    { id: 'graviton', name: 'Graviton', icon: 'Anchor', color: 'from-indigo-400 to-indigo-600', glow: 'shadow-indigo-500/20' },
+                    { id: 'quantum', name: 'Quantum', icon: 'Boxes', color: 'from-teal-400 to-teal-600', glow: 'shadow-teal-500/20' },
+                    { id: 'supernova', name: 'Supernova', icon: 'Flame', color: 'from-orange-500 to-red-600', glow: 'shadow-orange-500/20' },
+                    { id: 'astral', name: 'Astral', icon: 'Sparkles', color: 'from-violet-500 to-purple-700', glow: 'shadow-violet-500/20' },
+                    { id: 'cosmic', name: 'Cosmic', icon: 'Globe', color: 'from-fuchsia-400 to-fuchsia-600', glow: 'shadow-fuchsia-500/20' },
+                    { id: 'universal', name: 'Universal', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
+                ]
             }
         };
 
@@ -364,11 +429,12 @@
 
         const App = () => {
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
-            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy']);
+            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy', 'cosmos']);
             const [currency1, setCurrency1] = useState(100);
             const [currency2, setCurrency2] = useState(0);
             const [inventory, setInventory] = useState([]);
             const [claimedSets, setClaimedSets] = useState([]);
+            const [shrineOpens, setShrineOpens] = useState({});
             const [view, setView] = useState('shop');
             
             // UI States
@@ -384,8 +450,6 @@
             const [transferTarget, setTransferTarget] = useState(null);
             const [inventoryModal, setInventoryModal] = useState(null);
             const [inspectedPack, setInspectedPack] = useState(null);
-            const [usernameError, setUsernameError] = useState('');
-            const [clubCreateError, setClubCreateError] = useState('');
             
             // Events
             const [merchantVisible, setMerchantVisible] = useState(false);
@@ -427,6 +491,13 @@
             const isHolding = useRef(false);
             const isSwiping = useRef(false);
             const gameStateRef = useRef({});
+
+            // Robust Secondary Economy Diminishing Returns
+            const getSecondaryYieldMultiplier = useCallback((themeId, rarityId) => {
+                const tData = THEMES[themeId || 'abyssal'];
+                const rIdx = tData.RARITIES.findIndex(r => r.id === rarityId);
+                return 0.05 * Math.pow(0.75, Math.max(0, rIdx));
+            }, []);
 
             // Robust Firebase Auth Initialization (for Leaderboards ONLY)
             useEffect(() => {
@@ -480,6 +551,7 @@
                         if (data.claimedSets) setClaimedSets(data.claimedSets);
                         if (data.unlockedThemes) setUnlockedThemes(data.unlockedThemes);
                         if (data.currentThemeId) setCurrentThemeId(data.currentThemeId);
+                        if (data.shrineOpens) setShrineOpens(data.shrineOpens);
                         
                         // Load Social Data
                         if (data.username) setUsername(data.username);
@@ -499,7 +571,7 @@
             // Keep the ref updated with latest state values
             useEffect(() => {
                 gameStateRef.current = {
-                    currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId,
+                    currency1, currency2, inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens,
                     username, pinnedItem, friendsList, clubId, income: incomeFlow?.income || {c1:0, c2:0}
                 };
             });
@@ -512,7 +584,7 @@
                     const state = gameStateRef.current;
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens,
                         username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
@@ -539,13 +611,13 @@
                     const state = gameStateRef.current;
                     localStorage.setItem('abyssal_bounty_save', JSON.stringify({
                         currency1: state.currency1, currency2: state.currency2, inventory: state.inventory, 
-                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId,
+                        claimedSets: state.claimedSets, unlockedThemes: state.unlockedThemes, currentThemeId: state.currentThemeId, shrineOpens: state.shrineOpens,
                         username: state.username, clubId: state.clubId, pinnedItem: state.pinnedItem, friendsList: state.friendsList,
                         lastActive: new Date().toISOString()
                     }));
                 }, 1000);
                 return () => clearTimeout(saveTimer);
-            }, [inventory, claimedSets, unlockedThemes, currentThemeId, username, clubId, pinnedItem, friendsList, isDataLoaded]);
+            }, [inventory, claimedSets, unlockedThemes, currentThemeId, shrineOpens, username, clubId, pinnedItem, friendsList, isDataLoaded]);
 
             // Save Offline Clubs whenever they change
             useEffect(() => {
@@ -637,16 +709,16 @@
 
 
             // Game Logic & Theme Mechanics
-            const activeTheme = THEMES[currentThemeId];
+            const activeTheme = THEMES[currentThemeId] || THEMES['abyssal'];
             const { RARITIES, MUTATION_ORDER, MASTER_ITEM_DB, STANDARD_PACKS, SHRINE_CATEGORIES, terms } = activeTheme;
 
             // Compute Global Club Buffs
             const activeClub = useMemo(() => clubsList.find(c => c.id === clubId), [clubsList, clubId]);
             const clubLevel = useMemo(() => activeClub ? getClubLevel(activeClub.xp || 0) : 1, [activeClub]);
+            const clubMuseumBonus = useMemo(() => activeClub ? ((activeClub.museum || []).length * 0.01) : 0, [activeClub]);
             
-            // Balanced Club Buffs: +2% per level (Max 8% at lvl 5). Removed OP Museum!
-            const clubCpsBuff = 1 + ((clubLevel - 1) * 0.02);
-            const clubDiscount = 1 - ((clubLevel - 1) * 0.02);
+            const clubCpsBuff = 1 + (clubLevel >= 2 ? 0.05 : 0) + (clubLevel >= 4 ? 0.05 : 0) + clubMuseumBonus;
+            const clubDiscount = clubLevel >= 5 ? 0.9 : (clubLevel >= 3 ? 0.95 : 1);
 
             const getMutData = useCallback((tId, mId) => {
                 const t = THEMES[tId] || THEMES['abyssal'];
@@ -654,8 +726,13 @@
             }, []);
 
             const getDbItem = useCallback((name) => {
-                return MASTER_ITEM_DB.find(db => db.name === name) || { name: name || 'Unknown', e: '❓', rarityId: 'trash' };
-            }, [MASTER_ITEM_DB]);
+                let found;
+                Object.values(THEMES).forEach(t => {
+                    const i = t.MASTER_ITEM_DB.find(db => db.name === name);
+                    if(i) found = i;
+                });
+                return found || { name: name || 'Unknown', e: '❓', rarityId: 'trash' };
+            }, []);
 
             const activeInventory = inventory.filter(i => (i.themeId || 'abyssal') === currentThemeId);
 
@@ -689,7 +766,7 @@
                         const mutData = getMutData(i.themeId, i.mutation);
                         const val = (i.cps || 0) * (mutData.mult || 1);
                         if(i.currency === 'secondary') {
-                            acc.c2 += val * 0.3;
+                            acc.c2 += val * getSecondaryYieldMultiplier(i.themeId, i.rarity?.id); 
                             acc.c1 += val;
                         } else {
                             acc.c1 += val;
@@ -697,7 +774,7 @@
                         return acc;
                     }, { c1: 0, c2: 0 })
                 };
-            }, [inventory, getMutData]);
+            }, [inventory, getMutData, getSecondaryYieldMultiplier]);
 
             const finalCpsMultiplier = (frenzyTimer > 0 ? 5 : 1) * clubCpsBuff;
 
@@ -775,6 +852,13 @@
             const getPackCost = (p, isShrine = false) => { 
                 let discount = isShrine ? 0.75 : 1;
                 if (merchantSaleActive) discount *= 0.5;
+                if (isShrine) {
+                    // FIX: Make Shrines progress with a base x12 multiplier instead of x50
+                    const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
+                    const safeIdx = Math.max(0, shrineIndex);
+                    const realmBase = currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000));
+                    return Math.floor(realmBase * Math.pow(12, safeIdx) * discount * clubDiscount);
+                }
                 return Math.floor(p.cost * discount * clubDiscount); 
             };
 
@@ -794,6 +878,7 @@
                     let rarity, item;
                     
                     if (isShrine) {
+                        setShrineOpens(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }));
                         const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
                         const randomName = ownedItemNames[Math.floor(Math.random() * ownedItemNames.length)];
                         item = MASTER_ITEM_DB.find(db => db.name === randomName);
@@ -817,8 +902,30 @@
                         currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                     });
 
-                    // Removed overpowered automatic club progression.
-                    // Monoliths must be manually funded via the Club Hub using artifacts!
+                    // Update Club Bounty & Museum
+                    if (activeClub) {
+                        const updateData = {};
+                        if (activeClub.bounty && activeClub.bounty.progress < activeClub.bounty.target) {
+                            updateData.bounty = { ...activeClub.bounty, progress: (activeClub.bounty.progress || 0) + 1 };
+                        }
+                        const rareIndexes = ['epic', 'legendary', 'mythic', 'celestial', 'primordial', 'transcendent'];
+                        if (rareIndexes.includes(rarity.id)) {
+                            const museumList = activeClub.museum || [];
+                            if (!museumList.includes(item.name)) updateData.museum = [...museumList, item.name];
+                        }
+
+                        if (Object.keys(updateData).length > 0) {
+                            // Instant Local Update
+                            setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, ...updateData } : c));
+
+                            if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                                const { doc, setDoc } = window.FirebaseAPI;
+                                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                                setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), updateData, { merge: true }).catch(()=>{});
+                            }
+                        }
+                    }
+
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
                 return true;
@@ -859,7 +966,7 @@
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
                 const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
-                const realmMultiplier = currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1); 
+                const realmMultiplier = currentThemeId === 'cosmos' ? 1e30 : currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1); 
                 const baseCost = Math.pow(5, tgtRarityIdx) * 50 * realmMultiplier; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
@@ -870,7 +977,7 @@
                 const rIdx = RARITIES.findIndex(x => x.id === rarityId);
                 let basePackCost = STANDARD_PACKS[rIdx]?.cost;
                 if (!basePackCost || basePackCost === 0) {
-                    basePackCost = currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50);
+                    basePackCost = currentThemeId === 'cosmos' ? 1e34 : currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50);
                 }
                 return basePackCost * 5; 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
@@ -937,34 +1044,17 @@
                 setTimeout(() => setFriendSearchMessage(''), 3000);
             };
 
-            const generateMonolith = () => {
-                const rarities = ['trash', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
-                const rIdx = Math.floor(Math.random() * 4) + 2; // uncommon to legendary
-                const targets = { 'uncommon': 150, 'rare': 50, 'epic': 15, 'legendary': 3 };
-                const reqRarity = rarities[rIdx];
-                return { rarityId: reqRarity, target: targets[reqRarity], progress: 0, claimedBy: [] };
-            };
+            const generateBounty = () => {
+                const target = 50 + Math.floor(Math.random() * 50);
+                return { type: 'packs', target, progress: 0, claimedBy: [] };
+            }
 
             const handleCreateClub = async () => {
                 if (!createClubName.trim() || !createClubTag.trim() || !user) return;
-                
-                const nameTaken = clubsList.some(c => c.name.toLowerCase() === createClubName.trim().toLowerCase());
-                const tagTaken = clubsList.some(c => c.tag.toLowerCase() === createClubTag.trim().toLowerCase());
-
-                if (nameTaken) {
-                    setClubCreateError("Club name is already taken!");
-                    return;
-                }
-                if (tagTaken) {
-                    setClubCreateError("Club tag is already taken!");
-                    return;
-                }
-                setClubCreateError('');
-
                 const newClubId = Math.random().toString(36).substr(2, 9);
                 const newClubData = {
                     id: newClubId, name: createClubName.trim(), tag: createClubTag.trim().toUpperCase(),
-                    ownerId: user.uid, xp: 0, monolith: generateMonolith(), createdAt: new Date().toISOString()
+                    ownerId: user.uid, xp: 0, museum: [], bounty: generateBounty(), createdAt: new Date().toISOString()
                 };
                 
                 // 1. Instant Local Update
@@ -1010,62 +1100,53 @@
                 }
             };
 
-            const handleSacrificeToMonolith = async () => {
+            const handleDonateClub = async () => {
+                const cost = currentThemeId === 'cosmos' ? 5e34 : currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e24 : 100000);
+                if (currency1 < cost || !activeClub) return;
+                setCurrency1(c => c - cost);
+                
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: (c.xp || 0) + 100 } : c));
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: (activeClub.xp || 0) + 100 }, { merge: true }).catch(()=>{});
+                }
+            };
+
+            const claimBounty = async () => {
+                if (!activeClub || !activeClub.bounty || !user) return;
+                const bountyPrize = currentThemeId === 'cosmos' ? 5e38 : currentThemeId === 'olympian' ? 5e18 : (currentThemeId === 'canopy' ? 5e28 : 50000);
+                setCurrency2(c => c + bountyPrize);
+                
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: { ...c.bounty, claimedBy: [...(c.bounty.claimedBy || []), user.uid] } } : c));
+                
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                    const { doc, setDoc } = window.FirebaseAPI;
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
+                        bounty: { ...activeClub.bounty, claimedBy: [...(activeClub.bounty.claimedBy || []), user.uid] }
+                    }, { merge: true }).catch(()=>{});
+                }
+            };
+
+            const rollNewBounty = async () => {
                 if (!activeClub) return;
-                const currentMonolith = activeClub.monolith || generateMonolith();
-                const reqRarity = currentMonolith.rarityId;
-                const itemToSacrifice = inventory.find(i => i.rarity?.id === reqRarity && (!pinnedItem || i.id !== pinnedItem.id));
+                const newB = generateBounty();
                 
-                if (!itemToSacrifice) return;
+                // Local Update
+                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, bounty: newB } : c));
 
-                // Burn the artifact from the player's inventory
-                setInventory(prev => prev.filter(i => i.id !== itemToSacrifice.id));
-                
-                const newXp = (activeClub.xp || 0) + 50;
-                const newProg = currentMonolith.progress + 1;
-                const newMonolith = { ...currentMonolith, progress: newProg };
-
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, xp: newXp, monolith: newMonolith } : c));
-                
-                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
+                if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { xp: newXp, monolith: newMonolith }, { merge: true }).catch(()=>{});
+                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { bounty: newB }, { merge: true }).catch(()=>{});
                 }
             };
 
-            const claimMonolith = async () => {
-                if (!activeClub || !user) return;
-                const currentMonolith = activeClub.monolith;
-                if (!currentMonolith) return;
-
-                const rIdx = Math.max(1, RARITIES.findIndex(r => r.id === currentMonolith.rarityId));
-                const prize = 500000 * Math.pow(10, rIdx); // Huge secondary currency prize based on rarity
-                
-                setCurrency2(c => c + prize);
-                
-                const newMonolith = { ...currentMonolith, claimedBy: [...(currentMonolith.claimedBy || []), user.uid] };
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: newMonolith } : c));
-                
-                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
-                    const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newMonolith }, { merge: true }).catch(()=>{});
-                }
-            };
-
-            const rollNewMonolith = async () => {
-                if (!activeClub) return;
-                const newM = generateMonolith();
-                setClubsList(prev => prev.map(c => c.id === clubId ? { ...c, monolith: newM } : c));
-
-                if (window.db && window.FirebaseAPI && user && user.uid !== 'offline_user') {
-                    const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newM }, { merge: true }).catch(()=>{});
-                }
-            };
-
+            // FIX 1: Larger packs in the unboxing animation area
             const renderUnboxingArea = () => {
                 let isLight = false;
                 if (lastPull) {
@@ -1076,8 +1157,8 @@
                 const hasMutation = lastPull && lastPull.mutation && lastPull.mutation !== 'none';
 
                 return (
-                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : 'bg-white/5 border-white/10')} flex-1 min-h-[220px] sm:min-h-[280px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
-                        {isOpening && <div className="animate-pulse flex flex-col items-center gap-2"><div className={`w-12 h-12 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : 'bg-cyan-500/20 border-cyan-500')} border-2 flex items-center justify-center animate-spin`}><Icon name="Zap" size={16} className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : "text-cyan-400")} /></div><span className={`text-[9px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>Summoning...</span></div>}
+                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-purple-950/40 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} flex-1 min-h-[300px] sm:min-h-[380px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
+                        {isOpening && <div className="animate-pulse flex flex-col items-center gap-2"><div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500/20 border-fuchsia-500' : 'bg-cyan-500/20 border-cyan-500'))} border-4 flex items-center justify-center animate-spin`}><Icon name="Zap" size={24} className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : (currentThemeId === 'cosmos' ? "text-fuchsia-400" : "text-cyan-400"))} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))}`}>Summoning...</span></div>}
                         {isSealed && (
                             <div className="flex flex-col items-center gap-3 cursor-pointer group" onClick={() => {
                                 if(isRipping || isShaking) return; setIsShaking(true);
@@ -1085,17 +1166,18 @@
                                     setTimeout(() => { setInventory(v => [pendingLoot, ...v]); setLastPull(pendingLoot); setPendingLoot(null); setIsSealed(false); setIsRipping(false); }, 700);
                                 }, pendingLoot.rarity?.id === 'trash' ? 400 : 1200);
                             }}>
-                                <div className={`w-28 h-36 sm:w-36 sm:h-48 rounded-xl border-2 sm:border-4 border-white/20 shadow-2xl relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
-                                    <div className="absolute top-6 left-0 right-0 h-10 flex items-center justify-center z-10">
+                                {/* FIX: Replaced w-28 h-36 with much larger dimensions w-40 h-56 sm:w-52 sm:h-72 */}
+                                <div className={`w-40 h-56 sm:w-52 sm:h-72 rounded-2xl border-4 sm:border-8 border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative transition-all bg-gradient-to-br ${activePack?.color || 'from-slate-800 to-slate-900'} ${isShaking ? 'animate-[shake_0.15s_infinite]' : 'animate-bounce-slow'} ${activePack?.mutation && activePack?.mutation !== 'none' ? 'animate-ritual' : ''}`}>
+                                    <div className="absolute top-8 left-0 right-0 h-14 flex items-center justify-center z-10">
                                         <div className="relative w-full h-full">
-                                            <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (currentThemeId === 'canopy' ? 'bg-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.6)]' : 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]')} flex items-center justify-center transition-all ${isRipping ? '-translate-y-16 opacity-0' : ''}`}><span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-950">Sealed</span></div>
-                                            <div className={`absolute top-1/2 left-0 right-0 h-1 bg-slate-950/20 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
+                                            <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400 shadow-[0_0_30px_rgba(163,230,53,0.8)]' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-400 shadow-[0_0_30px_rgba(232,121,249,0.8)]' : 'bg-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.8)]'))} flex items-center justify-center transition-all ${isRipping ? '-translate-y-24 opacity-0' : ''}`}><span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-slate-950">Sealed</span></div>
+                                            <div className={`absolute top-1/2 left-0 right-0 h-2 bg-slate-950/30 z-20 ${isRipping ? 'hidden' : ''}`} style={{ clipPath: 'polygon(0 0, 5% 100%, 10% 0, 15% 100%, 20% 0, 25% 100%, 30% 0, 35% 100%, 40% 0, 45% 100%, 50% 0, 55% 100%, 60% 0, 65% 100%, 70% 0, 75% 100%, 80% 0, 85% 100%, 90% 0, 95% 100%, 100% 0)' }} />
                                         </div>
                                     </div>
-                                    <div className="absolute inset-2 border border-white/5 rounded-lg pointer-events-none" />
-                                    <div className="absolute bottom-2 left-0 right-0 text-center opacity-30"><Icon name={activePack?.icon} className="mx-auto scale-75 sm:scale-100" size={32} /></div>
+                                    <div className="absolute inset-3 border-2 border-white/10 rounded-xl pointer-events-none" />
+                                    <div className="absolute bottom-4 left-0 right-0 text-center opacity-40"><Icon name={activePack?.icon} className="mx-auto" size={48} /></div>
                                 </div>
-                                {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-500 shadow-lime-500/40 ring-green-900/20 text-lime-950' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20')} px-4 py-2 rounded-full font-black text-[9px] sm:text-xs uppercase shadow-lg animate-pulse ring-4`}>Unlock</div>}
+                                {!isShaking && !isRipping && <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500 shadow-amber-500/40 ring-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-500 shadow-lime-500/40 ring-green-900/20 text-lime-950' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500 shadow-fuchsia-500/40 ring-fuchsia-900/20 text-white' : 'bg-cyan-500 shadow-cyan-500/40 ring-white/20'))} px-6 py-2.5 rounded-full font-black text-[10px] sm:text-sm uppercase shadow-2xl animate-pulse ring-4`}>Tear Open</div>}
                             </div>
                         )}
                         {lastPull && !isSealed && (
@@ -1108,33 +1190,33 @@
                                         </span>
                                     )}
                                 </div>
-                                <div className="text-5xl sm:text-6xl mb-1 sm:mb-2 drop-shadow-2xl">{getDbItem(lastPull.name).e}</div>
-                                <h2 className={`text-xl sm:text-2xl font-black mb-1 tracking-tighter ${textColor}`}>{lastPull.name}</h2>
-                                <div className="flex flex-col items-center gap-0.5 bg-slate-950/40 px-2 py-1.5 rounded-xl mb-3 shadow-inner w-full max-w-[200px] border border-white/5">
+                                <div className="text-6xl sm:text-8xl mb-2 sm:mb-4 drop-shadow-2xl">{getDbItem(lastPull.name).e}</div>
+                                <h2 className={`text-2xl sm:text-3xl font-black mb-1 tracking-tighter ${textColor}`}>{lastPull.name}</h2>
+                                <div className="flex flex-col items-center gap-0.5 bg-slate-950/40 px-3 py-2 rounded-xl mb-4 shadow-inner w-full max-w-[240px] border border-white/5">
                                     {lastPull.currency === 'secondary' ? (
                                         <React.Fragment>
-                                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
+                                            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={12} /></div>
                                             <div className="h-[1px] w-1/2 bg-white/10 rounded-full" />
-                                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-cyan-400">+{formatNum(lastPull.cps * (mutData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={10} /></div>
+                                            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-black text-cyan-400">+{formatNum(lastPull.cps * (mutData.mult || 1) * getSecondaryYieldMultiplier(lastPull.themeId, lastPull.rarity?.id))}/s <Icon name={terms.secondaryIcon} size={12} /></div>
                                         </React.Fragment>
                                     ) : (
-                                        <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={10} /></div>
+                                        <div className="flex items-center gap-1 text-[10px] sm:text-xs font-black text-amber-400">+{formatNum(lastPull.cps * (mutData.mult || 1))}/s <Icon name={terms.primaryIcon} size={12} /></div>
                                     )}
                                 </div>
-                                <div className="flex gap-2 w-full max-w-[200px]">
+                                <div className="flex gap-2 w-full max-w-[240px]">
                                     <button onClick={() => {
                                         const sellVal = (lastPull.value || 0) * (mutData.mult || 1);
                                         setCurrency1(d => d + sellVal);
-                                        if (lastPull.currency === 'secondary') setCurrency2(p => p + (sellVal * 0.3));
+                                        if (lastPull.currency === 'secondary') setCurrency2(p => p + (sellVal * getSecondaryYieldMultiplier(lastPull.themeId, lastPull.rarity?.id)));
                                         setInventory(inv => inv.filter(i => i.id !== lastPull.id));
                                         setLastPull(null); setActivePack(null);
-                                    }} className={`flex-1 border py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
+                                    }} className={`flex-1 border py-2 rounded-xl font-black text-[10px] active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 ${isLight ? 'bg-slate-900/10 text-slate-900 border-slate-900/20 hover:bg-slate-900/20' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}>
                                         <span>Exchange</span>
-                                        <span className="text-[7px] opacity-80 flex items-center gap-0.5 font-mono">
+                                        <span className="text-[8px] opacity-80 flex items-center gap-0.5 font-mono">
                                             +{formatNum((lastPull.value || 0) * (mutData.mult || 1))} <Icon name={terms.primaryIcon} size={8} />
                                         </span>
                                     </button>
-                                    <button onClick={() => { setLastPull(null); setActivePack(null); }} className="flex-1 bg-slate-950 border border-white/10 text-white py-1.5 rounded-xl font-black text-[9px] active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
+                                    <button onClick={() => { setLastPull(null); setActivePack(null); }} className="flex-1 bg-slate-950 border border-white/10 text-white py-2 rounded-xl font-black text-[10px] active:scale-95 transition-all hover:bg-slate-900 flex items-center justify-center">Keep</button>
                                 </div>
                             </div>
                         )}
@@ -1156,7 +1238,7 @@
                     
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                         {[...Array(25)].map((_, i) => (
-                            <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : 'bg-white/10 rounded-full')} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]')}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none') }} />
+                            <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : (currentThemeId === 'cosmos' ? 'bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/10 rounded-full'))} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'cosmos' ? 'animate-[orb-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]'))}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none'), borderRadius: currentThemeId === 'cosmos' ? '50%' : 'auto' }} />
                         ))}
                     </div>
 
@@ -1175,14 +1257,14 @@
                         <div className="fixed top-0 left-0 z-[60] cursor-pointer animate-[ghost-drift_6s_linear_forwards]" style={merchantPath} onClick={() => { setMerchantVisible(false); setMerchantSaleActive(true); setMerchantSaleTimer(20); }}>
                             <div className="flex flex-col items-center">
                                 <div className={`${currentThemeId === 'canopy' ? 'bg-emerald-400/20 border-emerald-400/40 text-emerald-300' : 'bg-cyan-400/20 border-cyan-400/40 text-cyan-300'} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Tap Fast!</div>
-                                <Icon name={currentThemeId === 'olympian' ? 'Sun' : (currentThemeId === 'canopy' ? 'Star' : 'Ship')} size={64} className={`${currentThemeId === 'canopy' ? 'text-emerald-200/40 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]' : 'text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]'}`} />
+                                <Icon name={currentThemeId === 'olympian' ? 'Sun' : (currentThemeId === 'canopy' ? 'Star' : (currentThemeId === 'cosmos' ? 'Globe' : 'Ship'))} size={64} className={`${currentThemeId === 'canopy' ? 'text-emerald-200/40 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200/40 drop-shadow-[0_0_15px_rgba(217,70,239,0.8)]' : 'text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]')}`} />
                             </div>
                         </div>
                     )}
 
                     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
                         {(merchantSaleActive || frenzyTimer > 0) && (
-                            <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]') : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
+                            <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(217,70,239,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]')) : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
                                 <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={14} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
                                 <span className={`text-[8px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
                                     {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
@@ -1210,7 +1292,7 @@
                     </div>
 
                     {krakenEvent && (
-                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : 'bg-red-950/80')} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/80' : 'bg-red-950/80'))} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
                             {currentThemeId === 'abyssal' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-t from-cyan-950/40 via-transparent to-black/60 animate-ink" />
@@ -1263,6 +1345,23 @@
                                 </div>
                             )}
 
+                            {currentThemeId === 'cosmos' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    <div className="absolute inset-0 bg-fuchsia-950/50" />
+                                    {[...Array(6)].map((_, i) => {
+                                        const angle = (i * 73) % 360;
+                                        return (
+                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
+                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
+                                                    <div className="absolute top-1/2 left-0 w-full h-8 bg-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,1)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-purple-300 shadow-[0_0_30px_rgba(192,132,252,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
                                     <div className="bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50">
@@ -1272,17 +1371,17 @@
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 sm:gap-10">
                                         <div className="bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)]">
-                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : 'text-orange-500 drop-shadow-[0_0_15px_red]')} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
                                             <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
                                             <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
-                                                <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300')}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
+                                                <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : (currentThemeId === 'cosmos' ? 'bg-gradient-to-r from-purple-800 via-fuchsia-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'))}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
                                             </div>
                                             <div className="mt-4 sm:mt-6 text-white text-2xl sm:text-3xl font-mono font-black">{(Math.max(0, krakenTimer)).toFixed(1)}s</div>
                                         </div>
                                         <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
                                             const jackpot = Math.max(50, Math.floor(incomeFlow.income.c2 * 40 + 50 * finalCpsMultiplier));
                                             setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : (currentThemeId === 'canopy' ? 'bg-lime-600/40 border-lime-400 shadow-lime-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40')}`}>
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : (currentThemeId === 'canopy' ? 'bg-lime-600/40 border-lime-400 shadow-lime-500/40' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600/40 border-fuchsia-400 shadow-fuchsia-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'))}`}>
                                             <span className="text-3xl sm:text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Defend!</span>
                                         </button>
                                     </div>
@@ -1291,35 +1390,35 @@
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : 'bg-slate-950/60 border-white/10')} px-2 py-1 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-purple-500/30' : 'bg-slate-950/60 border-white/10'))} px-2 py-1 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
                         <div className="flex gap-1">
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
-                                <Icon name={terms.primaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : 'text-amber-500 shrink-0'} />
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : (currentThemeId === 'cosmos' ? 'bg-purple-900/60 border-fuchsia-500/30' : 'bg-slate-900/80 border-white/5'))} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
+                                <Icon name={terms.primaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 shrink-0' : 'text-amber-500 shrink-0')} />
                                 <div className="flex flex-col ml-1 leading-none min-w-0">
                                     <span className={`text-[9px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{formatNum(currency1)}</span>
-                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : 'text-amber-400/60')}`}>+{formatNum(incomeFlow.income.c1 * finalCpsMultiplier)}/s</span>
+                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400/80' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400/80' : 'text-amber-400/60'))}`}>+{formatNum(incomeFlow.income.c1 * finalCpsMultiplier)}/s</span>
                                 </div>
                             </div>
-                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : 'bg-slate-900/80 border-white/5')} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
-                                <Icon name={terms.secondaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : 'text-cyan-500 shrink-0'} />
+                            <div className={`${currentThemeId === 'olympian' ? 'bg-cyan-50 border-cyan-900/10' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-emerald-500/30' : (currentThemeId === 'cosmos' ? 'bg-purple-900/60 border-indigo-500/30' : 'bg-slate-900/80 border-white/5'))} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
+                                <Icon name={terms.secondaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-emerald-400 shrink-0' : (currentThemeId === 'cosmos' ? 'text-indigo-400 shrink-0' : 'text-cyan-500 shrink-0')} />
                                 <div className="flex flex-col ml-1 leading-none min-w-0">
                                     <span className={`text-[9px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-900' : 'text-white'}`}>{formatNum(currency2)}</span>
-                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : 'text-cyan-400/60')}`}>+{formatNum(incomeFlow.income.c2 * finalCpsMultiplier)}/s</span>
+                                    <span className={`text-[6px] font-black truncate ${currentThemeId === 'olympian' ? 'text-cyan-600' : (currentThemeId === 'canopy' ? 'text-emerald-400/80' : (currentThemeId === 'cosmos' ? 'text-indigo-400/80' : 'text-cyan-400/60'))}`}>+{formatNum(incomeFlow.income.c2 * finalCpsMultiplier)}/s</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right flex flex-col justify-center">
-                            <h1 className={`text-[7px] font-black uppercase opacity-60 leading-none mb-0.5 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-white')}`}>{activeTheme.name}</h1>
+                            <h1 className={`text-[7px] font-black uppercase opacity-60 leading-none mb-0.5 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200' : 'text-white'))}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
                                 <div className={`text-[7px] font-black uppercase animate-pulse leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
                                     SURGE x{(5 * clubCpsBuff).toFixed(2)}
                                 </div>
                             ) : activeClub && clubCpsBuff > 1 ? (
-                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>
+                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400')}`}>
                                     Club Buff x{clubCpsBuff.toFixed(2)}
                                 </div>
                             ) : (
-                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')}`}>Standard Yield</div>
+                                <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))}`}>Standard Yield</div>
                             )}
                         </div>
                     </nav>
@@ -1334,7 +1433,7 @@
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-2 sm:gap-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0 hidden sm:block`}>
-                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
+                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-400'))}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
                                 </div>
                                 <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
                                     {STANDARD_PACKS.map((p, idx) => {
@@ -1352,7 +1451,7 @@
                                                     <Icon name={p.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
                                                     <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
                                                     <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-300')} /></> ) : <span className="text-green-400">FREE</span>}
+                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-amber-400')) : (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-300'))} /></> ) : <span className="text-green-400">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1366,8 +1465,8 @@
 
                         {view === 'social' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : 'border-cyan-500/30')} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
-                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-cyan-400')} mx-auto mb-2`} />
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'))} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
+                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))} mx-auto mb-2`} />
                                     <h2 className={`text-lg sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
                                     <p className={`text-[8px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
                                 </div>
@@ -1375,25 +1474,19 @@
                                 {!username ? (
                                     <div className="bg-slate-900/90 backdrop-blur border border-white/10 p-5 rounded-3xl text-center">
                                         <h3 className="font-black uppercase mb-4 text-white text-xs">Join the Network</h3>
-                                        {usernameError && <div className="text-red-400 text-[9px] font-black uppercase mb-2 animate-pulse">{usernameError}</div>}
                                         <input 
                                             type="text" 
                                             placeholder="Enter Username" 
                                             className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-white mb-4 text-center font-black uppercase text-xs focus:outline-none focus:border-cyan-500"
                                             maxLength={12}
                                             value={tempUsername}
-                                            onChange={(e) => { setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setUsernameError(''); }}
+                                            onChange={(e) => setTempUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
                                         />
                                         <button 
                                             disabled={tempUsername.length < 3}
                                             onClick={() => {
-                                                const isTaken = leaderboard.some(p => p.username && p.username.toLowerCase() === tempUsername.toLowerCase());
-                                                if (isTaken) {
-                                                    setUsernameError("Username is already taken!");
-                                                    return;
-                                                }
                                                 setUsername(tempUsername);
-                                                if (user && window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
+                                                if (user && window.db && window.FirebaseAPI) {
                                                     const { doc, setDoc } = window.FirebaseAPI;
                                                     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                                                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -1401,7 +1494,7 @@
                                                     }, { merge: true }).catch(()=>{});
                                                 }
                                             }}
-                                            className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-600')} text-white font-black uppercase py-2.5 rounded-xl disabled:opacity-50 text-xs`}
+                                            className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600' : 'bg-cyan-600'))} text-white font-black uppercase py-2.5 rounded-xl disabled:opacity-50 text-xs`}
                                         >
                                             Set Username
                                         </button>
@@ -1411,7 +1504,7 @@
                                         <div className="bg-white/5 border border-white/10 p-3 rounded-3xl flex justify-between items-center backdrop-blur">
                                             <div>
                                                 <div className="text-[9px] font-black uppercase text-white/50 mb-0.5">Your Profile</div>
-                                                <div className={`text-lg font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-500' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-cyan-400')}`}>{username}</div>
+                                                <div className={`text-lg font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-500' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))}`}>{username}</div>
                                             </div>
                                             <button onClick={() => setInventoryModal('pin')} className={`w-12 h-12 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors ${pinnedItem ? 'border-white/5 bg-white/5 shadow-inner' : 'border-white/20 bg-black/30 hover:bg-white/10'}`}>
                                                 {pinnedItem ? (
@@ -1446,7 +1539,7 @@
                                                         <button
                                                             onClick={handleAddFriendByUsername}
                                                             disabled={!friendSearchQuery}
-                                                            className={`text-white px-4 rounded-lg font-black uppercase text-[10px] transition-colors disabled:opacity-50 ${currentThemeId === 'olympian' ? 'bg-amber-500 hover:bg-amber-400' : (currentThemeId === 'canopy' ? 'bg-lime-600 hover:bg-lime-500' : 'bg-cyan-600 hover:bg-cyan-500')}`}
+                                                            className={`text-white px-4 rounded-lg font-black uppercase text-[10px] transition-colors disabled:opacity-50 ${currentThemeId === 'olympian' ? 'bg-amber-500 hover:bg-amber-400' : (currentThemeId === 'canopy' ? 'bg-lime-600 hover:bg-lime-500' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 hover:bg-fuchsia-500' : 'bg-cyan-600 hover:bg-cyan-500'))}`}
                                                         >
                                                             Add
                                                         </button>
@@ -1488,6 +1581,7 @@
                                                                             {p.currentRealm === 'olympian' && <Icon name="Sun" size={8} className="text-amber-500" />}
                                                                             {p.currentRealm === 'canopy' && <Icon name="Leaf" size={8} className="text-lime-500" />}
                                                                             {p.currentRealm === 'abyssal' && <Icon name="Anchor" size={8} className="text-cyan-500" />}
+                                                                            {p.currentRealm === 'cosmos' && <Icon name="Globe" size={8} className="text-fuchsia-500" />}
                                                                         </div>
                                                                         <div className="flex items-center gap-2 mt-0.5">
                                                                             <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-500/80' : 'text-amber-500/80'}`}>{formatNum(p.cpsPrimary || 0)}/s</div>
@@ -1552,6 +1646,12 @@
                                                                         <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
                                                                             <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
                                                                         </div>
+                                                                        
+                                                                        {cLvl < 5 && (
+                                                                            <button onClick={handleDonateClub} className="w-full py-1.5 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 border border-yellow-500/30 rounded-lg text-[8px] font-black uppercase transition-colors flex items-center justify-center gap-1 active:scale-95">
+                                                                                Donate 100k <Icon name={terms.primaryIcon} size={8} /> for +100 XP
+                                                                            </button>
+                                                                        )}
                                                                     </div>
 
                                                                     <div className="flex gap-2 justify-center mt-2 relative z-10">
@@ -1559,52 +1659,55 @@
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl">
-                                                                    <div className="flex flex-col items-center gap-2 mb-3">
-                                                                        <Icon name="Flame" size={24} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-fuchsia-400'} />
-                                                                        <h3 className="text-sm font-black uppercase text-white/90 tracking-tighter">The Monolith</h3>
-                                                                        <p className="text-[8px] uppercase font-black text-white/50 text-center leading-relaxed max-w-[200px]">Sacrifice your duplicate artifacts to power the monolith. Earn massive secondary wealth for the whole club!</p>
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                                        <Icon name="ScrollText" size={12} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-cyan-400'} />
+                                                                        <h3 className="text-[10px] font-black uppercase text-white/80">Active Club Bounty</h3>
+                                                                    </div>
+                                                                    <div className="bg-black/40 border border-white/5 p-2 rounded-xl">
+                                                                        <div className="text-[9px] font-black uppercase text-white/70 mb-1.5">Open {bounty.target} Dimensional Caches</div>
+                                                                        <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
+                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${bountyDone ? 'bg-green-500' : (currentThemeId === 'olympian' ? 'bg-amber-500' : 'bg-cyan-500')}`} style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }} />
+                                                                            <div className="absolute inset-0 flex items-center justify-center text-[7px] font-black text-white mix-blend-difference">{bounty.progress} / {bounty.target}</div>
+                                                                        </div>
+                                                                        
+                                                                        {bountyDone && !hasClaimed && (
+                                                                            <button onClick={claimBounty} className="mt-2 w-full py-1.5 bg-green-500 text-white rounded-lg text-[9px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse">Claim Reward!</button>
+                                                                        )}
+                                                                        {bountyDone && hasClaimed && !allClaimed && (
+                                                                            <div className="mt-2 text-center text-[8px] font-black uppercase text-white/40">Waiting for other members...</div>
+                                                                        )}
+                                                                        {bountyDone && allClaimed && (
+                                                                            <button onClick={rollNewBounty} className="mt-2 w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black uppercase transition-colors">Roll New Bounty</button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <Icon name="Star" size={12} className="text-yellow-400" />
+                                                                            <h3 className="text-[10px] font-black uppercase text-white/80">Club Museum</h3>
+                                                                        </div>
+                                                                        <div className="text-[8px] font-black uppercase text-green-400">+{((activeClub.museum || []).length * 1).toFixed(0)}% CPS Bonus</div>
                                                                     </div>
                                                                     
-                                                                    {(() => {
-                                                                        const monolith = activeClub.monolith || { rarityId: 'uncommon', target: 150, progress: 0, claimedBy: [] };
-                                                                        const isFinished = monolith.progress >= monolith.target;
-                                                                        const hasClaimed = monolith.claimedBy.includes(user?.uid);
-                                                                        const rData = RARITIES.find(r => r.id === monolith.rarityId);
-                                                                        const ownedValid = inventory.filter(i => i.rarity?.id === monolith.rarityId && (!pinnedItem || i.id !== pinnedItem.id)).length;
-                                                                        
-                                                                        return (
-                                                                            <div className="bg-black/40 border border-white/5 p-3 rounded-xl flex flex-col items-center">
-                                                                                <div className="text-[9px] font-black uppercase text-white/70 mb-2">
-                                                                                    Target: <span className={rData?.color}>{monolith.target} {rData?.label} Items</span>
-                                                                                </div>
-                                                                                
-                                                                                <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative mb-3">
-                                                                                    <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${isFinished ? 'bg-green-500' : rData?.bg.split('/')[0] || 'bg-slate-500'}`} style={{ width: `${Math.min(100, (monolith.progress / monolith.target) * 100)}%` }} />
-                                                                                    <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white mix-blend-difference">{monolith.progress} / {monolith.target}</div>
-                                                                                </div>
-                                                                                
-                                                                                {!isFinished ? (
-                                                                                    <button disabled={ownedValid <= 0} onClick={handleSacrificeToMonolith} className={`w-full py-2 rounded-lg text-[9px] font-black uppercase transition-all shadow-md active:scale-95 ${ownedValid > 0 ? (currentThemeId === 'olympian' ? 'bg-amber-600 text-white' : 'bg-fuchsia-600 text-white') : 'bg-slate-800 text-white/30'}`}>
-                                                                                        Sacrifice 1 {rData?.label} ({ownedValid} Available)
-                                                                                    </button>
-                                                                                ) : !hasClaimed ? (
-                                                                                    <button onClick={claimMonolith} className="w-full py-2 bg-green-500 text-white rounded-lg text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse active:scale-95">
-                                                                                        Claim Monolith Power!
-                                                                                    </button>
-                                                                                ) : (
-                                                                                    <div className="flex flex-col items-center w-full gap-2">
-                                                                                        <div className="text-[9px] font-black uppercase text-white/40">Reward Claimed!</div>
-                                                                                        {user?.uid === activeClub.ownerId && (
-                                                                                            <button onClick={rollNewMonolith} className="w-full py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[8px] font-black uppercase transition-colors">
-                                                                                                Ignite New Monolith
-                                                                                            </button>
-                                                                                        )}
+                                                                    {(activeClub.museum || []).length === 0 ? (
+                                                                        <div className="text-center text-[8px] font-black uppercase text-white/30 py-3 border border-dashed border-white/10 rounded-xl">Pull an Epic or rarer item to start the museum!</div>
+                                                                    ) : (
+                                                                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                                                                            {(activeClub.museum || []).map((itemName, i) => {
+                                                                                const dbItem = getDbItem(itemName);
+                                                                                const r = RARITIES.find(x => x.id === dbItem.rarityId);
+                                                                                return (
+                                                                                    <div key={i} className="shrink-0 w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-lg shadow-inner relative group" title={itemName}>
+                                                                                        {dbItem.e}
+                                                                                        <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full ${r?.bg || 'bg-slate-500'} border border-black`}></div>
                                                                                     </div>
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })()}
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
@@ -1643,10 +1746,9 @@
                                                     <div className="flex flex-col gap-3 animate-in fade-in">
                                                         <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
                                                             <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Found a Club</h3>
-                                                            {clubCreateError && <div className="text-[9px] font-black uppercase text-red-400 mb-2 animate-pulse">{clubCreateError}</div>}
                                                             <div className="flex gap-2 mb-2">
-                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => { setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, '')); setClubCreateError(''); }} />
-                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => { setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, '')); setClubCreateError(''); }} />
+                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
+                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
                                                             </div>
                                                             <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-2 rounded-lg text-[9px] transition-colors disabled:opacity-50">Create Club</button>
                                                         </div>
@@ -1680,22 +1782,22 @@
 
                         {view === 'realms' && (
                              <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.15)]')} p-4 rounded-3xl text-center relative overflow-hidden mb-1`}>
-                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : 'from-fuchsia-600/10')} to-transparent pointer-events-none`}></div>
-                                    <Icon name="Globe" size={28} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : 'text-fuchsia-500')} mx-auto mb-2 relative z-10 sm:scale-110`} />
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(217,70,239,0.15)]' : 'border-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]'))} p-4 rounded-3xl text-center relative overflow-hidden mb-1`}>
+                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : (currentThemeId === 'cosmos' ? 'from-fuchsia-600/20' : 'from-cyan-600/10'))} to-transparent pointer-events-none`}></div>
+                                    <Icon name="Globe" size={28} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-500' : 'text-cyan-500'))} mx-auto mb-2 relative z-10 sm:scale-110`} />
                                     <h2 className={`text-lg font-black uppercase tracking-tighter mb-1 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
-                                    <p className={`text-[8px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-fuchsia-200')}`}>
+                                    <p className={`text-[8px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200' : 'text-cyan-200'))}`}>
                                         Travel to alternate realities. Each realm features Escalating Challenges!
                                     </p>
                                 </div>
                                 <div className="space-y-2 px-1">
                                     {Object.values(THEMES).map(th => (
-                                        <div key={th.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : 'bg-white/10 border-white/50 shadow-xl')) : 'bg-white/5 border-white/10'}`}>
+                                        <div key={th.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950 border-fuchsia-500 shadow-xl' : 'bg-white/10 border-cyan-500 shadow-xl'))) : 'bg-white/5 border-white/10'}`}>
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : 'bg-slate-900 text-white') : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={16} /></div>
-                                                <div><div className={`text-xs font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{th.name}</div><div className={`text-[8px] font-black uppercase opacity-50 mt-0.5 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-900 text-fuchsia-400' : 'bg-slate-900 text-white')) : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={16} /></div>
+                                                <div><div className={`text-xs font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === th.id && currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-white'))}`}>{th.name}</div><div className={`text-[8px] font-black uppercase opacity-50 mt-0.5 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
                                             </div>
-                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : (currentThemeId === 'canopy' ? 'bg-lime-600' : 'bg-fuchsia-600')}`}>Travel</button>}
+                                            {currentThemeId !== th.id && <button onClick={() => handleRealmSwitch(th.id)} className={`text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg ${currentThemeId === 'olympian' ? 'bg-amber-600' : (currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600' : 'bg-cyan-600'))}`}>Travel</button>}
                                         </div>
                                     ))}
                                 </div>
@@ -1704,11 +1806,11 @@
 
                         {view === 'inventory' && (
                             <div className="flex-1 flex flex-col gap-3 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : 'bg-white/5 border-white/10')} p-4 rounded-3xl flex flex-col gap-2 border`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} p-4 rounded-3xl flex flex-col gap-2 border`}>
                                     <div className="flex justify-between items-start">
-                                        <div><h3 className={`text-lg font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-white')}`}>{terms.log}</h3><p className={`text-[8px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : 'text-white')}`}>{activeInventory.length} items in realm</p></div>
+                                        <div><h3 className={`text-lg font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-white'))}`}>{terms.log}</h3><p className={`text-[8px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-white'))}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
-                                    <p className={`text-[8px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : 'text-cyan-300')}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
+                                    <p className={`text-[8px] opacity-80 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200' : 'text-cyan-300'))}`}>Collect all 10 artifacts of a mutation within a tier to claim huge set rewards!</p>
                                     <button onClick={() => {
                                         const ni = []; const g = {}; activeInventory.forEach(i => { if(!g[i.name]) g[i.name] = []; g[i.name].push(i); });
                                         let dAdded = 0, pAdded = 0;
@@ -1717,12 +1819,13 @@
                                             list.slice(1).forEach(dup => { 
                                                 const mData = getMutData(currentThemeId, dup.mutation);
                                                 const val = (dup.value || 0) * (mData.mult || 1); 
-                                                if(dup.currency === 'secondary') { pAdded += val * 0.3; dAdded += val; } else { dAdded += val; }
+                                                const secMult = getSecondaryYieldMultiplier(currentThemeId, dup.rarity?.id);
+                                                if(dup.currency === 'secondary') { pAdded += val * secMult; dAdded += val; } else { dAdded += val; }
                                             }); 
                                         });
                                         setCurrency1(c => c + dAdded); setCurrency2(c => c + pAdded);
                                         setInventory(prev => [...prev.filter(i => (i.themeId || 'abyssal') !== currentThemeId), ...ni]);
-                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-600/20 text-lime-400' : 'bg-amber-500/10 text-amber-400')} px-3 py-2 rounded-lg text-[9px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95 mt-1`}>Exchange All Duplicates</button>
+                                    }} className={`${currentThemeId === 'olympian' ? 'bg-amber-700 text-white shadow-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-lime-600/20 text-lime-400' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600/20 text-fuchsia-400' : 'bg-amber-500/10 text-amber-400'))} px-3 py-2 rounded-lg text-[9px] font-black uppercase border border-white/10 text-center shadow-lg transition-transform active:scale-95 mt-1`}>Exchange All Duplicates</button>
                                 </div>
                                 {RARITIES.map(r => (
                                     <div key={r.id} className="mb-3 px-1">
@@ -1741,7 +1844,7 @@
                                                 const prizeAmt = r.setPrize.amt * mData.mult;
                                                 
                                                 return (
-                                                    <div key={mut} className={`snap-center shrink-0 w-28 px-2 py-1.5 rounded-xl border-2 flex flex-col items-center gap-0.5 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]') : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
+                                                    <div key={mut} className={`snap-center shrink-0 w-28 px-2 py-1.5 rounded-xl border-2 flex flex-col items-center gap-0.5 ${isClaimed ? 'bg-green-500/10 border-green-500/30' : canClaim ? (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.5)]' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500/20 border-fuchsia-400 shadow-[0_0_10px_rgba(217,70,239,0.5)]' : 'bg-amber-500/20 border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]')) : (currentThemeId === 'olympian' ? 'bg-amber-900/5 border-amber-900/10' : 'bg-white/5 border-white/5 opacity-70')}`}>
                                                         <div className={`text-[8px] font-black uppercase tracking-widest ${mut === 'none' ? (currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white') : mData.color}`}>{mData.label || 'Base'} Set</div>
                                                         <div className={`text-[9px] font-mono font-black ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>{progress}/{total}</div>
                                                         {isClaimed ? (
@@ -1751,12 +1854,12 @@
                                                                 if(r.setPrize.curr === 'secondary') setCurrency2(v => v + prizeAmt);
                                                                 else setCurrency1(v => v + prizeAmt);
                                                                 setClaimedSets(prev => [...prev, setId]);
-                                                            }} className={`mt-0.5 ${currentThemeId === 'canopy' ? 'bg-lime-400 text-lime-950' : 'bg-amber-400 text-amber-950'} px-2 py-1 rounded-full text-[8px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse`}>
+                                                            }} className={`mt-0.5 ${currentThemeId === 'canopy' ? 'bg-lime-400 text-lime-950' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-400 text-fuchsia-950' : 'bg-amber-400 text-amber-950')} px-2 py-1 rounded-full text-[8px] font-black uppercase active:scale-90 transition-transform w-full shadow-md animate-pulse`}>
                                                                 Claim {formatNum(prizeAmt)}
                                                             </button>
                                                         ) : (
                                                             <div className={`flex items-center gap-1 text-[7px] font-black opacity-60 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-white'}`}>
-                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={r.setPrize.curr === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-amber-400') : (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400')} />
+                                                                Reward: {formatNum(prizeAmt)} <Icon name={r.setPrize.curr === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={r.setPrize.curr === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-amber-400')) : (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-400'))} />
                                                             </div>
                                                         )}
                                                     </div>
@@ -1774,8 +1877,8 @@
                                                     <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-90' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 rounded-2xl border-2 border-dashed flex items-center justify-between transition-all group gap-2`}>
                                                         <div className={`flex items-center gap-2 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={12} /><span className="text-[9px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
                                                         <div className="flex items-center gap-2 justify-end w-auto">
-                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : 'bg-cyan-500/10 text-cyan-400')} px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1`}>Undiscovered</div>
-                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                            <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'bg-cyan-500/10 text-cyan-400'))} px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1`}>Undiscovered</div>
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : (currentThemeId === 'cosmos' ? 'bg-indigo-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md'))) : 'bg-black/40 text-white/30'}`}>
                                                                 Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={8} />
                                                             </button>
                                                         </div>
@@ -1783,7 +1886,8 @@
                                                 );
                                                 const best = owned[0];
                                                 const mData = getMutData(currentThemeId, best.mutation);
-                                                const isDarkMut = best.mutation === 'void_touched' || best.mutation === 'underworld' || best.mutation === 'overgrown' || best.mutation === 'feral' || best.mutation === 'shamanic';
+                                                const isDarkMut = best.mutation === 'void_touched' || best.mutation === 'underworld' || best.mutation === 'overgrown' || best.mutation === 'feral' || best.mutation === 'shamanic' || best.mutation === 'universal' || best.mutation === 'astral';
+                                                const secMult = getSecondaryYieldMultiplier(currentThemeId, best.rarity?.id);
                                                 return (
                                                     <div key={best.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between gap-2 ${mData.bg} ${currentThemeId === 'olympian' ? 'border-amber-950/20' : 'border-white/20'} ${mData.glow}`}>
                                                         <div className="flex items-center gap-2 min-w-0"><span className="text-2xl drop-shadow-md shrink-0">{getDbItem(best.name).e}</span><div className="text-left min-w-0">
@@ -1791,18 +1895,18 @@
                                                             {best.mutation !== 'none' && <div className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${mData.color}`}>Mutation: {mData.label}</div>}
                                                             {best.currency === 'secondary' ? (
                                                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
-                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-emerald-700' : 'text-teal-700'} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1) * 0.3)}/s <Icon name={terms.secondaryIcon} size={8} /></div>
+                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : (currentThemeId === 'cosmos' ? 'text-fuchsia-700' : 'text-amber-700')} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
+                                                                    <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-emerald-700' : (currentThemeId === 'cosmos' ? 'text-indigo-700' : 'text-teal-700')} flex items-center gap-0.5`}>+{formatNum(best.cps * (mData.mult || 1) * secMult)}/s <Icon name={terms.secondaryIcon} size={8} /></div>
                                                                 </div>
                                                             ) : (
-                                                                <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : 'text-amber-700'} flex items-center gap-0.5 mt-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
+                                                                <div className={`text-[8px] font-black ${currentThemeId === 'canopy' ? 'text-lime-700' : (currentThemeId === 'cosmos' ? 'text-fuchsia-700' : 'text-amber-700')} flex items-center gap-0.5 mt-0.5`}>+{formatNum(best.cps * (mData.mult || 1))}/s <Icon name={terms.primaryIcon} size={8} /></div>
                                                             )}
                                                         </div></div>
                                                         <div className="flex items-center gap-1.5 justify-end shrink-0">
-                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md')) : 'bg-black/40 text-white/30'}`}>
+                                                            <button disabled={!canAffordBuy} onClick={() => handleDirectBuy(dbItem, r, directCost)} className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 transition-transform active:scale-90 ${canAffordBuy ? (currentThemeId === 'canopy' ? 'bg-emerald-600 text-white shadow-md' : (currentThemeId === 'olympian' ? 'bg-sky-600 text-white shadow-md' : (currentThemeId === 'cosmos' ? 'bg-indigo-600 text-white shadow-md' : 'bg-cyan-600 text-white shadow-md'))) : 'bg-black/40 text-white/30'}`}>
                                                                 Buy {formatNum(directCost)} <Icon name={terms.secondaryIcon} size={8} />
                                                             </button>
-                                                            <button disabled={owned.length <= 1} onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); if(it.currency === 'secondary') { setCurrency2(v => v + val*0.3); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className={`bg-slate-950 text-amber-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md ${owned.length <= 1 ? 'opacity-50 grayscale' : ''}`}>Exchange 1</button>
+                                                            <button disabled={owned.length <= 1} onClick={() => { const it = owned[owned.length-1]; setInventory(v => v.filter(x => x.id !== it.id)); const val = (it.value || 0) * (mData.mult || 1); const sMult = getSecondaryYieldMultiplier(currentThemeId, it.rarity?.id); if(it.currency === 'secondary') { setCurrency2(v => v + val*sMult); setCurrency1(v => v + val); } else { setCurrency1(v => v + val); } }} className={`bg-slate-950 text-amber-400 px-2 py-1 rounded-lg text-[8px] font-black uppercase shrink-0 transition-transform active:scale-90 shadow-md ${owned.length <= 1 ? 'opacity-50 grayscale' : ''}`}>Exchange 1</button>
                                                         </div>
                                                     </div>
                                                 );
@@ -1816,12 +1920,12 @@
                         {view === 'altar' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in slide-in-from-right-4">
                                 <div className="flex bg-slate-900/40 p-1 rounded-xl border border-white/10 shrink-0 backdrop-blur">
-                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Ascension</button>
-                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : 'bg-fuchsia-600 text-white shadow-lg')) : 'text-white/40'}`}>Transfer</button>
+                                    <button onClick={() => setAltarMode('ascend')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'ascend' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-lg' : 'bg-cyan-600 text-white shadow-lg'))) : 'text-white/40'}`}>Ascension</button>
+                                    <button onClick={() => setAltarMode('transfer')} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${altarMode === 'transfer' ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-lg' : 'bg-cyan-600 text-white shadow-lg'))) : 'text-white/40'}`}>Transfer</button>
                                 </div>
                                 {altarMode === 'ascend' ? (
                                     <div className="space-y-2.5">
-                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier. You are guaranteed a new, undiscovered item unless you have found them all!</p>
+                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-300'))}`}>Combine 5 duplicates of the same rarity to forge an item of the next tier. You are guaranteed a new, undiscovered item unless you have found them all!</p>
                                         {RARITIES.slice(0, -1).map((r, idx) => {
                                             const dupes = getDuplicatesForRarity(r.id);
                                             const next = RARITIES[idx + 1];
@@ -1845,30 +1949,30 @@
                                                         const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
-                                                    }} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
+                                                    }} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-lg active:scale-95' : 'bg-cyan-600 text-white shadow-lg active:scale-95'))) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 py-6">
-                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-fuchsia-300')}`}>Transfer a mutation from a source material to a target vessel.</p>
+                                        <p className={`text-[9px] text-center opacity-60 uppercase font-black px-2 leading-relaxed max-w-xs ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-300'))}`}>Transfer a mutation from a source material to a target vessel.</p>
                                         <div className="flex items-center gap-4">
                                             <button onClick={() => setInventoryModal('source')} className={`w-24 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${transferSacrifice ? 'bg-white/5 border-transparent ' + getMutData(currentThemeId, transferSacrifice.mutation).glow : 'border-red-500/20 text-red-400/30'}`}>
                                                 {transferSacrifice ? <span className="text-3xl">{getDbItem(transferSacrifice.name).e}</span> : <Icon name="Flame" size={20} />}
                                                 <span className="text-[7.5px] font-black uppercase text-center px-1">{transferSacrifice ? transferSacrifice.name : 'Material'}</span>
                                             </button>
-                                            <Icon name="Zap" size={14} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')} rotate-90`} />
-                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : (currentThemeId === 'canopy' ? 'border-emerald-500/20 text-emerald-400/30' : 'border-cyan-500/20 text-cyan-400/30')}`}>
+                                            <Icon name="Zap" size={14} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))} rotate-90`} />
+                                            <button onClick={() => setInventoryModal('target')} className={`w-24 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${transferTarget ? 'bg-white/5 border-transparent' : (currentThemeId === 'canopy' ? 'border-emerald-500/20 text-emerald-400/30' : (currentThemeId === 'cosmos' ? 'border-indigo-500/20 text-indigo-400/30' : 'border-cyan-500/20 text-cyan-400/30'))}`}>
                                                 {transferTarget ? <span className="text-3xl">{getDbItem(transferTarget.name).e}</span> : <Icon name="Box" size={20} />}
                                                 <span className="text-[7.5px] font-black uppercase text-center px-1">{transferTarget ? transferTarget.name : 'Target'}</span>
                                             </button>
                                         </div>
                                         {transferSacrifice && transferTarget && (
-                                            <div className="bg-slate-950/50 border border-cyan-500/30 px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner">
-                                                <span className={`text-[9px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`}>Fusion Cost:</span>
+                                            <div className={`bg-slate-950/50 border ${currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'} px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner`}>
+                                                <span className={`text-[9px] font-black uppercase ${currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-400')}`}>Fusion Cost:</span>
                                                 <span className={`text-xs font-black flex items-center gap-1 ${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? 'text-white' : 'text-red-400'}`}>
-                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={10} className={`${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : 'text-red-400'}`} />
+                                                    {formatNum(getTransferCost(transferSacrifice, transferTarget))} <Icon name={terms.secondaryIcon} size={10} className={`${currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-400')) : 'text-red-400'}`} />
                                                 </span>
                                             </div>
                                         )}
@@ -1879,7 +1983,7 @@
                                             const nt = { ...transferTarget, mutation: transferSacrifice.mutation };
                                             setInventory(p => [nt, ...p.filter(i => i.id !== transferSacrifice.id && i.id !== transferTarget.id)]);
                                             setTransferSacrifice(null); setTransferTarget(null); setLastPull(nt); setView('shop');
-                                        }} className={`w-full max-w-[200px] py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : 'bg-fuchsia-600 text-white shadow-lg active:scale-95')) : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
+                                        }} className={`w-full max-w-[200px] py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${transferSacrifice && transferTarget && currency2 >= getTransferCost(transferSacrifice, transferTarget) ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-lg active:scale-95' : 'bg-cyan-600 text-white shadow-lg active:scale-95'))) : 'bg-slate-900 text-white/20'}`}>Perform Synthesis</button>
                                     </div>
                                 )}
                             </div>
@@ -1888,17 +1992,23 @@
                         {view === 'shrine' && (
                             <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
                                 <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0`}>
-                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : 'text-cyan-400')}`}>Manifest pure arcane mutations. You will receive a random item that you already own, imbued with the chosen mutation.</p>
+                                    <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-400'))}`}>Manifest pure arcane mutations. Open a shrine 10 times to unlock the next tier!</p>
                                 </div>
                                 <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
                                     {SHRINE_CATEGORIES.map((cat, idx) => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
-                                        const baseCost = (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000)) * Math.pow(50, idx); 
+                                        const baseCost = (currentThemeId === 'cosmos' ? 5e33 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000))) * Math.pow(50, idx); 
                                         
-                                        const pk = { id: `shrine_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
+                                        const pk = { id: `shrine_${currentThemeId}_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
                                         const discountedCost = getPackCost(pk, true);
-                                        const isUnlocked = idx === 0 || claimedSets.some(s => s.startsWith(currentThemeId + '_') && s.endsWith('_' + MUTATION_ORDER[idx]));
+                                        
+                                        const prevShrineId = idx > 0 ? `shrine_${currentThemeId}_${SHRINE_CATEGORIES[idx-1].id}` : null;
+                                        const opensRequired = 10;
+                                        const currentOpens = prevShrineId ? (shrineOpens[prevShrineId] || 0) : 0;
+                                        const legacyUnlocked = claimedSets.some(s => s.startsWith(currentThemeId + '_') && s.endsWith('_' + MUTATION_ORDER[idx]));
+                                        
+                                        const isUnlocked = idx === 0 || currentOpens >= opensRequired || legacyUnlocked;
                                         
                                         // The player must own at least one item to use a shrine
                                         const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
@@ -1910,12 +2020,20 @@
                                                 onTouchStart={() => { if(isUnlocked) handleHoldStart(pk); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(pk); }}>
                                                 <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${cat.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
-                                                    {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={14} /><span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {MUTATION_ORDER[idx]} Set</span></div>}
+                                                    {!isUnlocked && (
+                                                        <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm">
+                                                            <Icon name="Lock" className="text-white/50 mb-1" size={14} />
+                                                            <span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">
+                                                                Open {SHRINE_CATEGORIES[idx-1].name} Shrine<br/>
+                                                                <span className="text-amber-400 mt-1 block">{currentOpens} / {opensRequired}</span>
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <Icon name={cat.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
                                                     <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
                                                     <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : 'text-cyan-300 animate-pulse') : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                        <Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : "text-cyan-300"} />
+                                                        <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(discountedCost)}</span>
+                                                        <Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : (currentThemeId === 'cosmos' ? "text-indigo-400" : "text-cyan-300")} />
                                                     </div>
                                                 </div>
                                             </div>
