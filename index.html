@@ -828,6 +828,7 @@
             const [createClubName, setCreateClubName] = useState('');
             const [createClubTag, setCreateClubTag] = useState('');
             const [clubSearchQuery, setClubSearchQuery] = useState('');
+            const [leaderboardError, setLeaderboardError] = useState('');
 
             // Live Trade State
             const [activeTrade, setActiveTrade] = useState(null);
@@ -991,13 +992,14 @@
                 const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 
                 setIsLeaderboardLoading(true);
+                setLeaderboardError('');
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
                 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
                     const profiles = [];
                     snapshot.forEach(d => profiles.push({ id: d.id, ...d.data() }));
                     
-                    profiles.sort((a, b) => ((b.wealth || 0) + ((b.cpsPrimary || 0) * 100)) - ((a.wealth || 0) + ((a.cpsPrimary || 0) * 100)));
+                    profiles.sort((a, b) => ((Number(b.wealth) || 0) + ((Number(b.cpsPrimary) || 0) * 100)) - ((Number(a.wealth) || 0) + ((Number(a.cpsPrimary) || 0) * 100)));
                     setLeaderboard(profiles);
                     setIsLeaderboardLoading(false);
                     
@@ -1010,6 +1012,7 @@
                     }
                 }, (error) => {
                     console.error("Leaderboard fetch error:", error);
+                    setLeaderboardError(error.message);
                     setIsLeaderboardLoading(false);
                 });
 
@@ -1088,22 +1091,28 @@
                 const { db, doc, setDoc } = window.FirebaseAPI || {};
                 if (!db || user.uid === 'offline_user') return;
 
-                const syncInterval = setInterval(() => {
+                const pushProfile = () => {
                     const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     const state = gameStateRef.current;
                     
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                        username: state.username,
-                        currentRealm: state.currentThemeId,
-                        cpsPrimary: state.income.c1,
-                        cpsSecondary: state.income.c2,
-                        wealth: state.currency1 + (state.currency2 * 5),
-                        pinnedItem: state.pinnedItem,
-                        friends: state.friendsList,
-                        clubId: state.clubId,
+                    const safeData = {
+                        username: state.username || 'Unknown',
+                        currentRealm: state.currentThemeId || 'abyssal',
+                        cpsPrimary: Number(state.income?.c1) || 0,
+                        cpsSecondary: Number(state.income?.c2) || 0,
+                        wealth: (Number(state.currency1) || 0) + ((Number(state.currency2) || 0) * 5),
+                        pinnedItem: state.pinnedItem || null,
+                        friends: Array.isArray(state.friendsList) ? state.friendsList : [],
+                        clubId: state.clubId || null,
                         lastActive: new Date().toISOString()
-                    }, { merge: true }).catch(console.error);
-                }, 10000); 
+                    };
+                    Object.keys(safeData).forEach(key => safeData[key] === undefined && delete safeData[key]);
+
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), safeData, { merge: true }).catch(console.error);
+                };
+
+                pushProfile(); // Instant sync
+                const syncInterval = setInterval(pushProfile, 10000); 
 
                 return () => clearInterval(syncInterval);
             }, [user, username]);
@@ -2798,9 +2807,15 @@
                                                 if (user && window.db && window.FirebaseAPI) {
                                                     const { doc, setDoc } = window.FirebaseAPI;
                                                     const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
-                                                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
-                                                        username: tempUsername, currentRealm: currentThemeId, cpsPrimary: incomeFlow.income.c1, cpsSecondary: incomeFlow.income.c2, wealth: currency1, lastActive: new Date().toISOString()
-                                                    }, { merge: true }).catch(()=>{});
+                                                    const safeData = {
+                                                        username: tempUsername, 
+                                                        currentRealm: currentThemeId || 'abyssal', 
+                                                        cpsPrimary: Number(incomeFlow?.income?.c1) || 0, 
+                                                        cpsSecondary: Number(incomeFlow?.income?.c2) || 0, 
+                                                        wealth: (Number(currency1) || 0) + ((Number(currency2) || 0) * 5), 
+                                                        lastActive: new Date().toISOString()
+                                                    };
+                                                    setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), safeData, { merge: true }).catch(()=>{});
                                                 }
                                             }}
                                             className={`w-full ${currentThemeId === 'canopy' ? 'bg-lime-600' : (currentThemeId === 'olympian' ? 'bg-amber-500' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600' : 'bg-cyan-600'))} text-white font-black uppercase py-2.5 rounded-xl disabled:opacity-50 text-xs`}
@@ -2870,7 +2885,13 @@
                                                     </h3>
                                                     
                                                     <div className="space-y-1.5">
-                                                        {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).length === 0 && !isLeaderboardLoading && (
+                                                        {leaderboardError && (
+                                                            <div className="text-center text-red-400 bg-red-950/40 border border-red-500/30 rounded-xl p-3 text-[9px] font-black uppercase tracking-widest my-2 animate-pulse">
+                                                                Database Error: {leaderboardError}
+                                                                <div className="text-[7px] mt-1 text-red-300 normal-case opacity-80">Please check your Firestore Security Rules!</div>
+                                                            </div>
+                                                        )}
+                                                        {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).length === 0 && !isLeaderboardLoading && !leaderboardError && (
                                                             <div className="text-center text-white/30 text-[9px] font-black uppercase py-4">No {leaderboardTab} players found.</div>
                                                         )}
                                                         {leaderboard.filter(p => leaderboardTab === 'global' || friendsList.includes(p.id)).map((p, index) => {
