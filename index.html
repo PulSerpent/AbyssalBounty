@@ -55,16 +55,99 @@
     <style>
         @keyframes drift { 0% { transform: translate(0, 0); } 33% { transform: translate(15px, -15px); } 66% { transform: translate(-15px, 10px); } 100% { transform: translate(0, 0); } }
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
-        @keyframes bubble-rise { 0% { transform: translateY(110vh) translateX(0) scale(0.5); opacity: 0; } 10% { opacity: 0.6; } 33% { transform: translateY(70vh) translateX(25px) scale(0.8); } 66% { transform: translateY(30vh) translateX(-25px) scale(1); } 90% { opacity: 0.6; } 100% { transform: translateY(-10vh) translateX(0) scale(1.2); opacity: 0; } }
+        
+        /* Refined Thematic Ambient Backgrounds */
+        @keyframes bubble-rise { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
+        @keyframes bubble-wobble { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(20px); } }
+        
+        @keyframes feather-fall {
+            0% { transform: translateY(-10vh) translateX(0) rotate(-15deg); opacity: 0; }
+            20% { opacity: 0.6; }
+            50% { transform: translateY(50vh) translateX(40px) rotate(15deg); }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(110vh) translateX(-20px) rotate(-15deg); opacity: 0; }
+        }
+        
+        /* --- NEW ADVANCED AMBIENT KEYFRAMES --- */
+        @keyframes godrays {
+            0% { transform: rotate(-15deg) translateX(-20%); opacity: 0.3; }
+            50% { transform: rotate(-5deg) translateX(10%); opacity: 0.6; }
+            100% { transform: rotate(-15deg) translateX(-20%); opacity: 0.3; }
+        }
+        @keyframes cloud-drift {
+            0% { transform: translateX(-20vw); opacity: 0; }
+            20% { opacity: 0.4; }
+            80% { opacity: 0.4; }
+            100% { transform: translateX(120vw); opacity: 0; }
+        }
+        @keyframes ember-rise {
+            0% { transform: translateY(110vh) translateX(0) scale(1); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(-10vh) translateX(50px) scale(0.5); opacity: 0; }
+        }
+        @keyframes leaf-tumble {
+            0% { transform: translateY(-10vh) translateX(0) rotate3d(1, 1, 0, 0deg); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(110vh) translateX(100px) rotate3d(1, 1, 1, 720deg); opacity: 0; }
+        }
+        @keyframes parallax-stars {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100vh); }
+        }
+        @keyframes nebula-pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); filter: hue-rotate(0deg); }
+            50% { opacity: 0.6; transform: scale(1.2); filter: hue-rotate(30deg); }
+        }
+        @keyframes cyber-grid-scroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+        @keyframes spark-fountain {
+            0% { transform: translateY(110vh) translateX(0); opacity: 1; }
+            100% { transform: translateY(-10vh) translateX(calc(-50px + 100px * var(--rnd))); opacity: 0; }
+        }
+        
+        @keyframes cloud-pan { 0% { transform: translateX(0); } 100% { transform: translateX(-5%); } }
+        @keyframes vine-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        @keyframes pillar-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+
+        /* --- NEW DETAIL KEYFRAMES --- */
+        @keyframes kelp-sway { 0%, 100% { transform: skewX(-8deg); } 50% { transform: skewX(8deg); } }
+        @keyframes ring-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+        @keyframes pendulum-swing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+
+        @keyframes asteroid-tumble {
+            0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(110vh) translateX(150px) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes rain-fall {
+            0% { transform: translateY(-10vh) rotate(15deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(110vh) translateX(-10vw) rotate(15deg); opacity: 0; }
+        }
+
+        @keyframes leaf-drop {
+            0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.6; }
+            50% { transform: translateY(50vh) translateX(-50px) rotate(90deg); }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(110vh) translateX(20px) rotate(180deg); opacity: 0; }
+        }
+        
+        @keyframes star-twinkle { 0%, 100% { opacity: 0.1; transform: scale(0.5); } 50% { opacity: 0.7; transform: scale(1); } }
+        @keyframes shooting-star { 0% { transform: translate(120vw, -20vh) rotate(45deg); opacity: 1; width: 0; } 10% { width: 150px; opacity: 1; } 20% { transform: translate(-50vw, 150vh) rotate(45deg); opacity: 0; width: 0; } 100% { opacity: 0; } }
+        
+        @keyframes neon-streak { 0% { transform: translateY(-50vh); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translateY(150vh); opacity: 0; } }
+        @keyframes sun-pulse { 0%, 100% { filter: drop-shadow(0 0 15px rgba(236,72,153,0.4)); } 50% { filter: drop-shadow(0 0 35px rgba(236,72,153,0.8)); } }
+        @keyframes wireframe-spin { 0% { transform: translateY(110vh) rotateX(0deg) rotateY(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(-20vh) rotateX(360deg) rotateY(720deg); opacity: 0; } }
+        
         @keyframes heavenly-drift { 0% { transform: translateY(-10vh) translateX(0) scale(0.5) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(50px) scale(1.2) rotate(360deg); opacity: 0; } }
-        
-        /* Thematic Ambient Backgrounds */
-        @keyframes ember-rise { 0% { transform: translateY(110vh) translateX(0) rotate(0deg) scale(1); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translateY(-10vh) translateX(50px) rotate(360deg) scale(0.2); opacity: 0; filter: blur(2px); } }
-        @keyframes leaf-sway { 0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 50% { transform: translateY(50vh) translateX(40px) rotate(90deg); } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(-40px) rotate(180deg); opacity: 0; } }
-        @keyframes star-twinkle { 0%, 100% { opacity: 0.1; transform: scale(0.5); } 50% { opacity: 0.9; transform: scale(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.8); } }
-        @keyframes data-stream { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(110vh); opacity: 0; } }
-        @keyframes neon-subtle-glitch { 0%, 94%, 100% { transform: translate(0, 0) skew(0deg); opacity: 0.3; filter: drop-shadow(0 0 0 transparent); } 95% { transform: translate(-10px, 0) skew(-25deg); opacity: 0.9; filter: drop-shadow(4px 0 0 #ef4444); } 97% { transform: translate(10px, 0) skew(25deg); opacity: 0.9; filter: drop-shadow(-4px 0 0 #22d3ee); } }
-        
         @keyframes shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
         @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-10px, -8px); } 20%, 40%, 60%, 80% { transform: translate(10px, 8px); } }
         @keyframes ghost-drift { 0% { transform: translate(var(--startX), var(--startY)); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(var(--endX), var(--endY)); opacity: 0; } }
@@ -180,6 +263,23 @@
         .animate-cyber-lock { animation: cyber-lock 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
         .animate-pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
 
+        /* Clockwork Crypt Effects */
+        @keyframes gear-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes gear-spin-reverse { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+        @keyframes steam-vent { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(-100px) scale(2); opacity: 0; filter: blur(10px); } }
+        @keyframes piston-pump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(120px); } }
+        
+        .bg-theme-clockwork {
+            background: linear-gradient(135deg, #1c1917, #292524, #1c1917);
+            background-size: 400% 400%;
+            animation: heavenly-sky 30s ease-in-out infinite;
+        }
+
+        .perspective-floor {
+            transform: perspective(600px) rotateX(60deg);
+            transform-origin: bottom center;
+        }
+
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -193,7 +293,7 @@
         /* Theme Backgrounds */
         .bg-theme-abyssal { background: linear-gradient(to bottom, #083344, #172554, #020617); }
         .bg-theme-olympian { 
-            background: linear-gradient(135deg, #fffbeb, #fef3c7, #fde68a, #fffbeb); 
+            background: linear-gradient(135deg, #e0f2fe, #fef3c7, #fde68a, #ffedd5); 
             background-size: 400% 400%;
             animation: heavenly-sky 25s ease-in-out infinite;
         }
@@ -256,6 +356,12 @@
                 Waves: <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>,
                 Box: <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z m-17.7-1 8.7 5 8.7-5 M12 22V12"/>,
                 Boxes: <path d="M2.9 17.1c.3.3.7.4 1.1.4h16c.4 0 .8-.1 1.1-.4M7 2v4M17 2v4M2 10h20"/>,
+                Cog: <React.Fragment><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /><circle cx="12" cy="12" r="3" /></React.Fragment>,
+                Train: <React.Fragment><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="M8 19l-2 3"/><path d="M16 19l2 3"/><path d="M2 14h20"/></React.Fragment>,
+                Terminal: <React.Fragment><rect width="18" height="14" x="3" y="5" rx="2" ry="2" /><path d="M7 9l2 2-2 2 M11 13h4" /></React.Fragment>,
+                Rocket: <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z M12 15l-3-3a22 22 0 0 1 3.82-11C15 2 22 2 22 2s0 7-1 9.18A22 22 0 0 1 12 15z M10 10l4 4 M16 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0z" />,
+                Mask: <React.Fragment><path d="M12 2c-3 0-5 3-5 6v4c0 3 2 5 5 5s5-2 5-5V8c0-3-2-6-5-6z M9 9h.01 M15 9h.01" /><path d="M12 13v2" strokeLinecap="round" /></React.Fragment>,
+                Chariot: <React.Fragment><path d="M6 14h10l2-6H4z"/><circle cx="8" cy="17" r="2"/><circle cx="16" cy="17" r="2"/><path d="M18 10h4l2-2" /></React.Fragment>,
                 X: <path d="M18 6 6 18M6 6l12 12"/>,
                 Check: <polyline points="20 6 9 17 4 12" />,
                 Globe: <React.Fragment><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></React.Fragment>,
@@ -579,6 +685,66 @@
                     { id: 'neon_infused', name: 'Neon-Infused', icon: 'Sparkles', color: 'from-red-500 to-red-700', glow: 'shadow-red-500/20' },
                     { id: 'digital_ascended', name: 'Digital', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
                 ]
+            },
+            clockwork: {
+                id: 'clockwork', name: 'Clockwork Crypt', bgClass: 'bg-theme-clockwork', icon: 'Cog',
+                terms: { primary: 'Gears', primaryIcon: 'Cog', secondary: 'Chronos Cores', secondaryIcon: 'Timer', packMenu: 'Excavate', log: 'Blueprints', beast: '⚙️', beastName: 'Gearwork Goliath', merchant: 'Aether Express' },
+                RARITIES: [
+                    { id: 'trash', label: 'Rusted', color: 'text-stone-500', bg: 'bg-stone-300/90', multiplier: 0.5, incomeBase: 1e50, secondaryChance: 0.01, setPrize: { amt: 2.5e55, curr: 'primary' } },
+                    { id: 'common', label: 'Bronze', color: 'text-orange-700', bg: 'bg-orange-200/90', multiplier: 1, incomeBase: 5e50, secondaryChance: 0.02, setPrize: { amt: 2.5e56, curr: 'primary' } },
+                    { id: 'uncommon', label: 'Iron', color: 'text-gray-400', bg: 'bg-gray-800/90', multiplier: 3, incomeBase: 2.5e51, secondaryChance: 0.05, setPrize: { amt: 2.5e57, curr: 'primary' } },
+                    { id: 'rare', label: 'Steel', color: 'text-slate-300', bg: 'bg-slate-800/90', multiplier: 8, incomeBase: 1.5e52, secondaryChance: 0.10, setPrize: { amt: 2.5e58, curr: 'primary' } },
+                    { id: 'epic', label: 'Brass', color: 'text-yellow-600', bg: 'bg-yellow-100/90', multiplier: 20, incomeBase: 1e53, secondaryChance: 0.15, setPrize: { amt: 2.5e59, curr: 'primary' } },
+                    { id: 'legendary', label: 'Clockwork', color: 'text-amber-500', bg: 'bg-stone-900/95', multiplier: 60, incomeBase: 8e53, secondaryChance: 0.25, setPrize: { amt: 2.5e60, curr: 'primary' } },
+                    { id: 'mythic', label: 'Aetherial', color: 'text-cyan-400', bg: 'bg-cyan-950/90', multiplier: 200, incomeBase: 5e54, secondaryChance: 0.40, setPrize: { amt: 2.5e61, curr: 'primary' } },
+                    { id: 'celestial', label: 'Chronal', color: 'text-purple-400', bg: 'bg-purple-950/95', multiplier: 800, incomeBase: 5e55, secondaryChance: 0.60, setPrize: { amt: 5e55, curr: 'secondary' } },
+                    { id: 'primordial', label: 'Paradigm', color: 'text-rose-400', bg: 'bg-rose-950/95', multiplier: 3500, incomeBase: 5e56, secondaryChance: 0.80, setPrize: { amt: 5e57, curr: 'secondary' } },
+                    { id: 'transcendent', label: 'Infinite', color: 'text-white', bg: 'bg-black/95', multiplier: 15000, incomeBase: 5e57, secondaryChance: 1.0, setPrize: { amt: 5e59, curr: 'secondary' } },
+                ],
+                MUTATION_ORDER: ['none', 'oiled', 'steam_powered', 'overclocked', 'aether_infused', 'temporal', 'paradoxical', 'eternal'],
+                MUTATIONS: {
+                    none: { label: '', mult: 1, bg: 'bg-white/90', color: 'text-slate-900' },
+                    oiled: { label: 'Oiled', mult: 1.5, bg: 'bg-stone-900/90', color: 'text-stone-400', glow: 'shadow-[0_0_15px_rgba(120,113,108,0.6)]' },
+                    steam_powered: { label: 'Steam', mult: 3, bg: 'bg-orange-950/90', color: 'text-orange-400', glow: 'shadow-[0_0_15px_rgba(251,146,60,0.6)]' },
+                    overclocked: { label: 'Overclocked', mult: 7, bg: 'bg-red-950/90', color: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(248,113,113,0.6)]' },
+                    aether_infused: { label: 'Aether', mult: 15, bg: 'bg-cyan-950/90', color: 'text-cyan-400', glow: 'shadow-[0_0_15px_rgba(34,211,238,0.6)]' },
+                    temporal: { label: 'Temporal', mult: 35, bg: 'bg-purple-950/90', color: 'text-purple-300', glow: 'shadow-[0_0_15px_rgba(192,132,252,0.4)]' },
+                    paradoxical: { label: 'Paradox', mult: 100, bg: 'bg-rose-950/90', color: 'text-rose-400', glow: 'shadow-[0_0_15px_rgba(2fb,113,133,0.6)]' },
+                    eternal: { label: 'Eternal', mult: 500, bg: 'bg-white/95', color: 'text-stone-900', glow: 'shadow-[0_0_20px_rgba(255,255,255,0.8)]' }
+                },
+                MASTER_ITEM_DB: [
+                    { name: "Ash Pile", rarityId: "trash", e: "💨" }, { name: "Snapping Wire", rarityId: "trash", e: "〰️" }, { name: "Stripped Screw", rarityId: "trash", e: "🔩" }, { name: "Oily Rag", rarityId: "trash", e: "🧻" }, { name: "Dull Penny", rarityId: "trash", e: "🪙" }, { name: "Bent Cog", rarityId: "trash", e: "⚙️" }, { name: "Rusted Bolt", rarityId: "trash", e: "🔩" }, { name: "Cracked Glass", rarityId: "trash", e: "🪞" }, { name: "Broken Spring", rarityId: "trash", e: "➰" }, { name: "Wood Splinter", rarityId: "trash", e: "🪵" },
+                    { name: "Copper Gear", rarityId: "common", e: "⚙️" }, { name: "Brass Pipe", rarityId: "common", e: "🪈" }, { name: "Intact Spring", rarityId: "common", e: "➰" }, { name: "Iron Rivet", rarityId: "common", e: "🔩" }, { name: "Small Valve", rarityId: "common", e: "🚰" }, { name: "Leather Belt", rarityId: "common", e: "🎗️" }, { name: "Coal Chunk", rarityId: "common", e: "🪨" }, { name: "Glass Vial", rarityId: "common", e: "🧪" }, { name: "Tick-Tock Mechanism", rarityId: "common", e: "⏱️" }, { name: "Winding Key", rarityId: "common", e: "🗝️" },
+                    { name: "Bronze Cylinder", rarityId: "uncommon", e: "🛢️" }, { name: "Whirring Widget", rarityId: "uncommon", e: "🪀" }, { name: "Silver Dial", rarityId: "uncommon", e: "🧭" }, { name: "Gauge Glass", rarityId: "uncommon", e: "🔍" }, { name: "Pressure Valve", rarityId: "uncommon", e: "🎛️" }, { name: "Steam Pipe", rarityId: "uncommon", e: "🌫️" }, { name: "Polished Cog", rarityId: "uncommon", e: "⚙️" }, { name: "Chain Link", rarityId: "uncommon", e: "⛓️" }, { name: "Heavy Spanner", rarityId: "uncommon", e: "🔧" }, { name: "Tinkerer's Goggles", rarityId: "uncommon", e: "🥽" },
+                    { name: "Gold Plated Gear", rarityId: "rare", e: "⚙️" }, { name: "Aether Tube", rarityId: "rare", e: "🧪" }, { name: "Precision Bearing", rarityId: "rare", e: "🛞" }, { name: "Diamond Drill", rarityId: "rare", e: "💎" }, { name: "Boiler Plate", rarityId: "rare", e: "🛡️" }, { name: "Metronome Core", rarityId: "rare", e: "⏱️" }, { name: "Compass Needle", rarityId: "rare", e: "🧭" }, { name: "Platinum Spring", rarityId: "rare", e: "➰" }, { name: "Welded Chassis", rarityId: "rare", e: "🏗️" }, { name: "Engine Piston", rarityId: "rare", e: "🗜️" },
+                    { name: "Clockwork Heart", rarityId: "epic", e: "🫀" }, { name: "Steam Turbine", rarityId: "epic", e: "🎡" }, { name: "Aether Battery", rarityId: "epic", e: "🔋" }, { name: "Auto-loom", rarityId: "epic", e: "🧶" }, { name: "Gyroscope Rotor", rarityId: "epic", e: "🪐" }, { name: "Tesla Coil", rarityId: "epic", e: "⚡" }, { name: "Perpetual Pendulum", rarityId: "epic", e: "🕰️" }, { name: "Chrono-Dial", rarityId: "epic", e: "⏱️" }, { name: "Brass Automaton", rarityId: "epic", e: "🤖" }, { name: "Alchemist's Lens", rarityId: "epic", e: "👁️" },
+                    { name: "Masterwork Engine", rarityId: "legendary", e: "🚂" }, { name: "Aetherium Core", rarityId: "legendary", e: "🔮" }, { name: "Grand Orrery", rarityId: "legendary", e: "🌌" }, { name: "Timepiece Matrix", rarityId: "legendary", e: "💠" }, { name: "Quantum Gear", rarityId: "legendary", e: "⚙️" }, { name: "Temporal Spring", rarityId: "legendary", e: "〰️" }, { name: "Void-Metal Rivet", rarityId: "legendary", e: "🔩" }, { name: "Chronomancer's Key", rarityId: "legendary", e: "🗝️" }, { name: "Dimensional Valve", rarityId: "legendary", e: "🚰" }, { name: "Celestial Cog", rarityId: "legendary", e: "🌟" },
+                    { name: "Heart of the Machine", rarityId: "mythic", e: "💖" }, { name: "Absolute Clockwork", rarityId: "mythic", e: "🏰" }, { name: "Reality Loom", rarityId: "mythic", e: "🌌" }, { name: "Engine of Epochs", rarityId: "mythic", e: "⏳" }, { name: "Infinity Spring", rarityId: "mythic", e: "♾️" }, { name: "The Master Key", rarityId: "mythic", e: "🗝️" }, { name: "Chronos Sphere", rarityId: "mythic", e: "🔮" }, { name: "Astral Automaton", rarityId: "mythic", e: "🤖" }, { name: "Paradigm Gear", rarityId: "mythic", e: "⚙️" }, { name: "Nexus Battery", rarityId: "mythic", e: "🔋" },
+                    { name: "Time Lord's Eye", rarityId: "celestial", e: "👁️" }, { name: "Void Engine", rarityId: "celestial", e: "🕳️" }, { name: "The First Cog", rarityId: "celestial", e: "1️⃣" }, { name: "Aetherial Mainspring", rarityId: "celestial", e: "🌌" }, { name: "Quantum Automaton", rarityId: "celestial", e: "🤖" }, { name: "Eternity Valve", rarityId: "celestial", e: "🚰" }, { name: "Dimensional Dynamo", rarityId: "celestial", e: "⚡" }, { name: "Chronal Matrix", rarityId: "celestial", e: "🟩" }, { name: "Epoch Generator", rarityId: "celestial", e: "🏭" }, { name: "Celestial Loom", rarityId: "celestial", e: "🧶" },
+                    { name: "Origin Gear", rarityId: "primordial", e: "⚙️" }, { name: "The Big Bang Battery", rarityId: "primordial", e: "💥" }, { name: "Primordial Steam", rarityId: "primordial", e: "💨" }, { name: "First Motion Spring", rarityId: "primordial", e: "〰️" }, { name: "Ancient Automaton", rarityId: "primordial", e: "🗿" }, { name: "Creator's Key", rarityId: "primordial", e: "🗝️" }, { name: "Paradigm Engine", rarityId: "primordial", e: "🚂" }, { name: "Time Weaver", rarityId: "primordial", e: "🕷️" }, { name: "Epoch Core", rarityId: "primordial", e: "🌋" }, { name: "Foundation Rivet", rarityId: "primordial", e: "📍" },
+                    { name: "Absolute Time", rarityId: "transcendent", e: "⏱️" }, { name: "The Prime Mechanism", rarityId: "transcendent", e: "👑" }, { name: "Infinite Engine", rarityId: "transcendent", e: "♾️" }, { name: "Chronos Himself", rarityId: "transcendent", e: "👴" }, { name: "Omni-Gear", rarityId: "transcendent", e: "⚙️" }, { name: "Eternity Loom", rarityId: "transcendent", e: "🌌" }, { name: "Reality Engine", rarityId: "transcendent", e: "🌍" }, { name: "The Final Tick", rarityId: "transcendent", e: "🛑" }, { name: "Time's End Spring", rarityId: "transcendent", e: "🔚" }, { name: "Clockmaker's Heart", rarityId: "transcendent", e: "💖" }
+                ],
+                STANDARD_PACKS: [
+                    { id: 'pack1', name: 'Junk Heap', cost: 5e54, currency: 'primary', icon: 'Box', color: 'from-stone-800 to-stone-950', glow: 'shadow-stone-500/20', weights: { trash: 65, common: 30, uncommon: 4, rare: 0.8, epic: 0.15, legendary: 0.04, mythic: 0.008, celestial: 0.001, primordial: 0.0005, transcendent: 0.0001 } },
+                    { id: 'pack2', name: 'Toolbox', cost: 5e55, currency: 'primary', icon: 'Cog', color: 'from-orange-800 to-orange-950', glow: 'shadow-orange-500/20', reqRarity: 'trash', weights: { trash: 15, common: 55, uncommon: 22, rare: 6, epic: 1.5, legendary: 0.4, mythic: 0.08, celestial: 0.015, primordial: 0.004, transcendent: 0.001 } },
+                    { id: 'pack3', name: 'Scrap Crate', cost: 5e56, currency: 'primary', icon: 'Boxes', color: 'from-gray-700 to-gray-900', glow: 'shadow-gray-500/20', reqRarity: 'common', weights: { trash: 2, common: 25, uncommon: 50, rare: 18, epic: 4, legendary: 0.8, mythic: 0.15, celestial: 0.04, primordial: 0.008, transcendent: 0.002 } },
+                    { id: 'pack4', name: 'Mechanic Cache', cost: 5e57, currency: 'primary', icon: 'Lock', color: 'from-slate-700 to-slate-900', glow: 'shadow-slate-500/50', reqRarity: 'uncommon', weights: { trash: 0.5, common: 2, uncommon: 25, rare: 50, epic: 18, legendary: 3.5, mythic: 0.8, celestial: 0.15, primordial: 0.04, transcendent: 0.01 } },
+                    { id: 'pack5', name: 'Brass Safe', cost: 5e58, currency: 'primary', icon: 'Shield', color: 'from-yellow-700 to-yellow-950', glow: 'shadow-yellow-500/50', reqRarity: 'rare', weights: { trash: 0.1, common: 0.5, uncommon: 5, rare: 35, epic: 45, legendary: 12, mythic: 2, celestial: 0.3, primordial: 0.08, transcendent: 0.02 } },
+                    { id: 'pack6', name: 'Clockwork Vault', cost: 5e59, currency: 'primary', icon: 'Timer', color: 'from-amber-800 to-amber-950', glow: 'shadow-amber-500/50', reqRarity: 'epic', weights: { trash: 0.01, common: 0.05, uncommon: 0.5, rare: 8, epic: 45, legendary: 35, mythic: 9, celestial: 2, primordial: 0.4, transcendent: 0.04 } },
+                    { id: 'pack7', name: 'Aetherial Engine', cost: 5e60, currency: 'primary', icon: 'Zap', color: 'from-cyan-800 to-cyan-950', glow: 'shadow-cyan-500/50', reqRarity: 'legendary', weights: { trash: 0.001, common: 0.01, uncommon: 0.1, rare: 1, epic: 10, legendary: 45, mythic: 30, celestial: 11, primordial: 2.5, transcendent: 0.389 } },
+                    { id: 'pack8', name: 'Chronal Sphere', cost: 5e61, currency: 'primary', icon: 'Globe', color: 'from-purple-800 to-purple-950', glow: 'shadow-purple-500/80', reqRarity: 'mythic', weights: { trash: 0.0001, common: 0.001, uncommon: 0.01, rare: 0.1, epic: 1.5, legendary: 10, mythic: 40, celestial: 35, primordial: 11, transcendent: 2.3889 } },
+                    { id: 'pack9', name: 'Paradigm Box', cost: 5e62, currency: 'primary', icon: 'Sparkles', color: 'from-rose-800 to-rose-950', glow: 'shadow-rose-500/80', reqRarity: 'celestial', weights: { trash: 0.00001, common: 0.0001, uncommon: 0.001, rare: 0.01, epic: 0.1, legendary: 1.5, mythic: 10, celestial: 40, primordial: 35, transcendent: 13.38889 } },
+                    { id: 'pack10', name: 'Infinite Mechanism', cost: 5e63, currency: 'primary', icon: 'Infinity', color: 'from-black to-stone-900', glow: 'shadow-white/80', reqRarity: 'primordial', weights: { trash: 0, common: 0, uncommon: 0, rare: 0, epic: 0.001, legendary: 0.01, mythic: 0.1, celestial: 1.5, primordial: 45, transcendent: 53.389 } },
+                ],
+                SHRINE_CATEGORIES: [
+                    { id: 'oiled', name: 'Oiled', icon: 'Droplet', color: 'from-stone-400 to-stone-600', glow: 'shadow-stone-500/20' },
+                    { id: 'steam_powered', name: 'Steam', icon: 'Flame', color: 'from-orange-400 to-orange-600', glow: 'shadow-orange-500/20' },
+                    { id: 'overclocked', name: 'Overclocked', icon: 'ZapFast', color: 'from-red-400 to-red-600', glow: 'shadow-red-500/20' },
+                    { id: 'aether_infused', name: 'Aether', icon: 'Sparkles', color: 'from-cyan-400 to-cyan-600', glow: 'shadow-cyan-500/20' },
+                    { id: 'temporal', name: 'Temporal', icon: 'Timer', color: 'from-purple-400 to-purple-600', glow: 'shadow-purple-500/20' },
+                    { id: 'paradoxical', name: 'Paradox', icon: 'Globe', color: 'from-rose-400 to-rose-600', glow: 'shadow-rose-500/20' },
+                    { id: 'eternal', name: 'Eternal', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
+                ]
             }
         };
 
@@ -594,7 +760,7 @@
 
         const App = () => {
             const [currentThemeId, setCurrentThemeId] = useState('abyssal');
-            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy', 'cosmos', 'neon']);
+            const [unlockedThemes, setUnlockedThemes] = useState(['abyssal', 'olympian', 'canopy', 'cosmos', 'neon', 'clockwork']);
             const [currency1, setCurrency1] = useState(100);
             const [currency2, setCurrency2] = useState(0);
             const [inventory, setInventory] = useState([]);
@@ -1079,8 +1245,8 @@
                 if (isShrine) {
                     const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
                     const safeIdx = Math.max(0, shrineIndex);
-                    // NEON UPDATE
-                    const realmBase = currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000)));
+                    // CLOCKWORK UPDATE
+                    const realmBase = currentThemeId === 'clockwork' ? 1e54 : (currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000))));
                     return Math.floor(realmBase * Math.pow(12, safeIdx) * discount * clubDiscount);
                 }
                 return Math.floor(p.cost * discount * clubDiscount); 
@@ -1166,8 +1332,8 @@
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
                 const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
-                // NEON UPDATE
-                const realmMultiplier = currentThemeId === 'neon' ? 1e40 : (currentThemeId === 'cosmos' ? 1e30 : (currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1))); 
+                // CLOCKWORK UPDATE
+                const realmMultiplier = currentThemeId === 'clockwork' ? 1e50 : (currentThemeId === 'neon' ? 1e40 : (currentThemeId === 'cosmos' ? 1e30 : (currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1)))); 
                 const baseCost = Math.pow(5, tgtRarityIdx) * 50 * realmMultiplier; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
@@ -1178,8 +1344,8 @@
                 const rIdx = RARITIES.findIndex(x => x.id === rarityId);
                 let basePackCost = STANDARD_PACKS[rIdx]?.cost;
                 if (!basePackCost || basePackCost === 0) {
-                    // NEON UPDATE
-                    basePackCost = currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50)));
+                    // CLOCKWORK UPDATE
+                    basePackCost = currentThemeId === 'clockwork' ? 1e54 : (currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50))));
                 }
                 return basePackCost * 5; 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
@@ -1492,8 +1658,8 @@
                 if (!activeClub || !user) return;
                 const m = activeClub.monolith || generateMonolithDemand();
                 
-                // Massive secondary currency reward - NEON UPDATE
-                const prize = currentThemeId === 'neon' ? 5e49 : (currentThemeId === 'cosmos' ? 5e39 : (currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000)));
+                // Massive secondary currency reward - CLOCKWORK UPDATE
+                const prize = currentThemeId === 'clockwork' ? 5e59 : (currentThemeId === 'neon' ? 5e49 : (currentThemeId === 'cosmos' ? 5e39 : (currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000))));
                 setCurrency2(c => c + prize);
                 
                 // Local Update
@@ -1598,6 +1764,143 @@
                 );
             };
 
+            // Helper to generate massive particle fields using a single DOM element via box-shadow
+            const generateBoxShadows = (count, color, maxW, maxH) => {
+                let shadows = [];
+                for(let i=0; i<count; i++) {
+                    shadows.push(`${Math.floor(Math.random() * maxW)}vw ${Math.floor(Math.random() * maxH)}vh ${Math.random() * 2}px ${color}`);
+                }
+                return shadows.join(', ');
+            };
+
+            // Calculate particle random states exactly once so they don't reset every 100ms game tick
+            const particleConfigs = useMemo(() => {
+                return {
+                    abyssalBubbles: [...Array(15)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        animDur1: `${Math.random() * 4 + 4}s`,
+                        animDel1: `${Math.random() * -10}s`,
+                        size: `${Math.random() * 20 + 10}px`,
+                        animDur2: `${Math.random() * 8 + 8}s`,
+                        animDel2: `${Math.random() * -10}s`
+                    })),
+                    abyssalPlankton: generateBoxShadows(150, 'rgba(34, 211, 238, 0.6)', 100, 200),
+                    abyssalKelp: [...Array(10)].map((_, i) => ({
+                        left: `${5 + i * 10 + Math.random() * 5}vw`,
+                        width: `${Math.random() * 15 + 20}px`, // Wider for detailed SVG
+                        height: `${Math.random() * 20 + 20}vh`,
+                        animDur: `${Math.random() * 3 + 4}s`,
+                        animDel: `${Math.random() * -10}s`
+                    })),
+                    abyssalCoral: [...Array(12)].map((_, i) => ({
+                        left: `${2 + i * 8 + Math.random() * 6}vw`,
+                        height: `${Math.random() * 10 + 10}vh`,
+                        color: ['text-pink-500/50', 'text-purple-500/50', 'text-orange-500/50', 'text-rose-400/50'][Math.floor(Math.random() * 4)],
+                        scale: Math.random() * 0.4 + 0.6,
+                        flip: Math.random() > 0.5 ? -1 : 1
+                    })),
+                    olympianClouds: [...Array(5)].map(() => ({
+                        top: `${Math.random() * 60}vh`,
+                        width: `${Math.random() * 40 + 40}vw`,
+                        height: `${Math.random() * 15 + 10}vh`,
+                        animDur: `${Math.random() * 40 + 40}s`,
+                        animDel: `${Math.random() * -40}s`
+                    })),
+                    olympianEmbers: generateBoxShadows(50, 'rgba(251, 191, 36, 0.8)', 100, 200),
+                    olympian: [...Array(20)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 15 + 15}px`, // Increased for SVG detail
+                        animDur: `${Math.random() * 8 + 8}s`,
+                        animDel: `${Math.random() * -15}s`
+                    })),
+                    pillars: [...Array(5)].map((_, i) => ({ 
+                        left: `${10 + i * 20 + Math.random()*5}%`, animDur: `${Math.random() * 6 + 10}s`, animDel: `${Math.random() * -10}s` 
+                    })),
+                    canopyLeaves: [...Array(25)].map(() => ({
+                        isDark: Math.random() > 0.5,
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 20 + 15}px`, // Increased for SVG detail
+                        animDur: `${Math.random() * 10 + 8}s`,
+                        animDel: `${Math.random() * -15}s`
+                    })),
+                    canopyRain: [...Array(35)].map(() => ({
+                        left: `${Math.random() * 120 - 10}vw`,
+                        height: `${Math.random() * 15 + 10}vh`,
+                        animDur: `${Math.random() * 1 + 0.8}s`,
+                        animDel: `${Math.random() * -2}s`
+                    })),
+                    canopyFireflies: generateBoxShadows(100, 'rgba(163, 230, 53, 0.8)', 100, 200),
+                    vinesBg: [...Array(6)].map((_, i) => ({ 
+                        left: `${15 * i + Math.random() * 10}%`, height: `${Math.random() * 40 + 30}vh`, animDur: `${Math.random() * 4 + 4}s`, animDel: `${Math.random() * -5}s` 
+                    })),
+                    vinesFg: [...Array(4)].map((_, i) => ({ 
+                        left: `${25 * i + Math.random() * 10}%`, height: `${Math.random() * 30 + 20}vh`, animDur: `${Math.random() * 3 + 3}s`, animDel: `${Math.random() * -5}s` 
+                    })),
+                    cosmosStarsLayer1: generateBoxShadows(150, 'rgba(255, 255, 255, 0.4)', 100, 200),
+                    cosmosStarsLayer2: generateBoxShadows(100, 'rgba(232, 121, 249, 0.6)', 100, 200),
+                    cosmosStarsLayer3: generateBoxShadows(50, 'rgba(255, 255, 255, 0.9)', 100, 200),
+                    cosmosNebulas: [...Array(3)].map((_, i) => ({
+                        left: `${Math.random() * 60 - 10}vw`,
+                        top: `${Math.random() * 60 - 10}vh`,
+                        color: i === 0 ? 'bg-fuchsia-600/20' : (i === 1 ? 'bg-purple-600/20' : 'bg-blue-600/20'),
+                        animDel: `${Math.random() * -10}s`
+                    })),
+                    cosmosAsteroids: [...Array(10)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 30 + 20}px`, // Increased for 3D Crystal
+                        animDur: `${Math.random() * 15 + 15}s`,
+                        animDel: `${Math.random() * -20}s`
+                    })),
+                    cosmosShooting: [...Array(3)].map(() => ({
+                        animDur: `${Math.random() * 10 + 15}s`,
+                        animDel: `${Math.random() * 10}s`
+                    })),
+                    neonStreaks: [...Array(25)].map(() => ({
+                        isPink: Math.random() > 0.5,
+                        left: `${Math.random() * 100}vw`,
+                        width: `${Math.random() > 0.8 ? 3 : 1}px`,
+                        height: `${Math.random() * 150 + 50}px`,
+                        animDur: `${Math.random() * 2 + 1}s`,
+                        animDel: `${Math.random() * -5}s`
+                    })),
+                    neonWireframes: [...Array(8)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 40 + 30}px`,
+                        isPink: Math.random() > 0.5,
+                        animDur: `${Math.random() * 15 + 15}s`,
+                        animDel: `${Math.random() * -20}s`
+                    })),
+                    clockworkSparks: [...Array(40)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 4 + 2}px`,
+                        animDur: `${Math.random() * 3 + 2}s`,
+                        animDel: `${Math.random() * -5}s`,
+                        rnd: Math.random()
+                    })),
+                    clockworkSoot: generateBoxShadows(80, 'rgba(28, 25, 23, 0.8)', 100, 200),
+                    clockworkPistons: [...Array(4)].map((_, i) => ({
+                        left: `${12 + i * 25}%`,
+                        animDur: `${Math.random() * 2 + 3}s`,
+                        animDel: `${Math.random() * -5}s`
+                    })),
+                    clockworkPendulums: [...Array(5)].map((_, i) => ({
+                        left: `${10 + i * 20 + Math.random() * 10}vw`,
+                        height: `${Math.random() * 20 + 20}vh`,
+                        animDur: `${Math.random() * 2 + 3}s`,
+                        animDel: `${Math.random() * -5}s`
+                    })),
+                    clockworkFloatingGears: [...Array(15)].map(() => ({
+                        left: `${Math.random() * 100}vw`,
+                        size: `${Math.random() * 20 + 15}px`,
+                        animDur: `${Math.random() * 10 + 10}s`,
+                        animDel: `${Math.random() * -15}s`
+                    })),
+                    cosmosMatter: [...Array(16)].map(() => ({
+                        transformOrigin: `${Math.random()*300 - 150}px ${Math.random()*300 - 150}px`
+                    }))
+                };
+            }, []);
+
             if (!isDataLoaded) {
                 return (
                     <div className="h-screen w-full flex items-center justify-center bg-slate-950 flex-col gap-4">
@@ -1612,61 +1915,485 @@
                     
                     {/* Thematic Background Particles Layer */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                        {currentThemeId === 'abyssal' && [...Array(30)].map((_, i) => (
-                            <div key={`abyssal-${i}`} className="absolute bg-cyan-500/10 border border-cyan-300/30 rounded-full shadow-[inset_0_0_10px_rgba(34,211,238,0.3)] backdrop-blur-[1px] animate-[bubble-rise_linear_infinite]"
-                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 20 + 8}px`, height: `${Math.random() * 20 + 8}px`, animationDuration: `${Math.random() * 8 + 6}s`, animationDelay: `${Math.random() * 5}s` }} />
-                        ))}
+                        
+                        {/* ABYSSAL DEEP SEA */}
+                        {currentThemeId === 'abyssal' && (
+                            <React.Fragment>
+                                {/* NEW: Sea Bed */}
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-[15vh] sm:h-[20vh] text-[#020617] drop-shadow-[0_-15px_30px_rgba(8,51,68,0.8)] z-10">
+                                    <path fill="currentColor" d="M0,224L48,213.3C96,203,192,181,288,186.7C384,192,480,224,576,218.7C672,213,768,171,864,154.7C960,139,1056,149,1152,165.3C1248,181,1344,203,1392,213.3L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                                </svg>
 
-                        {currentThemeId === 'olympian' && [...Array(35)].map((_, i) => (
-                            <div key={`olympian-${i}`} className="absolute bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-[ember-rise_linear_infinite]"
-                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 6 + 2}px`, height: `${Math.random() * 6 + 2}px`, animationDuration: `${Math.random() * 6 + 4}s`, animationDelay: `${Math.random() * 5}s`, borderRadius: '2px' }} />
-                        ))}
+                                {/* Detailed Coral Reefs */}
+                                {particleConfigs.abyssalCoral.map((cfg, i) => (
+                                    <div key={`coral-${i}`} className={`absolute bottom-[10vh] sm:bottom-[15vh] origin-bottom ${cfg.color} drop-shadow-[0_0_12px_currentColor] z-0`}
+                                         style={{ left: cfg.left, height: cfg.height, transform: `scaleX(${cfg.flip}) scale(${cfg.scale})` }}>
+                                        <svg preserveAspectRatio="none" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" className="w-auto h-full">
+                                            <path d="M50,100 Q45,70 25,50 M50,100 Q55,80 75,60 M25,50 Q15,30 20,15 M25,50 Q35,35 45,25 M75,60 Q85,40 80,20 M75,60 Q65,45 55,30" />
+                                            <circle cx="20" cy="15" r="4" fill="currentColor" />
+                                            <circle cx="45" cy="25" r="4" fill="currentColor" />
+                                            <circle cx="80" cy="20" r="4" fill="currentColor" />
+                                            <circle cx="55" cy="30" r="4" fill="currentColor" />
+                                        </svg>
+                                    </div>
+                                ))}
 
-                        {currentThemeId === 'canopy' && [...Array(25)].map((_, i) => (
-                            <div key={`canopy-${i}`} className="absolute bg-lime-500/40 shadow-[0_0_10px_rgba(132,204,22,0.4)] animate-[leaf-sway_linear_infinite]"
-                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 15 + 8}px`, height: `${Math.random() * 8 + 4}px`, animationDuration: `${Math.random() * 8 + 7}s`, animationDelay: `${Math.random() * 5}s`, borderRadius: '100% 0 100% 0' }} />
-                        ))}
+                                {/* Detailed Swaying Kelp Beds */}
+                                {particleConfigs.abyssalKelp.map((cfg, i) => (
+                                    <div key={`kelp-${i}`} className="absolute bottom-[12vh] sm:bottom-[18vh] origin-bottom animate-[kelp-sway_ease-in-out_infinite_alternate]"
+                                         style={{ left: cfg.left, width: cfg.width, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        <svg preserveAspectRatio="none" viewBox="0 0 40 200" fill="none" stroke="currentColor" strokeLinecap="round" className="w-full h-full text-cyan-900/60 drop-shadow-[0_0_8px_rgba(8,51,68,0.9)]">
+                                            <path d="M20,200 Q35,150 20,100 T20,0" strokeWidth="6" />
+                                            <path d="M23,160 Q40,145 40,130" strokeWidth="4" />
+                                            <path d="M17,120 Q0,105 0,90" strokeWidth="4" />
+                                            <path d="M23,80 Q40,65 40,50" strokeWidth="4" />
+                                            <path d="M17,40 Q0,25 0,10" strokeWidth="4" />
+                                        </svg>
+                                    </div>
+                                ))}
 
-                        {currentThemeId === 'cosmos' && [...Array(60)].map((_, i) => (
-                            <div key={`cosmos-${i}`} className={`absolute rounded-full animate-[star-twinkle_ease-in-out_infinite] ${Math.random() > 0.8 ? 'bg-fuchsia-300' : 'bg-white'}`}
-                                 style={{ left: `${Math.random() * 100}vw`, top: `${Math.random() * 100}vh`, width: `${Math.random() * 3 + 1}px`, height: `${Math.random() * 3 + 1}px`, animationDuration: `${Math.random() * 4 + 2}s`, animationDelay: `${Math.random() * 5}s` }} />
-                        ))}
+                                <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/20 to-transparent mix-blend-overlay" />
+                                <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[60%] bg-gradient-to-b from-cyan-300/10 to-transparent blur-2xl transform -rotate-12 animate-[godrays_15s_ease-in-out_infinite] mix-blend-screen" />
+                                <div className="absolute top-[-10%] right-[-10%] w-[80%] h-[80%] bg-gradient-to-b from-blue-300/10 to-transparent blur-2xl transform rotate-12 animate-[godrays_20s_ease-in-out_infinite_reverse] mix-blend-screen" />
+                                
+                                {/* Plankton layer using massive box-shadow */}
+                                <div className="absolute w-[2px] h-[2px] rounded-full animate-[parallax-stars_40s_linear_infinite]" style={{ boxShadow: particleConfigs.abyssalPlankton }} />
+                                <div className="absolute w-[2px] h-[2px] rounded-full animate-[parallax-stars_40s_linear_infinite]" style={{ boxShadow: particleConfigs.abyssalPlankton, top: '100vh' }} />
 
-                        {currentThemeId === 'neon' && (
-                            <div className="absolute inset-0 neon-scanlines pointer-events-none">
-                                {[...Array(30)].map((_, i) => {
-                                    const isRed = Math.random() > 0.7;
-                                    return (
-                                        <div key={`neon-${i}`} className="absolute animate-[data-stream_linear_infinite]" 
-                                             style={{ left: `${Math.random() * 100}vw`, animationDuration: `${Math.random() * 8 + 4}s`, animationDelay: `${Math.random() * 5}s` }}>
-                                            <div className={`backdrop-blur-[2px] ${isRed ? 'bg-red-500/30 border-red-500/50' : 'bg-cyan-400/20 border-cyan-500/40'} border animate-[neon-subtle-glitch_infinite]`}
-                                                 style={{ width: `${Math.random() * 40 + 20}px`, height: `${Math.random() * 6 + 2}px`, animationDuration: `${Math.random() * 3 + 2}s`, animationDelay: `${Math.random() * 2}s` }} />
+                                {particleConfigs.abyssalBubbles.map((cfg, i) => (
+                                    <div key={`abyssal-bubble-${i}`} className="absolute animate-[bubble-wobble_ease-in-out_infinite_alternate]" style={{ left: cfg.left, animationDuration: cfg.animDur1, animationDelay: cfg.animDel1 }}>
+                                        <div className="rounded-full border border-cyan-200/40 bg-gradient-to-tr from-cyan-400/20 to-transparent backdrop-blur-[2px] animate-[bubble-rise_linear_infinite] shadow-[inset_0_0_10px_rgba(34,211,238,0.2)]"
+                                             style={{ width: cfg.size, height: cfg.size, animationDuration: cfg.animDur2, animationDelay: cfg.animDel2 }} />
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        )}
+
+                        {/* OLYMPIAN PEAK */}
+                        {currentThemeId === 'olympian' && (
+                            <React.Fragment>
+                                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[500px] max-h-[500px] bg-yellow-200/40 blur-[80px] rounded-full mix-blend-screen animate-pulse" />
+                                <div className="absolute inset-0 bg-gradient-to-tr from-amber-600/10 via-transparent to-yellow-200/20 mix-blend-overlay" />
+                                <div className="absolute top-[-30%] left-[10%] w-[80%] h-[150%] bg-gradient-to-b from-white/30 to-transparent blur-3xl transform -rotate-45 animate-[godrays_20s_ease-in-out_infinite] mix-blend-overlay" />
+                                <div className="absolute top-[-30%] right-[10%] w-[80%] h-[150%] bg-gradient-to-b from-amber-200/20 to-transparent blur-3xl transform rotate-45 animate-[godrays_25s_ease-in-out_infinite_reverse] mix-blend-overlay" />
+                                
+                                {/* Floating Temples / Ruins */}
+                                {particleConfigs.pillars.map((cfg, i) => (
+                                    <div key={`temple-${i}`} className="absolute w-20 sm:w-28 opacity-40 animate-[pillar-bob_ease-in-out_infinite] mix-blend-overlay"
+                                         style={{ left: cfg.left, bottom: `${15 + (i * 10)}vh`, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        {/* Temple Roof */}
+                                        <div className="w-full h-6 sm:h-10 bg-amber-600" style={{clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)'}} />
+                                        <div className="w-full h-1 sm:h-1.5 bg-amber-700 mb-1" />
+                                        {/* Columns */}
+                                        <div className="flex justify-between px-2 h-[20vh] sm:h-[25vh]">
+                                            <div className="w-1.5 h-full bg-gradient-to-b from-amber-600 to-transparent" />
+                                            <div className="w-1.5 h-full bg-gradient-to-b from-amber-600 to-transparent" />
+                                            <div className="w-1.5 h-full bg-gradient-to-b from-amber-600 to-transparent" />
+                                            <div className="w-1.5 h-full bg-gradient-to-b from-amber-600 to-transparent" />
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    </div>
+                                ))}
+
+                                {/* Drifting Fluffy Clouds */}
+                                {particleConfigs.olympianClouds.map((cfg, i) => (
+                                    <div key={`cloud-${i}`} className="absolute rounded-full bg-white/40 blur-[30px] animate-[cloud-drift_linear_infinite]"
+                                         style={{ top: cfg.top, width: cfg.width, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                ))}
+
+                                {/* Thick Cloud Base Layers */}
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute bottom-[5vh] w-[150vw] h-[20vh] sm:h-[25vh] text-white opacity-40 drop-shadow-[0_-15px_30px_rgba(251,191,36,0.6)] z-0 animate-[cloud-pan_40s_ease-in-out_infinite_alternate]">
+                                    <path fill="currentColor" d="M0,192L48,176C96,160,192,128,288,138.7C384,149,480,203,576,213.3C672,224,768,192,864,170.7C960,149,1056,139,1152,149.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                                </svg>
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute bottom-[-2vh] w-[120vw] h-[15vh] sm:h-[20vh] text-[#fffbeb] opacity-90 drop-shadow-[0_-10px_20px_rgba(251,191,36,0.4)] z-10 animate-[cloud-pan_30s_ease-in-out_infinite_alternate-reverse]">
+                                    <path fill="currentColor" d="M0,288L48,272C96,256,192,224,288,208C384,192,480,192,576,213.3C672,235,768,277,864,282.7C960,288,1056,256,1152,240C1248,224,1344,224,1392,224L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                                </svg>
+
+                                {/* Golden Motes & Detailed Falling Feathers */}
+                                <div className="absolute w-[3px] h-[3px] rounded-full animate-[parallax-stars_30s_linear_infinite]" style={{ boxShadow: particleConfigs.olympianEmbers }} />
+                                <div className="absolute w-[3px] h-[3px] rounded-full animate-[parallax-stars_30s_linear_infinite]" style={{ boxShadow: particleConfigs.olympianEmbers, top: '100vh' }} />
+                                {particleConfigs.olympian.map((cfg, i) => (
+                                    <div key={`feather-${i}`} className="absolute animate-[feather-fall_linear_infinite]"
+                                         style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-white/80 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)]">
+                                            <path d="M20.24 3.76a4.25 4.25 0 0 0-6 0L4.5 13.5a4.25 4.25 0 0 0 0 6 4.25 4.25 0 0 0 6 0l9.74-9.74a4.25 4.25 0 0 0 0-6z" />
+                                        </svg>
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        )}
+
+                        {/* VERDANT CANOPY */}
+                        {currentThemeId === 'canopy' && (
+                            <React.Fragment>
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-lime-400/20 via-transparent to-black/80 mix-blend-multiply" />
+                                <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[150%] bg-gradient-to-b from-lime-300/10 to-transparent blur-3xl transform -rotate-12 animate-[godrays_18s_ease-in-out_infinite] mix-blend-screen" />
+
+                                {particleConfigs.vinesBg.map((cfg, i) => (
+                                    <div key={`vine-${i}`} className="absolute top-0 w-1 sm:w-2 bg-gradient-to-b from-green-950 to-transparent blur-[1px] origin-top animate-[vine-sway_ease-in-out_infinite]"
+                                         style={{ left: cfg.left, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                ))}
+
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute top-[-5vh] w-[150vw] h-[20vh] sm:h-[25vh] text-[#011a14] drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] z-0 animate-[cloud-pan_35s_ease-in-out_infinite_alternate-reverse]">
+                                    <path fill="currentColor" d="M0,128L48,138.7C96,149,192,171,288,160C384,149,480,107,576,112C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
+                                </svg>
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute top-0 w-[120vw] h-[15vh] sm:h-[20vh] text-[#022c22] drop-shadow-[0_15px_30px_rgba(0,0,0,0.7)] z-10 animate-[cloud-pan_25s_ease-in-out_infinite_alternate]">
+                                    <path fill="currentColor" d="M0,0L48,21.3C96,43,192,85,288,106.7C384,128,480,128,576,106.7C672,85,768,43,864,48C960,53,1056,107,1152,117.3C1248,128,1344,96,1392,80L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
+                                </svg>
+                                
+                                {particleConfigs.vinesFg.map((cfg, i) => (
+                                    <div key={`fg-vine-${i}`} className="absolute top-0 w-2 sm:w-3 bg-gradient-to-b from-green-900 to-transparent drop-shadow-[0_5px_10px_rgba(0,0,0,0.8)] origin-top animate-[vine-sway_ease-in-out_infinite] z-10"
+                                         style={{ left: cfg.left, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                ))}
+
+                                <div className="absolute w-[3px] h-[3px] rounded-full animate-[parallax-stars_20s_linear_infinite]" style={{ boxShadow: particleConfigs.canopyFireflies }} />
+                                <div className="absolute w-[3px] h-[3px] rounded-full animate-[parallax-stars_20s_linear_infinite]" style={{ boxShadow: particleConfigs.canopyFireflies, top: '100vh' }} />
+
+                                {/* Detailed Falling Leaves */}
+                                {particleConfigs.canopyLeaves.map((cfg, i) => (
+                                    <div key={`leaf-${i}`} className={`absolute animate-[leaf-tumble_linear_infinite] ${cfg.isDark ? 'text-green-900/90' : 'text-lime-500/80'}`}
+                                         style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full drop-shadow-[0_2px_5px_rgba(0,0,0,0.6)]">
+                                            <path d="M17,8 C17,8 21,2 21,2 C21,2 15,2 11,6 C7,10 4,16 2,22 C2,22 8,20 12,16 C16,12 17,8 17,8 Z" />
+                                        </svg>
+                                    </div>
+                                ))}
+
+                                {/* Tropical Rain */}
+                                {particleConfigs.canopyRain.map((cfg, i) => (
+                                    <div key={`rain-${i}`} className="absolute w-[1px] sm:w-[2px] bg-gradient-to-b from-transparent to-lime-300/40 animate-[rain-fall_linear_infinite] drop-shadow-[0_0_2px_rgba(163,230,53,0.5)]"
+                                         style={{ left: cfg.left, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                ))}
+
+                                {/* Bottom Mist & Giant Fern Silhouettes */}
+                                <div className="absolute bottom-0 w-full h-[30vh] bg-gradient-to-t from-[#011a14] to-transparent z-10 pointer-events-none" />
+                                
+                                <div className="absolute bottom-[-5vh] left-[-5vw] w-[35vw] h-[40vh] sm:w-[25vw] sm:h-[45vh] text-[#011a14] drop-shadow-[0_0_20px_rgba(0,0,0,0.9)] z-10 opacity-90">
+                                    <svg preserveAspectRatio="none" viewBox="0 0 100 100" className="w-full h-full">
+                                        <path d="M50,100 Q50,40 20,0" stroke="currentColor" strokeWidth="3" fill="none" />
+                                        <path d="M50,90 Q30,80 10,70 M48,70 Q28,60 15,45 M43,50 Q30,40 20,20" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                                        <path d="M50,85 Q70,80 90,75 M46,60 Q70,55 85,40 M40,35 Q60,30 65,10" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                                    </svg>
+                                </div>
+                                <div className="absolute bottom-[-5vh] right-[-5vw] w-[40vw] h-[45vh] sm:w-[30vw] sm:h-[50vh] text-[#022c22] drop-shadow-[0_0_20px_rgba(0,0,0,0.9)] z-10 opacity-80" style={{ transform: 'scaleX(-1) rotate(15deg)' }}>
+                                    <svg preserveAspectRatio="none" viewBox="0 0 100 100" className="w-full h-full">
+                                        <path d="M50,100 Q50,40 20,0" stroke="currentColor" strokeWidth="3" fill="none" />
+                                        <path d="M50,90 Q30,80 10,70 M48,70 Q28,60 15,45 M43,50 Q30,40 20,20" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+                                        <path d="M50,85 Q70,80 90,75 M46,60 Q70,55 85,40 M40,35 Q60,30 65,10" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+                                    </svg>
+                                </div>
+                            </React.Fragment>
+                        )}
+
+                        {/* COSMIC EXPANSE */}
+                        {currentThemeId === 'cosmos' && (
+                            <React.Fragment>
+                                <div className="absolute bottom-[20vh] sm:bottom-[30vh] left-[50%] -translate-x-1/2 w-[180vw] sm:w-[150vw] h-[40vh] rounded-[100%] border-t-[4px] border-fuchsia-400/20 shadow-[0_0_40px_rgba(217,70,239,0.3)] z-0 transform -rotate-6 animate-[ring-pulse_12s_ease-in-out_infinite]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}></div>
+                                <div className="absolute bottom-[22vh] sm:bottom-[32vh] left-[50%] -translate-x-1/2 w-[200vw] sm:w-[160vw] h-[45vh] rounded-[100%] border-t-[2px] border-cyan-400/20 shadow-[0_0_20px_rgba(34,211,238,0.3)] z-0 transform rotate-6 animate-[ring-pulse_8s_ease-in-out_infinite_reverse]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}></div>
+
+                                <div className="absolute bottom-[-30vh] left-[50%] -translate-x-1/2 w-[150vw] h-[50vh] rounded-[100%] bg-gradient-to-t from-fuchsia-900/60 to-purple-900/20 opacity-40 shadow-[0_-20px_80px_rgba(217,70,239,0.3)] z-10 blur-sm border-t border-fuchsia-400/20"></div>
+
+                                {/* Distant Quasar */}
+                                <div className="absolute top-[15%] left-[80%] w-2 h-2 bg-white rounded-full shadow-[0_0_15px_#fff,0_0_30px_#e879f9] opacity-70 z-0">
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                        <div className="w-[200px] h-[1px] bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent animate-[gear-spin_15s_linear_infinite]" />
+                                    </div>
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                        <div className="w-[1px] h-[200px] bg-gradient-to-b from-transparent via-cyan-300 to-transparent animate-[gear-spin-reverse_20s_linear_infinite]" />
+                                    </div>
+                                </div>
+
+                                {/* Detailed Craggy Meteorites */}
+                                {particleConfigs.cosmosAsteroids.map((cfg, i) => (
+                                    <div key={`asteroid-${i}`} className="absolute animate-[asteroid-tumble_linear_infinite] z-0"
+                                         style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(217,70,239,0.8)] backdrop-blur-sm text-[#1c1917]">
+                                            <path fill="currentColor" stroke="#e879f9" strokeWidth="2" strokeLinejoin="round" 
+                                                  d="M35,15 Q15,25 20,55 Q15,80 45,85 Q80,95 85,55 Q95,20 65,10 Q50,0 35,15 Z" />
+                                            {/* Asteroid Craters */}
+                                            <circle cx="45" cy="40" r="10" fill="#0c0a09" stroke="#e879f9" strokeWidth="1" opacity="0.6"/>
+                                            <circle cx="70" cy="55" r="6" fill="#0c0a09" stroke="#e879f9" strokeWidth="1" opacity="0.6"/>
+                                            <circle cx="30" cy="70" r="5" fill="#0c0a09" stroke="#e879f9" strokeWidth="1" opacity="0.6"/>
+                                        </svg>
+                                    </div>
+                                ))}
+
+                                {particleConfigs.cosmosNebulas.map((cfg, i) => (
+                                    <div key={`nebula-${i}`} className={`absolute w-[60vw] h-[60vw] rounded-full blur-[100px] mix-blend-screen animate-[nebula-pulse_20s_ease-in-out_infinite] ${cfg.color}`}
+                                         style={{ left: cfg.left, top: cfg.top, animationDelay: cfg.animDel }} />
+                                ))}
+                                
+                                {/* 3-Layer Parallax Starfield */}
+                                <div className="absolute w-[1px] h-[1px] bg-transparent animate-[parallax-stars_100s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer1 }} />
+                                <div className="absolute w-[1px] h-[1px] bg-transparent animate-[parallax-stars_100s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer1, top: '100vh' }} />
+                                
+                                <div className="absolute w-[2px] h-[2px] bg-transparent animate-[parallax-stars_60s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer2 }} />
+                                <div className="absolute w-[2px] h-[2px] bg-transparent animate-[parallax-stars_60s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer2, top: '100vh' }} />
+
+                                <div className="absolute w-[3px] h-[3px] bg-transparent animate-[parallax-stars_30s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer3 }} />
+                                <div className="absolute w-[3px] h-[3px] bg-transparent animate-[parallax-stars_30s_linear_infinite]" style={{ boxShadow: particleConfigs.cosmosStarsLayer3, top: '100vh' }} />
+
+                                {/* Shooting Stars */}
+                                {particleConfigs.cosmosShooting.map((cfg, i) => (
+                                    <div key={`shooting-${i}`} className="absolute bg-gradient-to-r from-transparent via-white to-white h-[2px] rounded-full shadow-[0_0_10px_white] animate-[shooting-star_linear_infinite]"
+                                         style={{ animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                ))}
+                            </React.Fragment>
+                        )}
+
+                        {/* NEON NEXUS */}
+                        {currentThemeId === 'neon' && (
+                            <React.Fragment>
+                                <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black/80" />
+                                
+                                {/* NEW: Retro Segmented Sun */}
+                                <div className="absolute bottom-[18vh] sm:bottom-[28vh] left-1/2 -translate-x-1/2 w-[50vw] max-w-[280px] h-[50vw] max-h-[280px] z-0 animate-[sun-pulse_4s_ease-in-out_infinite]">
+                                    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
+                                        <defs>
+                                            <linearGradient id="neonSun" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" stopColor="#fde047" />
+                                                <stop offset="45%" stopColor="#f472b6" />
+                                                <stop offset="100%" stopColor="#7e22ce" />
+                                            </linearGradient>
+                                            <clipPath id="neon-sun-slats">
+                                                <rect x="0" y="0" width="100" height="52" />
+                                                <rect x="0" y="56" width="100" height="8" />
+                                                <rect x="0" y="68" width="100" height="6" />
+                                                <rect x="0" y="78" width="100" height="5" />
+                                                <rect x="0" y="87" width="100" height="4" />
+                                                <rect x="0" y="94" width="100" height="3" />
+                                            </clipPath>
+                                        </defs>
+                                        <circle cx="50" cy="50" r="48" fill="url(#neonSun)" clipPath="url(#neon-sun-slats)" />
+                                    </svg>
+                                </div>
+
+                                {/* Cyberpunk Skyline */}
+                                <svg preserveAspectRatio="none" viewBox="0 0 1440 320" className="absolute bottom-[20vh] sm:bottom-[30vh] w-full h-[25vh] text-[#09090b] opacity-80 drop-shadow-[0_0_15px_rgba(236,72,153,0.3)] z-0">
+                                    <path fill="currentColor" stroke="#f472b6" strokeWidth="1" strokeOpacity="0.4" d="M0,280 L40,280 L40,150 L80,150 L80,200 L120,200 L120,100 L180,100 L180,240 L250,240 L250,80 L320,80 L320,180 L380,180 L380,50 L450,50 L450,220 L500,220 L500,120 L580,120 L580,250 L650,250 L650,90 L720,90 L720,190 L800,190 L800,40 L880,40 L880,200 L950,200 L950,110 L1020,110 L1020,230 L1100,230 L1100,60 L1180,60 L1180,180 L1250,180 L1250,120 L1320,120 L1320,260 L1400,260 L1400,100 L1440,100 L1440,320 L0,320 Z"></path>
+                                </svg>
+
+                                {/* 3D Perspective Grid Floor */}
+                                <div className="absolute bottom-0 w-[200vw] left-[-50vw] h-[60vh] perspective-floor z-10">
+                                    <div className="w-full h-[200%] bg-[linear-gradient(transparent_48%,rgba(34,211,238,0.4)_50%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(236,72,153,0.4)_50%,transparent_52%)] bg-[length:60px_60px] animate-[cyber-grid-scroll_2s_linear_infinite]" />
+                                </div>
+                                
+                                {/* Rain */}
+                                <div className="absolute inset-0 z-10">
+                                    {particleConfigs.neonStreaks.map((cfg, i) => (
+                                        <div key={`streak-${i}`} className={`absolute ${cfg.isPink ? 'bg-gradient-to-b from-transparent via-pink-500 to-transparent shadow-[0_0_10px_#ec4899]' : 'bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-[0_0_10px_#22d3ee]'} animate-[neon-streak_linear_infinite] opacity-80`}
+                                             style={{ left: cfg.left, width: cfg.width, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }} />
+                                    ))}
+                                </div>
+
+                                {/* NEW: Floating Wireframes */}
+                                {particleConfigs.neonWireframes.map((cfg, i) => (
+                                    <div key={`wireframe-${i}`} className="absolute z-10 animate-[wireframe-spin_linear_infinite]"
+                                         style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                         <svg viewBox="0 0 100 100" className={`w-full h-full ${cfg.isPink ? 'text-pink-500/50 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]' : 'text-cyan-400/50 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]'}`}>
+                                             <polygon fill="none" stroke="currentColor" strokeWidth="3" points="50,10 90,30 90,70 50,90 10,70 10,30" />
+                                             <line x1="10" y1="30" x2="90" y2="70" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+                                             <line x1="90" y1="30" x2="10" y2="70" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+                                             <line x1="50" y1="10" x2="50" y2="90" stroke="currentColor" strokeWidth="2" opacity="0.6" />
+                                         </svg>
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        )}
+
+                        {/* CLOCKWORK CRYPT */}
+                        {currentThemeId === 'clockwork' && (
+                            <React.Fragment>
+                                {/* Detailed Hydraulic Pistons (Pushed into background) */}
+                                {particleConfigs.clockworkPistons.map((cfg, i) => (
+                                    <div key={`piston-${i}`} className="absolute top-[-5vh] z-0 flex flex-col items-center opacity-30 blur-[2px]" style={{ left: cfg.left, height: '60vh' }}>
+                                        {/* The moving shaft */}
+                                        <div className="w-4 sm:w-6 h-full animate-[piston-pump_ease-in-out_infinite_alternate] drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)]" style={{ animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                            <div className="w-full h-full bg-[repeating-linear-gradient(0deg,#78716c_0px,#78716c_8px,#44403c_8px,#44403c_16px)] border-x-2 border-stone-400/50 shadow-[inset_0_0_10px_rgba(0,0,0,0.9)]" />
+                                            {/* Piston Head */}
+                                            <div className="w-12 sm:w-16 h-8 bg-gradient-to-b from-stone-400 to-stone-600 border-2 border-stone-800 -ml-4 sm:-ml-5 shadow-[0_5px_10px_rgba(0,0,0,0.7)] rounded-b-xl flex flex-col items-center justify-end pb-1.5 relative z-20">
+                                                <div className="w-8 sm:w-10 h-2 bg-amber-600/60 rounded-full shadow-[0_0_8px_#b45309]" />
+                                            </div>
+                                        </div>
+                                        {/* The fixed cylinder casing */}
+                                        <div className="absolute top-0 w-16 sm:w-24 h-[40vh] bg-gradient-to-b from-[#1c1917] to-[#451a03] border-x-[6px] border-b-[16px] border-[#78350f] shadow-[inset_0_0_40px_rgba(0,0,0,1)] rounded-b-3xl z-10 flex flex-col items-center justify-between py-10">
+                                            {/* Decorative glowing rings on cylinder */}
+                                            <div className="w-full h-3 bg-orange-600/20 border-y-2 border-orange-600/30 shadow-[0_0_10px_rgba(234,88,12,0.3)]"></div>
+                                            <div className="w-full h-3 bg-orange-600/20 border-y-2 border-orange-600/30 shadow-[0_0_10px_rgba(234,88,12,0.3)]"></div>
+                                            <div className="w-full h-3 bg-orange-600/20 border-y-2 border-orange-600/30 shadow-[0_0_10px_rgba(234,88,12,0.3)]"></div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Boiler Framework Base */}
+                                <div className="absolute left-0 top-0 bottom-0 w-4 sm:w-8 bg-gradient-to-r from-black/80 to-transparent border-r border-orange-900/20 z-0 shadow-[5px_0_15px_rgba(0,0,0,0.5)] opacity-60"></div>
+                                <div className="absolute right-0 top-0 bottom-0 w-4 sm:w-8 bg-gradient-to-l from-black/80 to-transparent border-l border-orange-900/20 z-0 shadow-[-5px_0_15px_rgba(0,0,0,0.5)] opacity-60"></div>
+                                <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-t from-black/80 to-transparent border-t border-orange-900/20 z-0 shadow-[0_-5px_15px_rgba(0,0,0,0.5)] opacity-60">
+                                    <div className="absolute top-[-8px] left-0 right-0 h-[8px] bg-[repeating-linear-gradient(90deg,#451a03_0px,#451a03_15px,transparent_15px,transparent_30px)] opacity-30"></div>
+                                </div>
+
+                                {/* Floating Brass Cogs */}
+                                {particleConfigs.clockworkFloatingGears.map((cfg, i) => (
+                                    <div key={`floating-gear-${i}`} className="absolute animate-[leaf-tumble_linear_infinite] z-0 opacity-40 blur-[2px]"
+                                         style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                         <Icon name="Cog" size="100%" className="text-amber-700/60 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+                                    </div>
+                                ))}
+
+                                {/* Detailed Mechanical Pendulums */}
+                                {particleConfigs.clockworkPendulums.map((cfg, i) => (
+                                    <div key={`pendulum-${i}`} className="absolute top-0 origin-top animate-[pendulum-swing_ease-in-out_infinite_alternate] opacity-40 blur-[1px]"
+                                         style={{ left: cfg.left, height: cfg.height, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
+                                        {/* Detailed SVG Pendulum */}
+                                        <svg viewBox="0 0 40 200" className="h-full w-auto drop-shadow-[0_2px_5px_rgba(251,146,60,0.2)]">
+                                            <defs>
+                                                <linearGradient id="chainGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse" spreadMethod="repeat">
+                                                    <stop offset="0%" stopColor="#a8a29e"/>
+                                                    <stop offset="50%" stopColor="#44403c"/>
+                                                    <stop offset="100%" stopColor="#a8a29e"/>
+                                                </linearGradient>
+                                            </defs>
+                                            {/* Chain Segment */}
+                                            <rect x="16" y="0" width="8" height="150" fill="url(#chainGrad)" />
+                                            {/* Bob Base */}
+                                            <circle cx="20" cy="160" r="24" fill="#78350f" stroke="#b45309" strokeWidth="4" />
+                                            {/* Glowing Core */}
+                                            <circle cx="20" cy="160" r="10" fill="#facc15" className="animate-pulse" opacity="0.8" />
+                                            {/* Mechanical Details */}
+                                            <path d="M6,160 L34,160 M20,146 L20,174" stroke="#fcd34d" strokeWidth="2" opacity="0.3" />
+                                        </svg>
+                                    </div>
+                                ))}
+
+                                {/* Giant Background Gears */}
+                                <div className="absolute top-[-10vh] left-[-20vw] w-[80vw] h-[80vw] opacity-[0.07] mix-blend-screen animate-[gear-spin_60s_linear_infinite]">
+                                    <Icon name="Cog" size="100%" className="text-amber-600" />
+                                </div>
+                                <div className="absolute top-[30vh] right-[-30vw] w-[100vw] h-[100vw] opacity-[0.03] mix-blend-screen animate-[gear-spin-reverse_90s_linear_infinite]">
+                                    <Icon name="Cog" size="100%" className="text-orange-700" />
+                                </div>
+                                
+                                <div className="absolute inset-0 bg-gradient-to-t from-orange-950/40 via-transparent to-transparent mix-blend-multiply" />
+
+                                {/* NEW: Floating Industrial Ash */}
+                                <div className="absolute w-[4px] h-[4px] rounded-full animate-[parallax-stars_40s_linear_infinite] z-0" style={{ boxShadow: particleConfigs.clockworkSoot }} />
+                                <div className="absolute w-[4px] h-[4px] rounded-full animate-[parallax-stars_40s_linear_infinite] z-0" style={{ boxShadow: particleConfigs.clockworkSoot, top: '100vh' }} />
+
+                                {/* Flying Sparks */}
+                                {particleConfigs.clockworkSparks.map((cfg, i) => (
+                                    <div key={`spark-${i}`} className="absolute bg-orange-500/50 rounded-full shadow-[0_0_5px_rgba(249,115,22,0.4)] animate-[spark-fountain_linear_infinite] z-0"
+                                         style={{ 
+                                             left: cfg.left, 
+                                             width: cfg.size, height: cfg.size, 
+                                             animationDuration: cfg.animDur, 
+                                             animationDelay: cfg.animDel,
+                                             '--rnd': cfg.rnd
+                                         }} />
+                                ))}
+                            </React.Fragment>
                         )}
                     </div>
 
-                    {anomalyVisible && (
-                        <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
-                            <div className="flex flex-col items-center">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-amber-500/30 border-amber-300 text-amber-100' : (currentThemeId === 'canopy' ? 'bg-lime-500/30 border-lime-300 text-lime-100' : 'bg-fuchsia-600/30 border-fuchsia-400 text-fuchsia-100')} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Frenzy Surge!</div>
-                                <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${currentThemeId === 'olympian' ? 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200' : (currentThemeId === 'canopy' ? 'from-lime-600 to-green-300 shadow-[0_0_30px_rgba(163,230,53,0.8)] border-lime-200' : 'from-fuchsia-800 to-indigo-500 shadow-[0_0_30px_rgba(192,38,211,0.8)] border-fuchsia-300')} animate-[void-pulse_2s_ease-in-out_infinite] flex items-center justify-center border-2`}>
-                                    <Icon name="ZapFast" className="text-white drop-shadow-[0_0_5px_white]" size={32} />
+                    {anomalyVisible && (() => {
+                        let aIcon = 'ZapFast';
+                        let aText = 'Frenzy Surge!';
+                        let aTextBg = 'bg-cyan-500/30 border-cyan-300 text-cyan-100';
+                        let aOrbStyle = 'from-cyan-600 to-blue-300 shadow-[0_0_30px_rgba(34,211,238,0.8)] border-cyan-200 rounded-full';
+                        let aAnim = 'animate-[void-pulse_2s_ease-in-out_infinite]';
+
+                        if (currentThemeId === 'abyssal') {
+                            aIcon = 'Droplet';
+                            aText = 'Tidal Surge!';
+                            aTextBg = 'bg-blue-600/50 border-blue-400 text-blue-100';
+                            aOrbStyle = 'from-cyan-600 to-blue-300 shadow-[0_0_30px_rgba(34,211,238,0.8)] border-cyan-200 rounded-full';
+                        } else if (currentThemeId === 'olympian') {
+                            aIcon = 'Flame';
+                            aText = 'Divine Spark!';
+                            aTextBg = 'bg-amber-600/50 border-amber-400 text-amber-100';
+                            aOrbStyle = 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200 rounded-full';
+                            aAnim = 'animate-[shake_0.5s_infinite]';
+                        } else if (currentThemeId === 'canopy') {
+                            aIcon = 'Sparkles';
+                            aText = 'Spirit Spore!';
+                            aTextBg = 'bg-lime-600/50 border-lime-400 text-lime-100';
+                            aOrbStyle = 'from-lime-600 to-green-300 shadow-[0_0_30px_rgba(163,230,53,0.8)] border-lime-200 rounded-full';
+                        } else if (currentThemeId === 'cosmos') {
+                            aIcon = 'Infinity';
+                            aText = 'Singularity!';
+                            aTextBg = 'bg-purple-600/50 border-purple-400 text-purple-100';
+                            aOrbStyle = 'from-purple-900 to-fuchsia-500 shadow-[0_0_30px_rgba(217,70,239,0.8)] border-fuchsia-300 rounded-full';
+                            aAnim = 'animate-[gear-spin_2s_linear_infinite]';
+                        } else if (currentThemeId === 'neon') {
+                            aIcon = 'Zap';
+                            aText = 'System Overclock!';
+                            aTextBg = 'bg-pink-600/50 border-pink-400 text-pink-100';
+                            aOrbStyle = 'from-red-600 to-pink-500 shadow-[0_0_30px_rgba(236,72,153,0.8)] border-pink-300 rounded-xl transform rotate-45';
+                            aAnim = 'animate-glitch';
+                        } else if (currentThemeId === 'clockwork') {
+                            aIcon = 'Timer';
+                            aText = 'Chronal Shift!';
+                            aTextBg = 'bg-orange-600/50 border-orange-400 text-orange-100';
+                            aOrbStyle = 'from-orange-700 to-amber-500 shadow-[0_0_30px_rgba(249,115,22,0.8)] border-amber-300 rounded-full';
+                            aAnim = 'animate-[shake-heavy_0.5s_infinite]';
+                        }
+
+                        return (
+                            <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
+                                <div className="flex flex-col items-center">
+                                    <div className={`${aTextBg} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-2 border animate-pulse`}>{aText}</div>
+                                    <div className={`w-16 h-16 bg-gradient-to-tr ${aOrbStyle} ${aAnim} flex items-center justify-center border-2`}>
+                                        <div className={currentThemeId === 'neon' ? '-rotate-45' : ''}>
+                                            <Icon name={aIcon} className="text-white drop-shadow-[0_0_5px_white]" size={32} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
-                    {merchantVisible && (
-                        <div className="fixed top-0 left-0 z-[60] cursor-pointer animate-[ghost-drift_6s_linear_forwards]" style={merchantPath} onClick={() => { setMerchantVisible(false); setMerchantSaleActive(true); setMerchantSaleTimer(20); }}>
-                            <div className="flex flex-col items-center">
-                                <div className={`${currentThemeId === 'canopy' ? 'bg-emerald-400/20 border-emerald-400/40 text-emerald-300' : 'bg-cyan-400/20 border-cyan-400/40 text-cyan-300'} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>Tap Fast!</div>
-                                <Icon name={currentThemeId === 'olympian' ? 'Sun' : (currentThemeId === 'canopy' ? 'Star' : (currentThemeId === 'cosmos' ? 'Globe' : 'Ship'))} size={64} className={`${currentThemeId === 'canopy' ? 'text-emerald-200/40 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200/40 drop-shadow-[0_0_15px_rgba(217,70,239,0.8)]' : 'text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]')}`} />
+                    {merchantVisible && (() => {
+                        let mIcon = 'Ship';
+                        let mColor = 'text-cyan-200/40 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]';
+                        let mAnim = 'animate-[bounce-slow_2s_infinite]';
+                        let tColor = 'bg-cyan-400/20 border-cyan-400/40 text-cyan-300';
+
+                        if (currentThemeId === 'olympian') {
+                            mIcon = 'Chariot';
+                            mColor = 'text-amber-200/60 drop-shadow-[0_0_25px_rgba(251,191,36,0.9)]';
+                            mAnim = 'animate-[pulse_1s_infinite]';
+                            tColor = 'bg-amber-400/20 border-amber-400/40 text-amber-300';
+                        } else if (currentThemeId === 'canopy') {
+                            mIcon = 'Mask';
+                            mColor = 'text-lime-200/50 drop-shadow-[0_0_20px_rgba(101,163,13,0.8)]';
+                            mAnim = 'animate-[shake-heavy_2s_infinite]'; 
+                            tColor = 'bg-lime-400/20 border-lime-400/40 text-lime-300';
+                        } else if (currentThemeId === 'cosmos') {
+                            mIcon = 'Rocket';
+                            mColor = 'text-fuchsia-200/60 drop-shadow-[0_0_30px_rgba(217,70,239,0.9)]';
+                            mAnim = 'animate-[shake_0.5s_infinite]';
+                            tColor = 'bg-fuchsia-400/20 border-fuchsia-400/40 text-fuchsia-300';
+                        } else if (currentThemeId === 'neon') {
+                            mIcon = 'Terminal';
+                            mColor = 'text-pink-300/60 drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]';
+                            mAnim = 'animate-glitch';
+                            tColor = 'bg-pink-400/20 border-pink-400/40 text-pink-300';
+                        } else if (currentThemeId === 'clockwork') {
+                            mIcon = 'Train';
+                            mColor = 'text-orange-300/60 drop-shadow-[0_0_25px_rgba(251,146,60,0.8)]';
+                            mAnim = 'animate-[shake_0.15s_infinite]';
+                            tColor = 'bg-orange-400/20 border-orange-400/40 text-orange-300';
+                        }
+
+                        return (
+                            <div className="fixed top-0 left-0 z-[60] cursor-pointer animate-[ghost-drift_6s_linear_forwards]" style={merchantPath} onClick={() => { setMerchantVisible(false); setMerchantSaleActive(true); setMerchantSaleTimer(20); }}>
+                                <div className={`flex flex-col items-center ${mAnim}`}>
+                                    <div className={`${tColor} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-1 border animate-pulse`}>
+                                        {activeTheme.terms.merchant}
+                                    </div>
+                                    <Icon name={mIcon} size={64} className={mColor} />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
                         {(merchantSaleActive || frenzyTimer > 0) && (
@@ -1781,8 +2508,8 @@
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
                                     <div className="absolute inset-0 bg-fuchsia-950/60" />
                                     {/* Star Matter being Sucked In */}
-                                    {[...Array(16)].map((_, i) => (
-                                        <div key={`matter-${i}`} className="absolute w-2 h-2 rounded-full bg-white animate-matter" style={{ animationDelay: `${i * 0.12}s`, transformOrigin: `${Math.random()*300 - 150}px ${Math.random()*300 - 150}px`, boxShadow: '0 0 12px #f0abfc' }} />
+                                    {particleConfigs.cosmosMatter.map((cfg, i) => (
+                                        <div key={`matter-${i}`} className="absolute w-2 h-2 rounded-full bg-white animate-matter" style={{ animationDelay: `${i * 0.12}s`, transformOrigin: cfg.transformOrigin, boxShadow: '0 0 12px #f0abfc' }} />
                                     ))}
                                     {/* Outer Accretion Disk */}
                                     <div className="absolute w-[350px] h-[350px] sm:w-[600px] sm:h-[600px] rounded-full border-[15px] border-dashed border-fuchsia-500/40 animate-accretion mix-blend-screen opacity-70" />
@@ -1822,6 +2549,22 @@
                                 </div>
                             )}
 
+                            {currentThemeId === 'clockwork' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-stone-950/60" />
+                                    {[...Array(5)].map((_, i) => (
+                                        <div key={`steam-${i}`} className="absolute bottom-0 w-32 h-32 bg-stone-300/40 rounded-full animate-[steam-vent_3s_ease-out_infinite]"
+                                             style={{ left: `${20 * i}%`, animationDelay: `${i * 0.6}s` }} />
+                                    ))}
+                                    <div className="absolute w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] animate-[gear-spin_10s_linear_infinite]">
+                                        <Icon name="Cog" size="100%" className="text-orange-900/60 drop-shadow-[0_0_30px_rgba(251,146,60,0.5)]" />
+                                    </div>
+                                    <div className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] animate-[gear-spin-reverse_7s_linear_infinite]">
+                                        <Icon name="Cog" size="100%" className="text-stone-700/80 drop-shadow-[0_0_20px_rgba(120,113,108,0.8)]" />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
                                     <div className={`bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50 ${currentThemeId === 'neon' ? 'animate-glitch border-red-500/50' : ''}`}>
@@ -1831,7 +2574,7 @@
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 sm:gap-10">
                                         <div className={`bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)] ${currentThemeId === 'neon' ? 'border-cyan-500/30' : ''}`}>
-                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : (currentThemeId === 'neon' ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-glitch' : 'text-orange-500 drop-shadow-[0_0_15px_red]')))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : (currentThemeId === 'neon' ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-glitch' : (currentThemeId === 'clockwork' ? 'text-orange-400 drop-shadow-[0_0_15px_orange]' : 'text-orange-500 drop-shadow-[0_0_15px_red]'))))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
                                             <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
                                             <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
                                                 <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : (currentThemeId === 'cosmos' ? 'bg-gradient-to-r from-purple-800 via-fuchsia-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'))}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
@@ -1841,7 +2584,7 @@
                                         <button onClick={() => { setKrakenTaps(p => { const next = p+1; if(next >= 50) { 
                                             const jackpot = Math.max(50, Math.floor(incomeFlow.income.c2 * 40 + 50 * finalCpsMultiplier));
                                             setCurrency2(v => v + jackpot); setKrakenFeedback(`VICTORY! +${formatNum(jackpot)} ${terms.secondary}`);
-                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : (currentThemeId === 'canopy' ? 'bg-lime-600/40 border-lime-400 shadow-lime-500/40' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600/40 border-fuchsia-400 shadow-fuchsia-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40'))}`}>
+                                            setTimeout(() => setKrakenEvent(false), 2000); return 50; } return next; }); }} className={`w-40 h-40 sm:w-56 sm:h-56 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform border-8 sm:border-[12px] ${currentThemeId === 'abyssal' ? 'bg-cyan-600/40 border-cyan-400 shadow-cyan-500/40' : (currentThemeId === 'canopy' ? 'bg-lime-600/40 border-lime-400 shadow-lime-500/40' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600/40 border-fuchsia-400 shadow-fuchsia-500/40' : (currentThemeId === 'clockwork' ? 'bg-stone-600/40 border-stone-400 shadow-stone-500/40' : 'bg-orange-600/40 border-orange-400 shadow-orange-500/40')))}`}>
                                             <span className="text-3xl sm:text-4xl font-black text-white uppercase drop-shadow-[0_4px_10px_black] tracking-tighter italic">Defend!</span>
                                         </button>
                                     </div>
