@@ -2929,7 +2929,21 @@
                                                 {clubId ? (
                                                     (() => {
                                                         const activeClub = clubsList.find(c => c.id === clubId);
-                                                        if (!activeClub) return <div className="text-center text-white/50 text-xs font-black p-4">Syncing club data...</div>;
+                                                        if (!activeClub) return (
+                                                            <div className="text-center text-white/50 text-xs font-black p-4 flex flex-col items-center gap-3 animate-in fade-in">
+                                                                <div>Syncing club data...</div>
+                                                                <button onClick={() => {
+                                                                    setClubId(null);
+                                                                    if (window.db && window.FirebaseAPI && user?.uid !== 'offline_user') {
+                                                                        const { doc, setDoc } = window.FirebaseAPI;
+                                                                        const appId = 'abyssal-bounty-live';
+                                                                        setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: null }, { merge: true }).catch(()=>{});
+                                                                    }
+                                                                }} className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[9px] hover:bg-red-500/30 transition-colors active:scale-95 shadow-inner">
+                                                                    Clear Stale Club
+                                                                </button>
+                                                            </div>
+                                                        );
                                                         
                                                         let members = leaderboard.filter(p => p.clubId === clubId);
                                                         if (username && !members.some(m => m.id === user?.uid)) {
