@@ -20,6 +20,7 @@
         let isOffline = false;
 
         try {
+            // REPLACE THESE KEYS WITH YOUR PROJECT KEYS BEFORE UPLOADING TO GITHUB
             const firebaseConfig = {
                 apiKey: "AIzaSyD6Om50RfeqTIXCNmeOphHJf7wtr64UbQo",
                 authDomain: "abyssal-bounty.firebaseapp.com",
@@ -54,7 +55,16 @@
     <style>
         @keyframes drift { 0% { transform: translate(0, 0); } 33% { transform: translate(15px, -15px); } 66% { transform: translate(-15px, 10px); } 100% { transform: translate(0, 0); } }
         @keyframes float-up { 0% { transform: translateY(110vh) scale(0.5); opacity: 0; } 20% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
+        @keyframes bubble-rise { 0% { transform: translateY(110vh) translateX(0) scale(0.5); opacity: 0; } 10% { opacity: 0.6; } 33% { transform: translateY(70vh) translateX(25px) scale(0.8); } 66% { transform: translateY(30vh) translateX(-25px) scale(1); } 90% { opacity: 0.6; } 100% { transform: translateY(-10vh) translateX(0) scale(1.2); opacity: 0; } }
         @keyframes heavenly-drift { 0% { transform: translateY(-10vh) translateX(0) scale(0.5) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(50px) scale(1.2) rotate(360deg); opacity: 0; } }
+        
+        /* Thematic Ambient Backgrounds */
+        @keyframes ember-rise { 0% { transform: translateY(110vh) translateX(0) rotate(0deg) scale(1); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translateY(-10vh) translateX(50px) rotate(360deg) scale(0.2); opacity: 0; filter: blur(2px); } }
+        @keyframes leaf-sway { 0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; } 20% { opacity: 0.8; } 50% { transform: translateY(50vh) translateX(40px) rotate(90deg); } 80% { opacity: 0.8; } 100% { transform: translateY(110vh) translateX(-40px) rotate(180deg); opacity: 0; } }
+        @keyframes star-twinkle { 0%, 100% { opacity: 0.1; transform: scale(0.5); } 50% { opacity: 0.9; transform: scale(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.8); } }
+        @keyframes data-stream { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(110vh); opacity: 0; } }
+        @keyframes neon-subtle-glitch { 0%, 94%, 100% { transform: translate(0, 0) skew(0deg); opacity: 0.3; filter: drop-shadow(0 0 0 transparent); } 95% { transform: translate(-10px, 0) skew(-25deg); opacity: 0.9; filter: drop-shadow(4px 0 0 #ef4444); } 97% { transform: translate(10px, 0) skew(25deg); opacity: 0.9; filter: drop-shadow(-4px 0 0 #22d3ee); } }
+        
         @keyframes shake { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-2deg); } 75% { transform: translateX(3px) rotate(2deg); } }
         @keyframes shake-heavy { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-10px, -8px); } 20%, 40%, 60%, 80% { transform: translate(10px, 8px); } }
         @keyframes ghost-drift { 0% { transform: translate(var(--startX), var(--startY)); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { transform: translate(var(--endX), var(--endY)); opacity: 0; } }
@@ -108,6 +118,68 @@
             100% { opacity: 0.6; }
         }
 
+        /* Unique Realm Encounter Animations */
+        @keyframes snake-strike {
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { transform: translateX(10%); opacity: 1; }
+            20% { transform: translateX(0%); opacity: 1; }
+            85% { transform: translateX(5%); opacity: 0.8; }
+            100% { transform: translateX(-100%); opacity: 0; }
+        }
+        @keyframes tongue-flick {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(6px); }
+        }
+        @keyframes snake-weave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-25px); }
+        }
+        .animate-snake-strike { animation: snake-strike 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .animate-tongue-flick { animation: tongue-flick 0.15s linear infinite; }
+        .snake-container { animation: snake-weave 1.5s ease-in-out infinite alternate; }
+        
+        /* Olympian - Claw Strikes */
+        @keyframes claw-tear {
+            0% { transform: scaleY(0) scaleX(0.8); opacity: 0; transform-origin: top; }
+            15% { transform: scaleY(1.2) scaleX(1); opacity: 1; filter: brightness(2); transform-origin: top; }
+            30% { transform: scaleY(1) scaleX(1); opacity: 0.9; filter: brightness(1); }
+            100% { transform: scaleY(1) scaleX(1.1) translateY(20px); opacity: 0; filter: blur(8px); }
+        }
+        .animate-claw-tear { animation: claw-tear 1.8s cubic-bezier(0.075, 0.82, 0.165, 1) infinite; }
+
+        /* Cosmos - Advanced Void Rift */
+        @keyframes void-core-pulse {
+            0%, 100% { transform: scale(0.9) rotate(0deg); filter: hue-rotate(0deg); box-shadow: 0 0 40px #d946ef, inset 0 0 20px #86198f; }
+            50% { transform: scale(1.15) rotate(180deg); filter: hue-rotate(45deg); box-shadow: 0 0 80px #d946ef, inset 0 0 40px #c026d3; }
+        }
+        @keyframes accretion-spin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        @keyframes matter-suck {
+            0% { transform: scale(2) translate(80px, 80px); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: scale(0) translate(0, 0); opacity: 0; }
+        }
+        .animate-void-core { animation: void-core-pulse 3s ease-in-out infinite; }
+        .animate-accretion { animation: accretion-spin 5s linear infinite; }
+        .animate-matter { animation: matter-suck 1.5s cubic-bezier(0.4, 0, 1, 1) infinite; }
+
+        /* Neon - Thrilling Cyber Grid */
+        @keyframes cyber-lock {
+            0% { transform: scale(2.5) rotate(90deg); opacity: 0; }
+            15% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 20px #22d3ee); }
+            85% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 10px #22d3ee); }
+            100% { transform: scale(0.5) rotate(-45deg); opacity: 0; }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; border-width: 8px; }
+            100% { transform: scale(2.5); opacity: 0; border-width: 1px; }
+        }
+        .animate-cyber-lock { animation: cyber-lock 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .animate-pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -136,7 +208,7 @@
             animation: heavenly-sky 40s ease-in-out infinite;
         }
         .bg-theme-neon {
-            background: linear-gradient(135deg, #020617, #082f49, #4a044e, #020617);
+            background: linear-gradient(135deg, #020617, #082f49, #450a0a, #020617);
             background-size: 400% 400%;
             animation: heavenly-sky 20s ease-in-out infinite;
         }
@@ -470,8 +542,8 @@
                     overclocked: { label: 'Overclocked', mult: 3, bg: 'bg-red-950/90', color: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(248,113,113,0.6)]' },
                     holographic: { label: 'Holographic', mult: 7, bg: 'bg-cyan-950/90', color: 'text-cyan-300', glow: 'shadow-[0_0_15px_rgba(103,232,249,0.6)]' },
                     cybernetic: { label: 'Cybernetic', mult: 15, bg: 'bg-blue-950/90', color: 'text-blue-400', glow: 'shadow-[0_0_15px_rgba(96,165,250,0.6)]' },
-                    synthetic: { label: 'Synthetic', mult: 35, bg: 'bg-purple-950/90', color: 'text-purple-300', glow: 'shadow-[0_0_15px_rgba(192,132,252,0.4)]' },
-                    neon_infused: { label: 'Neon-Infused', mult: 100, bg: 'bg-pink-950/90', color: 'text-pink-400', glow: 'shadow-[0_0_15px_rgba(244,114,182,0.6)]' },
+                    synthetic: { label: 'Synthetic', mult: 35, bg: 'bg-indigo-950/90', color: 'text-indigo-300', glow: 'shadow-[0_0_15px_rgba(165,180,252,0.4)]' },
+                    neon_infused: { label: 'Neon-Infused', mult: 100, bg: 'bg-red-950/90', color: 'text-red-500', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.6)]' },
                     digital_ascended: { label: 'Digital', mult: 500, bg: 'bg-white/95', color: 'text-slate-900', glow: 'shadow-[0_0_20px_rgba(255,255,255,0.8)]' }
                 },
                 MASTER_ITEM_DB: [
@@ -503,8 +575,8 @@
                     { id: 'overclocked', name: 'Overclocked', icon: 'Flame', color: 'from-red-400 to-red-600', glow: 'shadow-red-500/20' },
                     { id: 'holographic', name: 'Holographic', icon: 'Eye', color: 'from-cyan-400 to-cyan-600', glow: 'shadow-cyan-500/20' },
                     { id: 'cybernetic', name: 'Cybernetic', icon: 'Hexagon', color: 'from-blue-500 to-blue-700', glow: 'shadow-blue-500/20' },
-                    { id: 'synthetic', name: 'Synthetic', icon: 'Boxes', color: 'from-purple-500 to-purple-700', glow: 'shadow-purple-500/20' },
-                    { id: 'neon_infused', name: 'Neon-Infused', icon: 'Sparkles', color: 'from-pink-400 to-pink-600', glow: 'shadow-pink-500/20' },
+                    { id: 'synthetic', name: 'Synthetic', icon: 'Boxes', color: 'from-indigo-500 to-indigo-700', glow: 'shadow-indigo-500/20' },
+                    { id: 'neon_infused', name: 'Neon-Infused', icon: 'Sparkles', color: 'from-red-500 to-red-700', glow: 'shadow-red-500/20' },
                     { id: 'digital_ascended', name: 'Digital', icon: 'Infinity', color: 'from-slate-400 to-slate-600', glow: 'shadow-white/30' }
                 ]
             }
@@ -592,8 +664,8 @@
             const gameStateRef = useRef({});
             const processedRef = useRef(processedTrades);
             
-            // Generate standard active App ID for UI display
-            const activeAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            // Generate standard active App ID for UI display (REPLACED FOR RELIABILITY)
+            const activeAppId = 'abyssal-bounty-live';
 
             useEffect(() => { processedRef.current = processedTrades; }, [processedTrades]);
 
@@ -739,7 +811,7 @@
                     setIsLeaderboardLoading(false);
                     return;
                 }
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 
                 setIsLeaderboardLoading(true);
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
@@ -771,7 +843,7 @@
             useEffect(() => {
                 if (!user || user.uid === 'offline_user' || !window.FirebaseAPI) return;
                 const { db, collection, onSnapshot } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'trades');
                 const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -793,6 +865,24 @@
                         return newTrade || null;
                     });
                 }, console.error);
+                return () => unsubscribe();
+            }, [user]);
+
+            // Public Clubs Listener (Firebase) - ADDED FOR RELIABILITY
+            useEffect(() => {
+                if (!user || user.uid === 'offline_user' || !window.FirebaseAPI) return;
+                const { db, collection, onSnapshot } = window.FirebaseAPI;
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
+                
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'clubs');
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const fetchedClubs = [];
+                    snapshot.forEach(d => fetchedClubs.push({ id: d.id, ...d.data() }));
+                    setClubsList(fetchedClubs);
+                }, (error) => {
+                    console.error("Clubs fetch error:", error);
+                });
+
                 return () => unsubscribe();
             }, [user]);
 
@@ -822,7 +912,7 @@
                 if (!db || user.uid === 'offline_user') return;
 
                 const syncInterval = setInterval(() => {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     const state = gameStateRef.current;
                     
                     setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
@@ -1123,7 +1213,7 @@
             const initiateTrade = (targetProfile) => {
                 if (!user || user.uid === 'offline_user' || !window.FirebaseAPI) return;
                 const { db, doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 const tradeId = Math.random().toString(36).substr(2, 9);
                 
                 const newTrade = {
@@ -1145,7 +1235,7 @@
             const respondToTrade = (accept) => {
                 if (!activeTrade || !window.FirebaseAPI) return;
                 const { db, doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), {
                     status: accept ? 'active' : 'rejected'
                 }, { merge: true });
@@ -1155,7 +1245,7 @@
             const cancelTrade = () => {
                 if (!activeTrade || !window.FirebaseAPI) return;
                 const { db, doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), { status: 'cancelled' }, { merge: true });
                 setActiveTrade(null);
             };
@@ -1163,7 +1253,7 @@
             const updateTradeOffer = (newOffer) => {
                 if (!activeTrade || !window.FirebaseAPI || !user) return;
                 const { db, doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 const isSender = activeTrade.senderId === user.uid;
                 setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trades', activeTrade.id), {
                     [isSender ? 'senderOffer' : 'receiverOffer']: newOffer,
@@ -1174,7 +1264,7 @@
             const confirmTrade = () => {
                 if (!activeTrade || !window.FirebaseAPI || !user) return;
                 const { db, doc, setDoc } = window.FirebaseAPI;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                 const isSender = activeTrade.senderId === user.uid;
                 
                 const otherConfirmed = isSender ? activeTrade.receiverConfirmed : activeTrade.senderConfirmed;
@@ -1254,7 +1344,7 @@
                 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { friends: newFriends }, { merge: true });
                     } catch (e) { console.error("Friend sync error", e); }
@@ -1327,7 +1417,7 @@
                 // 2. Cloud Sync
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', newClubId), newClubData);
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: newClubId }, { merge: true });
@@ -1341,7 +1431,7 @@
                 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: cId }, { merge: true });
                     } catch (e) { console.error("Error joining club", e); }
@@ -1354,7 +1444,7 @@
                 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     try {
                         await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { clubId: null }, { merge: true });
                     } catch (e) { console.error("Error leaving club", e); }
@@ -1390,7 +1480,7 @@
 
                 if (window.db && window.FirebaseAPI && user?.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                         xp: (activeClub.xp || 0) + xpGain,
                         monolith: { ...m, current: newCurrent }
@@ -1411,7 +1501,7 @@
                 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), {
                         monolith: { ...m, claimedBy: [...(m.claimedBy || []), user.uid] }
                     }, { merge: true }).catch(()=>{});
@@ -1427,7 +1517,7 @@
 
                 if (window.db && window.FirebaseAPI && user.uid !== 'offline_user') {
                     const { doc, setDoc } = window.FirebaseAPI;
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clubs', clubId), { monolith: newM }, { merge: true }).catch(()=>{});
                 }
             };
@@ -1520,29 +1610,43 @@
             return (
                 <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
-                    {currentThemeId === 'neon' ? (
-                        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden neon-scanlines">
-                            {[...Array(40)].map((_, i) => (
-                                <div key={`neon-${i}`} className="absolute font-mono text-[10px] sm:text-xs font-black animate-[matrix-fall_linear_infinite]" 
-                                     style={{ 
-                                         left: `${Math.random() * 100}vw`, 
-                                         animationDuration: `${Math.random() * 4 + 3}s`, 
-                                         animationDelay: `${Math.random() * 5}s`,
-                                         color: Math.random() > 0.5 ? '#22d3ee' : '#f472b6',
-                                         opacity: Math.random() * 0.5 + 0.2,
-                                         textShadow: '0 0 5px currentColor'
-                                     }}>
-                                    {Math.random() > 0.5 ? '1' : '0'}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-                            {[...Array(25)].map((_, i) => (
-                                <div key={i} className={`absolute ${currentThemeId === 'olympian' ? 'bg-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : (currentThemeId === 'canopy' ? 'bg-lime-400/20 shadow-[0_0_15px_rgba(163,230,53,0.5)]' : (currentThemeId === 'cosmos' ? 'bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/10 rounded-full'))} ${currentThemeId === 'olympian' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'canopy' ? 'animate-[heavenly-drift_linear_infinite]' : (currentThemeId === 'cosmos' ? 'animate-[orb-drift_linear_infinite]' : 'animate-[float-up_linear_infinite]'))}`} style={{ left: `${Math.random() * 100}vw`, width: currentThemeId === 'olympian' ? `${Math.random() * 6 + 3}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), height: currentThemeId === 'olympian' ? `${Math.random() * 20 + 20}px` : (currentThemeId === 'canopy' ? `${Math.random() * 15 + 5}px` : `${Math.random() * 10 + 2}px`), animationDuration: `${Math.random() * 10 + 10}s`, animationDelay: `${Math.random() * 10}s`, clipPath: currentThemeId === 'olympian' ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : (currentThemeId === 'canopy' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : 'none'), borderRadius: currentThemeId === 'cosmos' ? '50%' : 'auto' }} />
-                            ))}
-                        </div>
-                    )}
+                    {/* Thematic Background Particles Layer */}
+                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                        {currentThemeId === 'abyssal' && [...Array(30)].map((_, i) => (
+                            <div key={`abyssal-${i}`} className="absolute bg-cyan-500/10 border border-cyan-300/30 rounded-full shadow-[inset_0_0_10px_rgba(34,211,238,0.3)] backdrop-blur-[1px] animate-[bubble-rise_linear_infinite]"
+                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 20 + 8}px`, height: `${Math.random() * 20 + 8}px`, animationDuration: `${Math.random() * 8 + 6}s`, animationDelay: `${Math.random() * 5}s` }} />
+                        ))}
+
+                        {currentThemeId === 'olympian' && [...Array(35)].map((_, i) => (
+                            <div key={`olympian-${i}`} className="absolute bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-[ember-rise_linear_infinite]"
+                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 6 + 2}px`, height: `${Math.random() * 6 + 2}px`, animationDuration: `${Math.random() * 6 + 4}s`, animationDelay: `${Math.random() * 5}s`, borderRadius: '2px' }} />
+                        ))}
+
+                        {currentThemeId === 'canopy' && [...Array(25)].map((_, i) => (
+                            <div key={`canopy-${i}`} className="absolute bg-lime-500/40 shadow-[0_0_10px_rgba(132,204,22,0.4)] animate-[leaf-sway_linear_infinite]"
+                                 style={{ left: `${Math.random() * 100}vw`, width: `${Math.random() * 15 + 8}px`, height: `${Math.random() * 8 + 4}px`, animationDuration: `${Math.random() * 8 + 7}s`, animationDelay: `${Math.random() * 5}s`, borderRadius: '100% 0 100% 0' }} />
+                        ))}
+
+                        {currentThemeId === 'cosmos' && [...Array(60)].map((_, i) => (
+                            <div key={`cosmos-${i}`} className={`absolute rounded-full animate-[star-twinkle_ease-in-out_infinite] ${Math.random() > 0.8 ? 'bg-fuchsia-300' : 'bg-white'}`}
+                                 style={{ left: `${Math.random() * 100}vw`, top: `${Math.random() * 100}vh`, width: `${Math.random() * 3 + 1}px`, height: `${Math.random() * 3 + 1}px`, animationDuration: `${Math.random() * 4 + 2}s`, animationDelay: `${Math.random() * 5}s` }} />
+                        ))}
+
+                        {currentThemeId === 'neon' && (
+                            <div className="absolute inset-0 neon-scanlines pointer-events-none">
+                                {[...Array(30)].map((_, i) => {
+                                    const isRed = Math.random() > 0.7;
+                                    return (
+                                        <div key={`neon-${i}`} className="absolute animate-[data-stream_linear_infinite]" 
+                                             style={{ left: `${Math.random() * 100}vw`, animationDuration: `${Math.random() * 8 + 4}s`, animationDelay: `${Math.random() * 5}s` }}>
+                                            <div className={`backdrop-blur-[2px] ${isRed ? 'bg-red-500/30 border-red-500/50' : 'bg-cyan-400/20 border-cyan-500/40'} border animate-[neon-subtle-glitch_infinite]`}
+                                                 style={{ width: `${Math.random() * 40 + 20}px`, height: `${Math.random() * 6 + 2}px`, animationDuration: `${Math.random() * 3 + 2}s`, animationDelay: `${Math.random() * 2}s` }} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
 
                     {anomalyVisible && (
                         <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
@@ -1613,16 +1717,19 @@
                             )}
 
                             {currentThemeId === 'olympian' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none">
-                                    <div className="absolute inset-0 bg-red-900/10" />
-                                    {[...Array(6)].map((_, i) => {
-                                        const angle = (i * 73) % 360;
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                    <div className="absolute inset-0 bg-red-950/40" />
+                                    {[...Array(4)].map((_, i) => {
+                                        const angle = (i * 85) % 360;
                                         return (
-                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
-                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
-                                                    <div className="absolute top-1/2 left-0 w-full h-4 bg-orange-600 shadow-[0_0_40px_rgba(234,88,12,1)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-orange-50 shadow-[0_0_30px_rgba(251,146,60,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                    <div className="absolute top-[calc(1/2+80px)] left-0 w-full h-4 bg-orange-400 shadow-[0_0_30px_rgba(251,191,36,0.6)]" style={{ transform: `rotate(${angle}deg)` }} />
+                                            <div key={`claw-${i}`} className="absolute w-full h-full flex items-center justify-center">
+                                                <div className="relative w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] animate-claw-tear opacity-0" style={{ animationDelay: `${i * 0.4}s`, left: `${(i * 41) % 60 - 30}%`, top: `${(i * 37) % 60 - 30}%`, transform: `rotate(${angle}deg)` }}>
+                                                    <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_20px_rgba(234,88,12,0.9)]">
+                                                        <path d="M40,20 Q60,100 40,180" fill="none" stroke="#ea580c" strokeWidth="12" strokeLinecap="round" />
+                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#f97316" strokeWidth="16" strokeLinecap="round" />
+                                                        <path d="M160,20 Q180,100 160,180" fill="none" stroke="#fbbf24" strokeWidth="12" strokeLinecap="round" />
+                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+                                                    </svg>
                                                 </div>
                                             </div>
                                         );
@@ -1632,48 +1739,99 @@
 
                             {currentThemeId === 'canopy' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    <div className="absolute inset-0 bg-green-950/50" />
-                                    {[...Array(6)].map((_, i) => {
-                                        const angle = (i * 73) % 360;
-                                        return (
-                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
-                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
-                                                    <div className="absolute top-1/2 left-0 w-full h-8 bg-lime-500 shadow-[0_0_40px_rgba(132,204,22,1)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-green-300 shadow-[0_0_30px_rgba(134,239,172,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                </div>
+                                    <div className="absolute inset-0 bg-green-950/60" />
+                                    {[...Array(8)].map((_, i) => (
+                                        <div key={i} className="absolute snake-container" style={{ top: `${(i*12)}%`, left: i%2===0 ? '-10%' : 'auto', right: i%2!==0 ? '-10%' : 'auto', transform: i%2!==0 ? 'scaleX(-1)' : 'none', animationDelay: `${i * 0.2}s` }}>
+                                            <div className="animate-snake-strike" style={{ animationDelay: `${i * 0.35}s` }}>
+                                                <svg viewBox="0 0 260 100" className="w-[260px] h-[100px] sm:w-[400px] sm:h-[150px] drop-shadow-[0_0_15px_rgba(34,197,94,0.9)] opacity-95">
+                                                    <defs>
+                                                        <linearGradient id={`snakeGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                                            <stop offset="0%" stopColor="#064e3b" />
+                                                            <stop offset="60%" stopColor="#15803d" />
+                                                            <stop offset="100%" stopColor="#22c55e" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    {/* Slithering Body */}
+                                                    <path d="M-50,50 Q10,10 70,50 T180,50" fill="none" stroke={`url(#snakeGrad-${i})`} strokeWidth="18" strokeLinecap="round" />
+                                                    {/* Scales Texture Overlay */}
+                                                    <path d="M-40,50 Q10,15 70,50 T170,50" fill="none" stroke="#064e3b" strokeWidth="4" strokeDasharray="4 8" opacity="0.5" />
+                                                    
+                                                    {/* Diamond Head */}
+                                                    <path d="M170,50 L200,32 L230,50 L200,68 Z" fill="#16a34a" />
+                                                    <path d="M180,50 L200,38 L220,50 L200,62 Z" fill="#15803d" />
+                                                    
+                                                    {/* Glowing Slit Eyes */}
+                                                    <ellipse cx="205" cy="41" rx="5" ry="2.5" fill="#fef08a" transform="rotate(20 205 41)" />
+                                                    <ellipse cx="205" cy="59" rx="5" ry="2.5" fill="#fef08a" transform="rotate(-20 205 59)" />
+                                                    <circle cx="207" cy="41" r="1.5" fill="#991b1b" />
+                                                    <circle cx="207" cy="59" r="1.5" fill="#991b1b" />
+                                                    
+                                                    {/* Flickering Forked Tongue */}
+                                                    <g className="animate-tongue-flick">
+                                                        <path d="M230,50 L250,50 L255,45 M250,50 L255,55" stroke="#dc2626" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </g>
+                                                </svg>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
                             {currentThemeId === 'cosmos' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    <div className="absolute inset-0 bg-fuchsia-950/50" />
-                                    {[...Array(6)].map((_, i) => {
-                                        const angle = (i * 73) % 360;
-                                        return (
-                                            <div key={i} className="absolute w-full h-full flex items-center justify-center">
-                                                <div className="relative w-[400px] h-[400px] opacity-0 animate-slash-detailed" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 37) % 60 - 30}%`, top: `${(i * 41) % 60 - 30}%` }}>
-                                                    <div className="absolute top-1/2 left-0 w-full h-8 bg-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,1)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                    <div className="absolute top-[calc(1/2+40px)] left-0 w-full h-4 bg-purple-300 shadow-[0_0_30px_rgba(192,132,252,0.8)]" style={{ transform: `rotate(${angle}deg)` }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-fuchsia-950/60" />
+                                    {/* Star Matter being Sucked In */}
+                                    {[...Array(16)].map((_, i) => (
+                                        <div key={`matter-${i}`} className="absolute w-2 h-2 rounded-full bg-white animate-matter" style={{ animationDelay: `${i * 0.12}s`, transformOrigin: `${Math.random()*300 - 150}px ${Math.random()*300 - 150}px`, boxShadow: '0 0 12px #f0abfc' }} />
+                                    ))}
+                                    {/* Outer Accretion Disk */}
+                                    <div className="absolute w-[350px] h-[350px] sm:w-[600px] sm:h-[600px] rounded-full border-[15px] border-dashed border-fuchsia-500/40 animate-accretion mix-blend-screen opacity-70" />
+                                    <div className="absolute w-[250px] h-[250px] sm:w-[450px] sm:h-[450px] rounded-full border-[8px] border-dotted border-purple-400/60 animate-accretion" style={{ animationDirection: 'reverse', animationDuration: '7s' }} />
+                                    {/* The Void Core */}
+                                    <div className="absolute w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] bg-black rounded-full animate-void-core flex items-center justify-center border-4 border-fuchsia-900 z-10">
+                                        <div className="w-[80px] h-[80px] bg-black rounded-full shadow-[inset_0_0_50px_#4a044e]" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {currentThemeId === 'neon' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-slate-950/80" />
+                                    {/* Tech Grid Background */}
+                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.15)_1px,transparent_1px)] bg-[length:50px_50px] animate-pulse" />
+                                    
+                                    {/* Expanding Radar Rings */}
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={`ring-${i}`} className="absolute w-[150px] h-[150px] rounded-full border-red-500 animate-pulse-ring" style={{ animationDelay: `${i * 0.5}s` }} />
+                                    ))}
+
+                                    {/* The Targeting System */}
+                                    <div className="absolute animate-cyber-lock opacity-0">
+                                        <svg viewBox="0 0 200 200" className="w-[300px] h-[300px] sm:w-[450px] sm:h-[450px]">
+                                            <circle cx="100" cy="100" r="80" fill="none" stroke="#22d3ee" strokeWidth="4" strokeDasharray="20 10 5 10" />
+                                            <circle cx="100" cy="100" r="60" fill="none" stroke="#ef4444" strokeWidth="2" opacity="0.5" />
+                                            <path d="M100,5 L100,40 M100,160 L100,195 M5,100 L40,100 M160,100 L195,100" stroke="#22d3ee" strokeWidth="6" strokeLinecap="round" />
+                                            <path d="M20,20 L50,50 M180,180 L150,150 M180,20 L150,50 M20,180 L50,150" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
+                                            <circle cx="100" cy="100" r="15" fill="#ef4444" className="animate-pulse" />
+                                            <circle cx="100" cy="100" r="5" fill="#fff" />
+                                        </svg>
+                                        <div className="absolute top-[65%] left-1/2 -translate-x-1/2 bg-black/90 text-red-400 font-mono text-sm px-4 py-1.5 border border-red-500 rounded animate-glitch mt-4 shadow-[0_0_15px_rgba(239,68,68,0.6)] whitespace-nowrap">
+                                            BREACH_DETECTED
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
                             <div className="relative z-10 flex flex-col items-center">
                                 {krakenFeedback ? (
-                                    <div className={`bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50 ${currentThemeId === 'neon' ? 'animate-glitch border-pink-500/50' : ''}`}>
-                                        <h2 className={`text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter ${currentThemeId === 'neon' ? 'text-cyan-400 drop-shadow-[2px_2px_0_#f472b6]' : ''}`}>{krakenFeedback}</h2>
+                                    <div className={`bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50 ${currentThemeId === 'neon' ? 'animate-glitch border-red-500/50' : ''}`}>
+                                        <h2 className={`text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter ${currentThemeId === 'neon' ? 'text-cyan-400 drop-shadow-[2px_2px_0_#ef4444]' : ''}`}>{krakenFeedback}</h2>
                                         <div className={`text-6xl sm:text-8xl drop-shadow-[0_0_20px_white] ${currentThemeId === 'neon' ? 'drop-shadow-[0_0_20px_#22d3ee]' : ''}`}>{terms.beast}</div>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center gap-6 sm:gap-10">
                                         <div className={`bg-slate-950/90 border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-center backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,1)] ${currentThemeId === 'neon' ? 'border-cyan-500/30' : ''}`}>
-                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : (currentThemeId === 'neon' ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.8)] animate-glitch' : 'text-orange-500 drop-shadow-[0_0_15px_red]')))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
+                                            <h2 className={`text-2xl sm:text-4xl font-black uppercase ${currentThemeId === 'abyssal' ? 'text-cyan-400 drop-shadow-[0_0_15px_cyan]' : (currentThemeId === 'canopy' ? 'text-lime-400 drop-shadow-[0_0_15px_lime]' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 drop-shadow-[0_0_15px_fuchsia]' : (currentThemeId === 'neon' ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-glitch' : 'text-orange-500 drop-shadow-[0_0_15px_red]')))} animate-pulse tracking-tighter`}>{terms.beastName} Confrontation!</h2>
                                             <p className="text-[10px] sm:text-xs font-black uppercase opacity-60 mb-4 sm:mb-6 tracking-widest mt-1 sm:mt-2">Tap to Defend!</p>
                                             <div className="w-56 sm:w-80 h-8 sm:h-10 bg-slate-900 rounded-full border-2 border-white/10 overflow-hidden relative shadow-inner p-1">
                                                 <div className={`h-full rounded-full transition-all duration-300 ${currentThemeId === 'abyssal' ? 'bg-gradient-to-r from-cyan-600 via-blue-500 to-white' : (currentThemeId === 'canopy' ? 'bg-gradient-to-r from-green-800 via-lime-500 to-yellow-300' : (currentThemeId === 'cosmos' ? 'bg-gradient-to-r from-purple-800 via-fuchsia-500 to-white' : 'bg-gradient-to-r from-red-600 via-orange-500 to-yellow-300'))}`} style={{ width: `${(krakenTaps / 50) * 100}%` }} />
@@ -1767,14 +1925,14 @@
 
                         {view === 'social' && (
                             <div className="flex-1 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4">
-                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : (currentThemeId === 'neon' ? 'border-pink-500/30' : 'border-cyan-500/30')))} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
-                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : (currentThemeId === 'neon' ? 'text-pink-400' : 'text-cyan-400')))} mx-auto mb-2`} />
+                                <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40' : (currentThemeId === 'canopy' ? 'border-lime-500/30' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30' : (currentThemeId === 'neon' ? 'border-red-500/30' : 'border-cyan-500/30')))} p-4 sm:p-6 rounded-[2rem] sm:rounded-[3rem] text-center relative overflow-hidden mb-2 shadow-xl`}>
+                                    <Icon name="Users" size={32} className={`${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : (currentThemeId === 'neon' ? 'text-red-400' : 'text-cyan-400')))} mx-auto mb-2`} />
                                     <h2 className={`text-lg sm:text-2xl font-black uppercase tracking-tighter mb-1 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Dimensional Hub</h2>
                                     <p className={`text-[8px] sm:text-[10px] uppercase font-black opacity-80 ${currentThemeId === 'olympian' ? 'text-amber-900' : 'text-cyan-200'}`}>See top players, flex your rarest items, and build your club legacy!</p>
                                     
                                     <div className="mt-3 inline-flex items-center gap-1.5 bg-black/60 border border-white/10 px-3 py-1.5 rounded-full shadow-inner">
                                         <span className="text-[7px] text-white/50 uppercase font-black tracking-widest">Server ID:</span>
-                                        <span className={`text-[9px] font-mono font-black ${currentThemeId === 'neon' ? 'text-pink-400' : 'text-cyan-400'}`}>{activeAppId.length > 15 ? activeAppId.substring(0,8) + '...' : activeAppId}</span>
+                                        <span className={`text-[9px] font-mono font-black ${currentThemeId === 'neon' ? 'text-red-400' : 'text-cyan-400'}`}>{activeAppId.length > 15 ? activeAppId.substring(0,8) + '...' : activeAppId}</span>
                                     </div>
                                 </div>
 
@@ -1795,7 +1953,7 @@
                                                 setUsername(tempUsername);
                                                 if (user && window.db && window.FirebaseAPI) {
                                                     const { doc, setDoc } = window.FirebaseAPI;
-                                                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                                                    const appId = 'abyssal-bounty-live'; // REPLACED FOR RELIABILITY
                                                     setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), {
                                                         username: tempUsername, currentRealm: currentThemeId, cpsPrimary: incomeFlow.income.c1, cpsSecondary: incomeFlow.income.c2, wealth: currency1, lastActive: new Date().toISOString()
                                                     }, { merge: true }).catch(()=>{});
@@ -1919,6 +2077,178 @@
                                                         })}
                                                     </div>
                                                 </div>
+                                            </React.Fragment>
+                                        )}
+
+                                        {hubTab === 'club' && (
+                                            <React.Fragment>
+                                                {clubId ? (
+                                                    (() => {
+                                                        const activeClub = clubsList.find(c => c.id === clubId);
+                                                        if (!activeClub) return <div className="text-center text-white/50 text-xs font-black p-4">Syncing club data...</div>;
+                                                        
+                                                        let members = leaderboard.filter(p => p.clubId === clubId);
+                                                        if (username && !members.some(m => m.id === user?.uid)) {
+                                                            members.push({ id: user?.uid, username: username, wealth: currency1 + (currency2 * 5), cpsPrimary: incomeFlow?.income?.c1 || 0, clubId: clubId });
+                                                            members.sort((a, b) => (b.wealth || 0) - (a.wealth || 0));
+                                                        }
+                                                        
+                                                        const cLvl = getClubLevel(activeClub.xp || 0);
+                                                        const nxtLvlXp = CLUB_LEVEL_CAPS[cLvl] || (activeClub.xp || 0);
+                                                        const curLvlXp = CLUB_LEVEL_CAPS[cLvl-1] || 0;
+                                                        const xpProgress = cLvl >= 6 ? 100 : Math.max(0, Math.min(100, ((activeClub.xp || 0) - curLvlXp) / (nxtLvlXp - curLvlXp) * 100));
+
+                                                        const monolith = activeClub.monolith || { targetRarityId: 'epic', target: 10, current: 0, claimedBy: [] };
+                                                        const monolithDone = monolith.current >= monolith.target;
+                                                        const hasClaimed = monolith.claimedBy && monolith.claimedBy.includes(user?.uid);
+                                                        const allClaimed = members.every(m => monolith.claimedBy && monolith.claimedBy.includes(m.id));
+                                                        
+                                                        const targetRarity = RARITIES.find(r => r.id === monolith.targetRarityId) || RARITIES[1];
+                                                        const availableDupes = getDuplicatesForRarity(monolith.targetRarityId).length;
+
+                                                        return (
+                                                            <div className="flex flex-col gap-3 animate-in fade-in">
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-4 shadow-xl text-center relative overflow-hidden">
+                                                                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
+                                                                    <Icon name="Shield" size={32} className="mx-auto text-yellow-500 mb-1 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)] relative z-10" />
+                                                                    <h3 className="text-lg font-black uppercase text-white tracking-tighter relative z-10">[{activeClub.tag}] {activeClub.name}</h3>
+                                                                    
+                                                                    <div className="bg-black/40 border border-white/5 rounded-xl p-2.5 mt-2 relative z-10">
+                                                                        <div className="flex justify-between items-end mb-1.5">
+                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">Club Level {cLvl}</span>
+                                                                            <span className="text-[8px] font-black uppercase text-white/50">{cLvl >= 6 ? 'MAX LEVEL' : `${activeClub.xp || 0} / ${nxtLvlXp} XP`}</span>
+                                                                        </div>
+                                                                        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden shadow-inner mb-2">
+                                                                            <div className="h-full bg-yellow-500 transition-all duration-500" style={{ width: `${xpProgress}%` }} />
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex gap-2 justify-center mt-2 relative z-10">
+                                                                        <button onClick={handleLeaveClub} className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition-colors shadow-inner active:scale-95">Leave Club</button>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-1">
+                                                                    <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Members</h3>
+                                                                    <div className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-hide">
+                                                                        {members.map(p => {
+                                                                            const isMe = p.id === user?.uid;
+                                                                            const isFriend = friendsList.includes(p.id);
+                                                                            const isOnline = p.lastActive ? (Date.now() - new Date(p.lastActive).getTime() < 40000) : false;
+                                                                            const canTrade = isOnline && !isMe;
+                                                                            return (
+                                                                                <div key={p.id} className={`flex items-center gap-2 p-2 rounded-xl border ${isMe ? 'bg-white/10 border-white/30 shadow-md' : 'bg-black/40 border-white/5'}`}>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex items-center gap-1.5">
+                                                                                            {!isMe && <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOnline ? 'bg-green-500 shadow-[0_0_5px_lime]' : 'bg-white/20'}`} title={isOnline ? 'Online' : 'Offline'} />}
+                                                                                            <span className={`font-black uppercase truncate text-[10px] ${isMe ? 'text-white' : (isOnline ? 'text-white/90' : 'text-white/40')}`}>{p.username}</span>
+                                                                                            {p.id === activeClub.ownerId && <Icon name="Star" size={8} className="text-yellow-500 shrink-0" title="Club Owner" />}
+                                                                                        </div>
+                                                                                        <div className="text-[8px] font-black text-white/50 truncate mt-0.5">Wealth: {formatNum(p.wealth || 0)}</div>
+                                                                                    </div>
+                                                                                    
+                                                                                    {!isMe && (
+                                                                                        <div className="flex gap-1 ml-auto shrink-0">
+                                                                                            <button onClick={() => canTrade ? initiateTrade(p) : null} disabled={!canTrade} className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-colors ${canTrade ? 'bg-blue-500/20 border-blue-500/30 text-blue-400 hover:bg-blue-500/40 cursor-pointer shadow-inner' : 'bg-slate-800 border-slate-700 text-slate-600 opacity-50 cursor-not-allowed'}`} title={canTrade ? "Propose Trade" : "Must be ONLINE to trade"}>
+                                                                                                <Icon name="Trade" size={10} />
+                                                                                            </button>
+                                                                                            {!friendsList.includes(p.id) && (
+                                                                                                <button onClick={() => toggleFriend(p.id)} className="w-7 h-7 rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 flex items-center justify-center transition-colors shadow-inner" title="Add Friend">
+                                                                                                    <Icon name="UserPlus" size={10} />
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl mb-4">
+                                                                    <div className="flex items-center gap-1.5 mb-2">
+                                                                        <Icon name="Flame" size={16} className={currentThemeId === 'olympian' ? 'text-amber-500' : 'text-fuchsia-500'} />
+                                                                        <h3 className="text-sm font-black uppercase text-white tracking-widest">The Monolith</h3>
+                                                                    </div>
+                                                                    <div className="bg-black/60 border border-white/10 p-4 rounded-xl text-center relative overflow-hidden shadow-inner">
+                                                                        <div className={`absolute inset-0 opacity-20 bg-gradient-to-b from-fuchsia-500 to-transparent pointer-events-none`}></div>
+                                                                        
+                                                                        <div className="flex justify-between items-center mb-2 relative z-10">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-current ${monolith.color || 'text-yellow-400'}`}>
+                                                                                {monolith.difficulty || 'Standard'}
+                                                                            </span>
+                                                                            <span className="text-[9px] font-black uppercase text-yellow-400">
+                                                                                +{monolith.xpReward || 2500} Club XP
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <p className="text-[10px] font-black uppercase text-white/70 mb-2 relative z-10">
+                                                                            The Monolith Demands Sacrifice
+                                                                        </p>
+                                                                        <div className={`text-lg font-black uppercase tracking-widest mb-3 relative z-10 ${targetRarity.color} drop-shadow-md`}>
+                                                                            {monolith.target} {targetRarity.label} Items
+                                                                        </div>
+                                                                        
+                                                                        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden border border-white/10 relative z-10 mb-4 shadow-inner">
+                                                                            <div className={`absolute top-0 left-0 h-full transition-all duration-500 ${monolithDone ? 'bg-green-500' : 'bg-fuchsia-600'}`} style={{ width: `${Math.min(100, (monolith.current / monolith.target) * 100)}%` }} />
+                                                                            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white mix-blend-difference">{monolith.current} / {monolith.target}</div>
+                                                                        </div>
+
+                                                                        {!monolithDone && (
+                                                                            <button 
+                                                                                onClick={handleSacrificeToMonolith} 
+                                                                                disabled={availableDupes <= 0}
+                                                                                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all shadow-lg border relative z-10 ${availableDupes > 0 ? 'bg-red-900/40 border-red-500/50 text-red-400 hover:bg-red-900/60 active:scale-95' : 'bg-slate-900 border-white/10 text-white/30'}`}
+                                                                            >
+                                                                                {availableDupes > 0 ? `Sacrifice 1 Duplicate (${availableDupes} Available)` : `No ${targetRarity.label} Duplicates Available`}
+                                                                            </button>
+                                                                        )}
+
+                                                                        {monolithDone && !hasClaimed && (
+                                                                            <button onClick={claimMonolithBlessing} className="w-full py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse relative z-10 active:scale-95">Claim Monolith Blessing!</button>
+                                                                        )}
+                                                                        {monolithDone && hasClaimed && !allClaimed && (
+                                                                            <div className="text-center text-[9px] font-black uppercase text-white/40 py-2 relative z-10 border border-dashed border-white/10 rounded-xl">Waiting for other members...</div>
+                                                                        )}
+                                                                        {monolithDone && allClaimed && (
+                                                                            <button onClick={rollNewMonolith} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase transition-colors relative z-10 active:scale-95">Ignite New Monolith</button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()
+                                                ) : (
+                                                    <div className="flex flex-col gap-3 animate-in fade-in">
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Found a Club</h3>
+                                                            <div className="flex gap-2 mb-2">
+                                                                <input type="text" placeholder="Club Name" className="flex-1 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-yellow-500 transition-colors" maxLength={20} value={createClubName} onChange={e => setCreateClubName(e.target.value.replace(/[^a-zA-Z0-9 ]/g, ''))} />
+                                                                <input type="text" placeholder="TAG" className="w-16 bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase text-center focus:outline-none focus:border-yellow-500 transition-colors" maxLength={4} value={createClubTag} onChange={e => setCreateClubTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
+                                                            </div>
+                                                            <button disabled={!createClubName || !createClubTag} onClick={handleCreateClub} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase py-2 rounded-lg text-[9px] transition-colors disabled:opacity-50">Create Club</button>
+                                                        </div>
+                                                        <div className="bg-slate-950/90 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-xl">
+                                                            <h3 className="text-[10px] font-black uppercase text-white/50 mb-2">Join a Club</h3>
+                                                            <input type="text" placeholder="Search by name or tag..." className="w-full bg-black/50 border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px] font-black uppercase focus:outline-none focus:border-cyan-500 mb-2 transition-colors" value={clubSearchQuery} onChange={e => setClubSearchQuery(e.target.value.toLowerCase())} />
+                                                            <div className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-hide">
+                                                                {clubsList.filter(c => c.name.toLowerCase().includes(clubSearchQuery) || c.tag.toLowerCase().includes(clubSearchQuery)).map(c => {
+                                                                    const memberCount = leaderboard.filter(p => p.clubId === c.id).length;
+                                                                    return (
+                                                                        <div key={c.id} className="flex justify-between items-center p-2 rounded-xl bg-black/40 border border-white/5">
+                                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                                <div className="text-[9px] font-black uppercase text-white truncate">[{c.tag}] {c.name}</div>
+                                                                                <div className="text-[7.5px] font-black uppercase text-white/40 mt-0.5">{memberCount} Member{memberCount !== 1 ? 's' : ''}</div>
+                                                                            </div>
+                                                                            <button onClick={() => handleJoinClub(c.id)} className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-colors shrink-0 shadow-inner">Join</button>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {clubsList.length === 0 && <div className="text-center text-white/30 text-[9px] font-black uppercase py-3">No clubs discovered.</div>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </React.Fragment>
                                         )}
                                     </div>
@@ -2187,7 +2517,7 @@
                                         );
                                     })}
                                 </div>
-                                <div className={`text-center opacity-50 text-[8px] font-black uppercase tracking-widest shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
+                                <div className={`text-center opacity-50 text-[8px] sm:text-[9px] font-black uppercase tracking-widest shrink-0 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>Hold to Inspect Rates</div>
                                 {renderUnboxingArea()}
                             </div>
                         )}
