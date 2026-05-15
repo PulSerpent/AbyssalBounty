@@ -184,6 +184,17 @@
             100% { transform: translateY(110vh); opacity: 0; }
         }
 
+        /* --- MASSIVE BOSS FIGHT CINEMATICS --- */
+        @keyframes boss-eye-open { 0% { transform: translate(-50%, -50%) scaleY(0.1); filter: brightness(0.5); } 100% { transform: translate(-50%, -50%) scaleY(1); filter: brightness(1.5) drop-shadow(0 0 40px cyan); } }
+        @keyframes vortex-spin { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); } 100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); } }
+        @keyframes bull-charge { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; filter: blur(10px); } 50% { opacity: 0.4; filter: blur(0px); } 100% { transform: translate(-50%, -50%) scale(2.5) translateY(50px); opacity: 0; filter: blur(20px); } }
+        @keyframes dripping-venom { 0% { transform: translateY(0) scaleY(1); opacity: 1; } 70% { transform: translateY(150px) scaleY(2); opacity: 1; } 100% { transform: translateY(200px) scaleY(0); opacity: 0; } }
+        @keyframes pulsar-beam { 0% { transform: translate(-50%, -50%) rotate(45deg) scaleY(0.8); opacity: 0.6; filter: hue-rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(45deg) scaleY(1.5); opacity: 1; filter: hue-rotate(60deg); box-shadow: 0 0 100px #22d3ee; } }
+        @keyframes marquee-warning { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes piston-crush-l { 0%, 100% { transform: translateX(-100%); } 15%, 30% { transform: translateX(0%); } }
+        @keyframes piston-crush-r { 0%, 100% { transform: translateX(100%); } 15%, 30% { transform: translateX(0%); } }
+        @keyframes furnace-pulse { 0%, 100% { box-shadow: 0 0 50px #ea580c, inset 0 0 50px #ea580c; background-color: #7c2d12; } 50% { box-shadow: 0 0 150px #fef08a, inset 0 0 150px #fef08a; background-color: #ea580c; } }
+
         /* Cinematic Encounter Animations */
         @keyframes tentacle-writhe { 
             0% { transform: rotate(-10deg) translateY(0) scale(1); } 
@@ -1166,7 +1177,8 @@
                 };
             }, [inventory, getMutData, getSecondaryYieldMultiplier]);
 
-            const finalCpsMultiplier = (frenzyTimer > 0 ? 5 : 1) * clubCpsBuff;
+            // Removed the 5x frenzy multiplier from income
+            const finalCpsMultiplier = clubCpsBuff;
 
             useEffect(() => {
                 const timer = setInterval(() => {
@@ -1240,6 +1252,7 @@
             }, [claimedSets, currentThemeId, RARITIES, MUTATION_ORDER]);
 
             const getPackCost = (p, isShrine = false) => { 
+                if (frenzyTimer > 0) return 0; // FREE PACKS DURING FRENZY
                 let discount = isShrine ? 0.75 : 1;
                 if (merchantSaleActive) discount *= 0.5;
                 if (isShrine) {
@@ -1253,7 +1266,11 @@
             };
 
             const openPack = (p, isShrine = false) => {
-                if (isOpening || isSealed || isRipping || isShaking || activePack) return false;
+                const isFrenzy = frenzyTimer > 0;
+                
+                // If not in a frenzy, block multiple opens. If in a frenzy, let them spam!
+                if (!isFrenzy && (isOpening || isSealed || isRipping || isShaking || activePack)) return false;
+                
                 const cost = getPackCost(p, isShrine);
                 if ((p.currency === 'primary' ? currency1 : currency2) < cost) return false;
                 
@@ -1262,36 +1279,45 @@
                     if (ownedItemNames.length === 0) return false;
                 }
 
-                setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
-                if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
-                setTimeout(() => {
-                    let rarity, item;
+                let rarity, item;
+                if (isShrine) {
+                    setShrineOpens(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }));
+                    const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
+                    const randomName = ownedItemNames[Math.floor(Math.random() * ownedItemNames.length)];
+                    item = MASTER_ITEM_DB.find(db => db.name === randomName);
+                    rarity = RARITIES.find(r => r.id === item.rarityId) || RARITIES[0];
+                } else {
+                    const weights = p.weights;
+                    const total = Object.values(weights).reduce((a,b) => a+b, 0);
+                    let rand = Math.random() * total; rarity = RARITIES[0];
+                    for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
                     
-                    if (isShrine) {
-                        setShrineOpens(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }));
-                        const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
-                        const randomName = ownedItemNames[Math.floor(Math.random() * ownedItemNames.length)];
-                        item = MASTER_ITEM_DB.find(db => db.name === randomName);
-                        rarity = RARITIES.find(r => r.id === item.rarityId) || RARITIES[0];
-                    } else {
-                        const weights = p.weights;
-                        const total = Object.values(weights).reduce((a,b) => a+b, 0);
-                        let rand = Math.random() * total; rarity = RARITIES[0];
-                        for(const r of [...RARITIES].reverse()) { if(rand < (weights[r.id] || 0)) { rarity = r; break; } rand -= (weights[r.id] || 0); }
-                        
-                        const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
-                        item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
-                    }
-                    
-                    const isSec = isShrine || Math.random() < (rarity.secondaryChance || 0);
-                    const cpsBase = rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3));
-                    
-                    setPendingLoot({ 
-                        id: Math.random().toString(36).substr(2, 9), 
-                        themeId: currentThemeId, name: item.name, rarity, mutation: p.mutation || 'none', 
-                        currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
-                    });
+                    const items = MASTER_ITEM_DB.filter(i => i.rarityId === rarity.id);
+                    item = items[Math.floor(Math.random() * items.length)] || MASTER_ITEM_DB[0];
+                }
+                
+                const isSec = isShrine || Math.random() < (rarity.secondaryChance || 0);
+                const cpsBase = rarity.incomeBase * (1 + (STANDARD_PACKS.findIndex(pk => pk.id === (p.id || '')) * 0.3));
+                
+                const finalLoot = { 
+                    id: Math.random().toString(36).substr(2, 9), 
+                    themeId: currentThemeId, name: item.name, rarity, mutation: p.mutation || 'none', 
+                    currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
+                };
 
+                // INSTANT OPENING DURING FRENZY
+                if (isFrenzy) {
+                    setInventory(v => [finalLoot, ...v]);
+                    return true; 
+                }
+
+                // NORMAL OPENING SEQUENCE
+                setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
+                if (cost > 0) {
+                    if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
+                }
+                setTimeout(() => {
+                    setPendingLoot(finalLoot);
                     setIsOpening(false); setIsSealed(true);
                 }, 800);
                 return true;
@@ -1698,7 +1724,7 @@
                 const hasMutation = lastPull && lastPull.mutation && lastPull.mutation !== 'none';
 
                 return (
-                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/80 border-amber-950/20 shadow-inner' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-purple-950/40 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} flex-1 min-h-[300px] sm:min-h-[380px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
+                    <div className={`${currentThemeId === 'olympian' ? 'bg-white/10 border-amber-500/30' : (currentThemeId === 'canopy' ? 'bg-green-950/40 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-purple-950/40 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} flex-1 min-h-[300px] sm:min-h-[380px] flex items-center justify-center rounded-[2rem] sm:rounded-[3rem] border relative overflow-hidden transition-all backdrop-blur-sm shadow-xl`}>
                         {isOpening && <div className="animate-pulse flex flex-col items-center gap-2"><div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-500' : (currentThemeId === 'canopy' ? 'bg-lime-500/20 border-lime-500' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500/20 border-fuchsia-500' : 'bg-cyan-500/20 border-cyan-500'))} border-4 flex items-center justify-center animate-spin`}><Icon name="Zap" size={24} className={currentThemeId === 'olympian' ? "text-amber-500" : (currentThemeId === 'canopy' ? "text-lime-400" : (currentThemeId === 'cosmos' ? "text-fuchsia-400" : "text-cyan-400"))} /></div><span className={`text-[10px] sm:text-xs font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400'))}`}>Summoning...</span></div>}
                         {isSealed && (
                             <div className="flex flex-col items-center gap-3 cursor-pointer group" onClick={() => {
@@ -2106,7 +2132,7 @@
                                 {particleConfigs.cosmosAsteroids.map((cfg, i) => (
                                     <div key={`asteroid-${i}`} className="absolute animate-[asteroid-tumble_linear_infinite] z-0"
                                          style={{ left: cfg.left, width: cfg.size, height: cfg.size, animationDuration: cfg.animDur, animationDelay: cfg.animDel }}>
-                                        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(217,70,239,0.8)] backdrop-blur-sm text-[#1c1917]">
+                                        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(217,70,239,0.8)] text-[#1c1917]">
                                             <path fill="currentColor" stroke="#e879f9" strokeWidth="2" strokeLinejoin="round" 
                                                   d="M35,15 Q15,25 20,55 Q15,80 45,85 Q80,95 85,55 Q95,20 65,10 Q50,0 35,15 Z" />
                                             {/* Asteroid Craters */}
@@ -2294,50 +2320,50 @@
                     </div>
 
                     {anomalyVisible && (() => {
-                        let aIcon = 'ZapFast';
-                        let aText = 'Frenzy Surge!';
+                        let aIcon = 'Boxes';
+                        let aText = 'Loot Frenzy!';
                         let aTextBg = 'bg-cyan-500/30 border-cyan-300 text-cyan-100';
                         let aOrbStyle = 'from-cyan-600 to-blue-300 shadow-[0_0_30px_rgba(34,211,238,0.8)] border-cyan-200 rounded-full';
                         let aAnim = 'animate-[void-pulse_2s_ease-in-out_infinite]';
 
                         if (currentThemeId === 'abyssal') {
-                            aIcon = 'Droplet';
-                            aText = 'Tidal Surge!';
+                            aIcon = 'Fish';
+                            aText = 'Sunken Hoard!';
                             aTextBg = 'bg-blue-600/50 border-blue-400 text-blue-100';
                             aOrbStyle = 'from-cyan-600 to-blue-300 shadow-[0_0_30px_rgba(34,211,238,0.8)] border-cyan-200 rounded-full';
                         } else if (currentThemeId === 'olympian') {
-                            aIcon = 'Flame';
-                            aText = 'Divine Spark!';
+                            aIcon = 'Castle';
+                            aText = 'Divine Bounty!';
                             aTextBg = 'bg-amber-600/50 border-amber-400 text-amber-100';
                             aOrbStyle = 'from-amber-600 to-yellow-300 shadow-[0_0_30px_rgba(251,191,36,0.8)] border-amber-200 rounded-full';
                             aAnim = 'animate-[shake_0.5s_infinite]';
                         } else if (currentThemeId === 'canopy') {
-                            aIcon = 'Sparkles';
-                            aText = 'Spirit Spore!';
+                            aIcon = 'Leaf';
+                            aText = 'Bountiful Harvest!';
                             aTextBg = 'bg-lime-600/50 border-lime-400 text-lime-100';
                             aOrbStyle = 'from-lime-600 to-green-300 shadow-[0_0_30px_rgba(163,230,53,0.8)] border-lime-200 rounded-full';
                         } else if (currentThemeId === 'cosmos') {
-                            aIcon = 'Infinity';
-                            aText = 'Singularity!';
+                            aIcon = 'Star';
+                            aText = 'Cosmic Overflow!';
                             aTextBg = 'bg-purple-600/50 border-purple-400 text-purple-100';
                             aOrbStyle = 'from-purple-900 to-fuchsia-500 shadow-[0_0_30px_rgba(217,70,239,0.8)] border-fuchsia-300 rounded-full';
                             aAnim = 'animate-[gear-spin_2s_linear_infinite]';
                         } else if (currentThemeId === 'neon') {
-                            aIcon = 'Zap';
-                            aText = 'System Overclock!';
+                            aIcon = 'Terminal';
+                            aText = 'Free_Data.exe!';
                             aTextBg = 'bg-pink-600/50 border-pink-400 text-pink-100';
                             aOrbStyle = 'from-red-600 to-pink-500 shadow-[0_0_30px_rgba(236,72,153,0.8)] border-pink-300 rounded-xl transform rotate-45';
                             aAnim = 'animate-glitch';
                         } else if (currentThemeId === 'clockwork') {
-                            aIcon = 'Timer';
-                            aText = 'Chronal Shift!';
+                            aIcon = 'Boxes';
+                            aText = 'Surplus Gears!';
                             aTextBg = 'bg-orange-600/50 border-orange-400 text-orange-100';
                             aOrbStyle = 'from-orange-700 to-amber-500 shadow-[0_0_30px_rgba(249,115,22,0.8)] border-amber-300 rounded-full';
                             aAnim = 'animate-[shake-heavy_0.5s_infinite]';
                         }
 
                         return (
-                            <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(15); }}>
+                            <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(8); }}>
                                 <div className="flex flex-col items-center">
                                     <div className={`${aTextBg} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-2 border animate-pulse`}>{aText}</div>
                                     <div className={`w-16 h-16 bg-gradient-to-tr ${aOrbStyle} ${aAnim} flex items-center justify-center border-2`}>
@@ -2396,14 +2422,26 @@
                     })()}
 
                     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-auto max-w-[95vw] flex flex-col gap-2 items-center pointer-events-none whitespace-nowrap">
-                        {(merchantSaleActive || frenzyTimer > 0) && (
-                            <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(217,70,239,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]')) : (currentThemeId === 'canopy' ? 'bg-lime-950/90 shadow-[0_0_30px_rgba(163,230,53,0.3)]' : 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(192,38,211,0.3)]')}`}>
-                                <Icon name={merchantSaleActive ? terms.icon : "ZapFast"} size={14} className={`animate-pulse ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400') : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`} />
-                                <span className={`text-[8px] font-black uppercase tracking-widest ${merchantSaleActive ? (currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50') : (currentThemeId === 'canopy' ? 'text-lime-50' : 'text-fuchsia-50')}`}>
-                                    {merchantSaleActive ? '✨ 50% OFF PACKS | 25% OFF SHRINES ✨' : '⚡ 5X INCOME MULTIPLIER ACTIVE ⚡'}
+                        {merchantSaleActive && frenzyTimer <= 0 && (
+                            <div className={`pointer-events-auto px-4 py-1.5 rounded-full border border-white/20 flex items-center gap-3 shadow-2xl animate-in slide-in-from-top-4 duration-500 backdrop-blur-md ${currentThemeId === 'canopy' ? 'bg-emerald-950/90 shadow-[0_0_30px_rgba(52,211,153,0.3)]' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/90 shadow-[0_0_30px_rgba(217,70,239,0.3)]' : 'bg-cyan-950/90 shadow-[0_0_30px_rgba(34,211,238,0.3)]')}`}>
+                                <Icon name={terms.icon} size={14} className={`animate-pulse ${currentThemeId === 'canopy' ? 'text-emerald-400' : 'text-cyan-400'}`} />
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${currentThemeId === 'canopy' ? 'text-emerald-50' : 'text-cyan-50'}`}>
+                                    ✨ 50% OFF PACKS | 25% OFF SHRINES ✨
                                 </span>
                                 <div className="px-2 py-0.5 rounded-full bg-black/60 font-mono text-[8px] font-black text-white">
-                                    {merchantSaleActive ? merchantSaleTimer : frenzyTimer}s
+                                    {merchantSaleTimer}s
+                                </div>
+                            </div>
+                        )}
+                        
+                        {frenzyTimer > 0 && (
+                            <div className="pointer-events-auto px-5 py-2 rounded-full border border-white/50 flex items-center gap-3 shadow-[0_0_40px_rgba(255,255,255,0.4)] animate-in slide-in-from-top-4 duration-300 backdrop-blur-md bg-white/20">
+                                <Icon name="Sparkles" size={16} className="animate-bounce text-white drop-shadow-[0_0_5px_white]" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_5px_white]">
+                                    🔥 FREE LOOT ACTIVE! 🔥
+                                </span>
+                                <div className="px-2.5 py-0.5 rounded-full bg-red-500 font-mono text-[10px] font-black text-white shadow-[0_0_10px_red]">
+                                    {frenzyTimer}s
                                 </div>
                             </div>
                         )}
@@ -2425,17 +2463,30 @@
                     </div>
 
                     {krakenEvent && (
-                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-black/90' : (currentThemeId === 'canopy' ? 'bg-green-950/80' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/80' : 'bg-red-950/80'))} backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                        <div className={`fixed inset-0 z-[100] ${currentThemeId === 'abyssal' ? 'bg-[#020617]/95' : (currentThemeId === 'canopy' ? 'bg-[#011a14]/95' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/95' : 'bg-[#1c1917]/95'))} backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in ${currentThemeId !== 'abyssal' && !krakenFeedback ? 'animate-heavy-shake' : ''}`}>
+                            
+                            {/* 1. ABYSSAL KRAKEN (Vortex & Giant Eye) */}
                             {currentThemeId === 'abyssal' && !krakenFeedback && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-950/40 via-transparent to-black/60 animate-ink" />
-                                    {[...Array(8)].map((_, i) => (
-                                        <div key={i} className={`absolute animate-tentacle-detailed opacity-80`} style={{ bottom: '-15%', left: `${i * 12.5}%`, width: '180px', height: '550px', animationDelay: `${i * 0.7}s`, filter: 'drop-shadow(0 0 30px cyan)' }}>
-                                            <svg viewBox="0 0 100 300" className="w-full h-full">
-                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="cyan" strokeWidth="25" fill="none" strokeLinecap="round" />
-                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="rgba(0,0,0,0.3)" strokeWidth="10" fill="none" transform="translate(5,0)" />
-                                                {[...Array(6)].map((_, j) => (
-                                                    <circle key={j} cx="35" cy={50 + j * 40} r="6" fill="rgba(255,255,255,0.8)" className="animate-pulse" style={{ animationDelay: `${j * 0.2}s` }} />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-950/80 via-transparent to-black/90 animate-ink z-10" />
+                                    
+                                    {/* Massive Whirlpool */}
+                                    <div className="absolute top-1/2 left-1/2 w-[200vw] h-[200vw] bg-[conic-gradient(from_0deg,transparent,rgba(6,182,212,0.15),transparent,rgba(14,165,233,0.15),transparent)] rounded-full blur-2xl animate-[vortex-spin_4s_linear_infinite] z-0" />
+                                    
+                                    {/* Giant Glowing Eye */}
+                                    <div className="absolute top-[40%] left-1/2 w-[280px] h-[120px] bg-black rounded-[100%] border-[8px] border-cyan-800 shadow-[inset_0_0_40px_cyan,0_0_80px_#0891b2] overflow-hidden animate-[boss-eye-open_3s_ease-in-out_infinite_alternate] z-10 flex items-center justify-center">
+                                        <div className="w-[40px] h-[140px] bg-yellow-400 rounded-[100%] shadow-[0_0_30px_#fde047] animate-pulse" />
+                                    </div>
+
+                                    {/* Complex Sucker Tentacles */}
+                                    {[...Array(10)].map((_, i) => (
+                                        <div key={i} className="absolute animate-tentacle-detailed opacity-90 z-20" style={{ bottom: '-20%', left: `${i * 10}%`, width: '150px', height: '600px', animationDelay: `${i * 0.5}s`, filter: 'drop-shadow(0 0 20px rgba(6,182,212,0.5))' }}>
+                                            <svg viewBox="0 0 100 300" className="w-full h-full text-cyan-800">
+                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="currentColor" strokeWidth="30" fill="none" strokeLinecap="round" />
+                                                <path d="M50,300 Q10,200 50,150 T50,0" stroke="rgba(0,0,0,0.5)" strokeWidth="15" fill="none" transform="translate(5,0)" />
+                                                {/* Suckers */}
+                                                {[...Array(8)].map((_, j) => (
+                                                    <circle key={j} cx="35" cy={40 + j * 30} r="8" fill="rgba(34,211,238,0.8)" stroke="#083344" strokeWidth="2" className="animate-pulse" style={{ animationDelay: `${j * 0.15}s` }} />
                                                 ))}
                                             </svg>
                                         </div>
@@ -2443,19 +2494,27 @@
                                 </div>
                             )}
 
+                            {/* 2. OLYMPIAN MINOTAUR (Bull Silhouette & Carnage) */}
                             {currentThemeId === 'olympian' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    <div className="absolute inset-0 bg-red-950/40" />
-                                    {[...Array(4)].map((_, i) => {
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden bg-red-950/80">
+                                    {/* Massive Charging Silhouette */}
+                                    <div className="absolute top-1/2 left-1/2 w-[80vw] h-[80vw] max-w-[600px] max-h-[600px] animate-[bull-charge_1.5s_cubic-bezier(0.175,0.885,0.32,1.275)_infinite] z-0 flex items-center justify-center">
+                                        <svg viewBox="0 0 24 24" fill="#7f1d1d" className="w-full h-full drop-shadow-[0_0_50px_#dc2626]">
+                                            <path d="M20 8h-2l-2-4h-2l-1 2H11L10 4H8L6 8H4v2h2v4l-2 4h4l1-2h6l1 2h4l-2-4v-4h2V8z M15 12h-2v-2h2v2z M11 12H9v-2h2v2z" />
+                                        </svg>
+                                    </div>
+                                    
+                                    {/* Heavy Screen Claws */}
+                                    {[...Array(5)].map((_, i) => {
                                         const angle = (i * 85) % 360;
                                         return (
-                                            <div key={`claw-${i}`} className="absolute w-full h-full flex items-center justify-center">
-                                                <div className="relative w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] animate-claw-tear opacity-0" style={{ animationDelay: `${i * 0.4}s`, left: `${(i * 41) % 60 - 30}%`, top: `${(i * 37) % 60 - 30}%`, transform: `rotate(${angle}deg)` }}>
-                                                    <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_20px_rgba(234,88,12,0.9)]">
-                                                        <path d="M40,20 Q60,100 40,180" fill="none" stroke="#ea580c" strokeWidth="12" strokeLinecap="round" />
-                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#f97316" strokeWidth="16" strokeLinecap="round" />
-                                                        <path d="M160,20 Q180,100 160,180" fill="none" stroke="#fbbf24" strokeWidth="12" strokeLinecap="round" />
-                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+                                            <div key={`claw-${i}`} className="absolute w-full h-full flex items-center justify-center z-10">
+                                                <div className="relative w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] animate-claw-tear opacity-0" style={{ animationDelay: `${i * 0.3}s`, left: `${(i * 41) % 60 - 30}%`, top: `${(i * 37) % 60 - 30}%`, transform: `rotate(${angle}deg)` }}>
+                                                    <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_30px_rgba(239,68,68,1)]">
+                                                        <path d="M40,20 Q60,100 40,180" fill="none" stroke="#dc2626" strokeWidth="16" strokeLinecap="round" />
+                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#ef4444" strokeWidth="24" strokeLinecap="round" />
+                                                        <path d="M160,20 Q180,100 160,180" fill="none" stroke="#f59e0b" strokeWidth="16" strokeLinecap="round" />
+                                                        <path d="M100,0 Q120,100 100,200" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" opacity="0.9" />
                                                     </svg>
                                                 </div>
                                             </div>
@@ -2464,39 +2523,46 @@
                                 </div>
                             )}
 
+                            {/* 3. VERDANT CANOPY (Giant Fangs & Dripping Venom) */}
                             {currentThemeId === 'canopy' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                    <div className="absolute inset-0 bg-green-950/60" />
-                                    {[...Array(8)].map((_, i) => (
-                                        <div key={i} className="absolute snake-container" style={{ top: `${(i*12)}%`, left: i%2===0 ? '-10%' : 'auto', right: i%2!==0 ? '-10%' : 'auto', transform: i%2!==0 ? 'scaleX(-1)' : 'none', animationDelay: `${i * 0.2}s` }}>
-                                            <div className="animate-snake-strike" style={{ animationDelay: `${i * 0.35}s` }}>
-                                                <svg viewBox="0 0 260 100" className="w-[260px] h-[100px] sm:w-[400px] sm:h-[150px] drop-shadow-[0_0_15px_rgba(34,197,94,0.9)] opacity-95">
-                                                    <defs>
-                                                        <linearGradient id={`snakeGrad-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                                            <stop offset="0%" stopColor="#064e3b" />
-                                                            <stop offset="60%" stopColor="#15803d" />
-                                                            <stop offset="100%" stopColor="#22c55e" />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    {/* Slithering Body */}
-                                                    <path d="M-50,50 Q10,10 70,50 T180,50" fill="none" stroke={`url(#snakeGrad-${i})`} strokeWidth="18" strokeLinecap="round" />
-                                                    {/* Scales Texture Overlay */}
-                                                    <path d="M-40,50 Q10,15 70,50 T170,50" fill="none" stroke="#064e3b" strokeWidth="4" strokeDasharray="4 8" opacity="0.5" />
-                                                    
-                                                    {/* Diamond Head */}
-                                                    <path d="M170,50 L200,32 L230,50 L200,68 Z" fill="#16a34a" />
-                                                    <path d="M180,50 L200,38 L220,50 L200,62 Z" fill="#15803d" />
-                                                    
-                                                    {/* Glowing Slit Eyes */}
-                                                    <ellipse cx="205" cy="41" rx="5" ry="2.5" fill="#fef08a" transform="rotate(20 205 41)" />
-                                                    <ellipse cx="205" cy="59" rx="5" ry="2.5" fill="#fef08a" transform="rotate(-20 205 59)" />
-                                                    <circle cx="207" cy="41" r="1.5" fill="#991b1b" />
-                                                    <circle cx="207" cy="59" r="1.5" fill="#991b1b" />
-                                                    
-                                                    {/* Flickering Forked Tongue */}
-                                                    <g className="animate-tongue-flick">
-                                                        <path d="M230,50 L250,50 L255,45 M250,50 L255,55" stroke="#dc2626" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </g>
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden bg-[#011a14]">
+                                    {/* Monstrous Eyes in the Dark */}
+                                    <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg flex justify-center gap-12 sm:gap-24 opacity-90 animate-[boss-eye-open_2s_ease-in-out_infinite_alternate] z-0">
+                                        <div className="w-32 h-16 sm:w-48 sm:h-24 bg-black rounded-[100%] border-[6px] border-lime-600 shadow-[0_0_60px_#84cc16] flex justify-center items-center transform rotate-[15deg]">
+                                            <div className="w-4 h-14 sm:w-6 sm:h-20 bg-yellow-300 rounded-[100%] shadow-[0_0_20px_#fde047]" />
+                                        </div>
+                                        <div className="w-32 h-16 sm:w-48 sm:h-24 bg-black rounded-[100%] border-[6px] border-lime-600 shadow-[0_0_60px_#84cc16] flex justify-center items-center transform -rotate-[15deg]">
+                                            <div className="w-4 h-14 sm:w-6 sm:h-20 bg-yellow-300 rounded-[100%] shadow-[0_0_20px_#fde047]" />
+                                        </div>
+                                    </div>
+
+                                    {/* Giant Fangs and Venom Drips */}
+                                    <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-full max-w-md flex justify-center gap-32 sm:gap-48 z-10 opacity-70">
+                                        <svg viewBox="0 0 100 200" className="w-24 h-48 sm:w-32 sm:h-64 drop-shadow-[0_10px_20px_black] transform rotate-[10deg]">
+                                            <path d="M0,0 Q50,100 50,200 Q50,100 100,0 Z" fill="#e2e8f0" />
+                                        </svg>
+                                        <svg viewBox="0 0 100 200" className="w-24 h-48 sm:w-32 sm:h-64 drop-shadow-[0_10px_20px_black] transform -rotate-[10deg]">
+                                            <path d="M0,0 Q50,100 50,200 Q50,100 100,0 Z" fill="#e2e8f0" />
+                                        </svg>
+                                    </div>
+                                    
+                                    {/* Acid Drops */}
+                                    {[...Array(12)].map((_, i) => (
+                                        <div key={`drip-${i}`} className="absolute w-2 sm:w-3 bg-lime-400 rounded-full shadow-[0_0_15px_#84cc16] animate-[dripping-venom_1s_ease-in_infinite] z-20"
+                                             style={{ left: `${Math.random() * 60 + 20}%`, top: `${Math.random() * 20 + 30}%`, animationDuration: `${Math.random() * 1 + 0.8}s`, animationDelay: `${Math.random()}s` }} />
+                                    ))}
+
+                                    {/* Swarm of Slithering Snakes */}
+                                    {[...Array(12)].map((_, i) => (
+                                        <div key={`snake-${i}`} className="absolute snake-container z-30" style={{ top: `${(i*8)}%`, left: i%2===0 ? '-20%' : 'auto', right: i%2!==0 ? '-20%' : 'auto', transform: i%2!==0 ? 'scaleX(-1)' : 'none', animationDelay: `${i * 0.15}s` }}>
+                                            <div className="animate-snake-strike" style={{ animationDelay: `${i * 0.25}s` }}>
+                                                <svg viewBox="0 0 260 100" className="w-[300px] h-[120px] sm:w-[500px] sm:h-[180px] drop-shadow-[0_5px_15px_rgba(0,0,0,0.9)] opacity-95">
+                                                    <path d="M-50,50 Q10,10 70,50 T180,50" fill="none" stroke="#15803d" strokeWidth="24" strokeLinecap="round" />
+                                                    <path d="M-40,50 Q10,15 70,50 T170,50" fill="none" stroke="#064e3b" strokeWidth="6" strokeDasharray="5 10" opacity="0.8" />
+                                                    <path d="M170,50 L210,28 L240,50 L210,72 Z" fill="#16a34a" />
+                                                    <ellipse cx="210" cy="38" rx="6" ry="3" fill="#fef08a" transform="rotate(20 210 38)" />
+                                                    <ellipse cx="210" cy="62" rx="6" ry="3" fill="#fef08a" transform="rotate(-20 210 62)" />
+                                                    <g className="animate-tongue-flick"><path d="M240,50 L260,50 L268,42 M260,50 L268,58" stroke="#dc2626" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></g>
                                                 </svg>
                                             </div>
                                         </div>
@@ -2504,68 +2570,103 @@
                                 </div>
                             )}
 
+                            {/* 4. COSMIC EXPANSE (Singularity & Pulsar Beams) */}
                             {currentThemeId === 'cosmos' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-fuchsia-950/60" />
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center bg-black">
+                                    <div className="absolute inset-0 bg-fuchsia-950/40 mix-blend-screen" />
+                                    
+                                    {/* Gravitational Lensing Rings */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] sm:w-[600px] sm:h-[600px] border-[20px] sm:border-[40px] border-white/10 rounded-full blur-[20px] animate-[boss-eye-open_2s_ease-in-out_infinite_alternate]" />
+                                    
+                                    {/* Colossal Pulsar Beams */}
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250vw] h-[30px] sm:h-[60px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent blur-[2px] animate-[pulsar-beam_0.4s_infinite_alternate] mix-blend-screen" style={{ transform: 'translate(-50%, -50%) rotate(35deg)' }} />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250vw] h-[30px] sm:h-[60px] bg-gradient-to-r from-transparent via-fuchsia-400 to-transparent blur-[2px] animate-[pulsar-beam_0.6s_infinite_alternate-reverse] mix-blend-screen" style={{ transform: 'translate(-50%, -50%) rotate(-35deg)' }} />
+
                                     {/* Star Matter being Sucked In */}
                                     {particleConfigs.cosmosMatter.map((cfg, i) => (
-                                        <div key={`matter-${i}`} className="absolute w-2 h-2 rounded-full bg-white animate-matter" style={{ animationDelay: `${i * 0.12}s`, transformOrigin: cfg.transformOrigin, boxShadow: '0 0 12px #f0abfc' }} />
+                                        <div key={`matter-${i}`} className="absolute w-3 h-3 rounded-full bg-white animate-matter z-10" style={{ animationDelay: `${i * 0.1}s`, transformOrigin: cfg.transformOrigin, boxShadow: '0 0 20px #f0abfc' }} />
                                     ))}
-                                    {/* Outer Accretion Disk */}
-                                    <div className="absolute w-[350px] h-[350px] sm:w-[600px] sm:h-[600px] rounded-full border-[15px] border-dashed border-fuchsia-500/40 animate-accretion mix-blend-screen opacity-70" />
-                                    <div className="absolute w-[250px] h-[250px] sm:w-[450px] sm:h-[450px] rounded-full border-[8px] border-dotted border-purple-400/60 animate-accretion" style={{ animationDirection: 'reverse', animationDuration: '7s' }} />
-                                    {/* The Void Core */}
-                                    <div className="absolute w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] bg-black rounded-full animate-void-core flex items-center justify-center border-4 border-fuchsia-900 z-10">
-                                        <div className="w-[80px] h-[80px] bg-black rounded-full shadow-[inset_0_0_50px_#4a044e]" />
+                                    
+                                    {/* Accretion Disks */}
+                                    <div className="absolute w-[400px] h-[400px] sm:w-[800px] sm:h-[800px] rounded-full border-[20px] border-dashed border-fuchsia-500/80 animate-accretion mix-blend-screen opacity-90 shadow-[0_0_50px_#d946ef]" />
+                                    <div className="absolute w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] rounded-full border-[10px] border-dotted border-cyan-400/90 animate-accretion mix-blend-screen shadow-[0_0_40px_#22d3ee]" style={{ animationDirection: 'reverse', animationDuration: '4s' }} />
+                                    
+                                    {/* The Void Core Eye */}
+                                    <div className="absolute w-[150px] h-[150px] sm:w-[250px] sm:h-[250px] bg-black rounded-full animate-void-core flex items-center justify-center border-8 border-fuchsia-900 z-20 overflow-hidden">
+                                        <div className="w-[100px] h-[100px] sm:w-[150px] sm:h-[150px] bg-black rounded-full shadow-[inset_0_0_80px_#701a75]" />
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-full bg-fuchsia-400 blur-[8px] animate-pulse transform rotate-45" />
                                     </div>
                                 </div>
                             )}
 
+                            {/* 5. NEON NEXUS (Wireframe Skull & Scrolling Errors) */}
                             {currentThemeId === 'neon' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-slate-950/80" />
-                                    {/* Tech Grid Background */}
-                                    <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.15)_1px,transparent_1px)] bg-[length:50px_50px] animate-pulse" />
-                                    
-                                    {/* Expanding Radar Rings */}
-                                    {[...Array(3)].map((_, i) => (
-                                        <div key={`ring-${i}`} className="absolute w-[150px] h-[150px] rounded-full border-red-500 animate-pulse-ring" style={{ animationDelay: `${i * 0.5}s` }} />
-                                    ))}
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center bg-black">
+                                    {/* Scrolling Warning Marquees */}
+                                    <div className="absolute inset-0 flex flex-col justify-between opacity-80 z-0 py-[10vh] mix-blend-screen">
+                                        {[...Array(6)].map((_, i) => (
+                                            <div key={`warn-${i}`} className={`w-[200%] flex whitespace-nowrap text-3xl sm:text-5xl font-black italic tracking-widest bg-red-600/30 text-red-500 border-y-4 border-red-500/50 py-2 animate-[marquee-warning_2s_linear_infinite] ${i%2===0 ? '' : 'animation-direction-reverse'}`} style={{ animationDuration: `${Math.random()*1 + 1.5}s` }}>
+                                                {` // CRITICAL FAILURE // CORE MELTDOWN // SYSTEM OVERRIDE // FATAL ERROR // CRITICAL FAILURE // CORE MELTDOWN // SYSTEM OVERRIDE // FATAL ERROR //`}
+                                            </div>
+                                        ))}
+                                    </div>
 
-                                    {/* The Targeting System */}
-                                    <div className="absolute animate-cyber-lock opacity-0">
-                                        <svg viewBox="0 0 200 200" className="w-[300px] h-[300px] sm:w-[450px] sm:h-[450px]">
-                                            <circle cx="100" cy="100" r="80" fill="none" stroke="#22d3ee" strokeWidth="4" strokeDasharray="20 10 5 10" />
-                                            <circle cx="100" cy="100" r="60" fill="none" stroke="#ef4444" strokeWidth="2" opacity="0.5" />
-                                            <path d="M100,5 L100,40 M100,160 L100,195 M5,100 L40,100 M160,100 L195,100" stroke="#22d3ee" strokeWidth="6" strokeLinecap="round" />
-                                            <path d="M20,20 L50,50 M180,180 L150,150 M180,20 L150,50 M20,180 L50,150" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
-                                            <circle cx="100" cy="100" r="15" fill="#ef4444" className="animate-pulse" />
-                                            <circle cx="100" cy="100" r="5" fill="#fff" />
+                                    {/* Heavy Screen Glitch */}
+                                    <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_8px] z-10 opacity-50" />
+                                    
+                                    {/* Giant Cyber Skull */}
+                                    <div className="absolute w-[300px] h-[350px] sm:w-[500px] sm:h-[600px] animate-glitch z-20 drop-shadow-[0_0_30px_#ef4444]">
+                                        <svg viewBox="0 0 100 120" className="w-full h-full" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round">
+                                            {/* Skull Outline */}
+                                            <path d="M20,50 C20,10 80,10 80,50 L80,70 L70,80 L70,110 L30,110 L30,80 L20,70 Z" fill="rgba(220,38,38,0.1)" />
+                                            {/* Grid Lines */}
+                                            <path d="M35,20 L35,110 M50,15 L50,110 M65,20 L65,110" strokeWidth="0.5" opacity="0.5" />
+                                            <path d="M20,35 L80,35 M20,50 L80,50 M25,65 L75,65" strokeWidth="0.5" opacity="0.5" />
+                                            {/* Angry Eyes */}
+                                            <polygon points="25,45 45,55 25,60" fill="#fecaca" stroke="#f87171" className="animate-pulse" />
+                                            <polygon points="75,45 55,55 75,60" fill="#fecaca" stroke="#f87171" className="animate-pulse" />
+                                            {/* Teeth/Grille */}
+                                            <path d="M40,90 L60,90 M40,100 L60,100" strokeWidth="3" />
+                                            <path d="M45,85 L45,105 M50,85 L50,105 M55,85 L55,105" strokeWidth="1.5" />
                                         </svg>
-                                        <div className="absolute top-[65%] left-1/2 -translate-x-1/2 bg-black/90 text-red-400 font-mono text-sm px-4 py-1.5 border border-red-500 rounded animate-glitch mt-4 shadow-[0_0_15px_rgba(239,68,68,0.6)] whitespace-nowrap">
-                                            BREACH_DETECTED
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 6. CLOCKWORK CRYPT (Crushing Pistons & Grinder) */}
+                            {currentThemeId === 'clockwork' && !krakenFeedback && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden bg-stone-950 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent,rgba(0,0,0,0.9))] z-20" />
+                                    
+                                    {/* Background Spinning Sawblades */}
+                                    <div className="absolute top-[-10vh] left-[-10vw] w-[50vw] h-[50vw] max-w-[400px] max-h-[400px] animate-[gear-spin_1s_linear_infinite] z-0">
+                                        <Icon name="Sun" size="100%" className="text-stone-700/80 drop-shadow-[0_0_20px_rgba(0,0,0,1)]" />
+                                    </div>
+                                    <div className="absolute bottom-[-10vh] right-[-10vw] w-[50vw] h-[50vw] max-w-[400px] max-h-[400px] animate-[gear-spin-reverse_1s_linear_infinite] z-0">
+                                        <Icon name="Sun" size="100%" className="text-stone-700/80 drop-shadow-[0_0_20px_rgba(0,0,0,1)]" />
+                                    </div>
+
+                                    {/* Massive Furnace Mouth */}
+                                    <div className="absolute w-[250px] h-[250px] sm:w-[400px] sm:h-[400px] rounded-full border-[24px] border-stone-800 bg-black shadow-[0_0_100px_rgba(0,0,0,1)] z-10 flex items-center justify-center overflow-hidden animate-[furnace-pulse_1s_ease-in-out_infinite_alternate]">
+                                        <div className="absolute top-0 w-full h-full bg-[repeating-linear-gradient(90deg,transparent_0px,transparent_30px,#1c1917_30px,#1c1917_50px)] z-20" />
+                                        <div className="w-[150%] h-[150%] bg-gradient-to-t from-white via-yellow-300 to-red-600 blur-xl animate-pulse" />
+                                    </div>
+
+                                    {/* Crushing Horizontal Pistons */}
+                                    <div className="absolute top-1/2 -translate-y-1/2 left-0 w-[50vw] h-[30vh] max-w-[400px] animate-[piston-crush-l_1.2s_ease-in-out_infinite] z-30 drop-shadow-[15px_0_30px_rgba(0,0,0,0.9)]">
+                                        <div className="w-full h-full bg-gradient-to-b from-stone-600 to-stone-900 border-y-8 border-r-[30px] border-stone-800 rounded-r-3xl flex items-center justify-end pr-4">
+                                            <div className="w-4 h-[80%] bg-amber-500 rounded-full shadow-[0_0_20px_#d97706]" />
+                                        </div>
+                                    </div>
+                                    <div className="absolute top-1/2 -translate-y-1/2 right-0 w-[50vw] h-[30vh] max-w-[400px] animate-[piston-crush-r_1.2s_ease-in-out_infinite] z-30 drop-shadow-[-15px_0_30px_rgba(0,0,0,0.9)]">
+                                        <div className="w-full h-full bg-gradient-to-b from-stone-600 to-stone-900 border-y-8 border-l-[30px] border-stone-800 rounded-l-3xl flex items-center justify-start pl-4">
+                                            <div className="w-4 h-[80%] bg-amber-500 rounded-full shadow-[0_0_20px_#d97706]" />
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {currentThemeId === 'clockwork' && !krakenFeedback && (
-                                <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-stone-950/60" />
-                                    {[...Array(5)].map((_, i) => (
-                                        <div key={`steam-${i}`} className="absolute bottom-0 w-32 h-32 bg-stone-300/40 rounded-full animate-[steam-vent_3s_ease-out_infinite]"
-                                             style={{ left: `${20 * i}%`, animationDelay: `${i * 0.6}s` }} />
-                                    ))}
-                                    <div className="absolute w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] animate-[gear-spin_10s_linear_infinite]">
-                                        <Icon name="Cog" size="100%" className="text-orange-900/60 drop-shadow-[0_0_30px_rgba(251,146,60,0.5)]" />
-                                    </div>
-                                    <div className="absolute w-[250px] h-[250px] sm:w-[350px] sm:h-[350px] animate-[gear-spin-reverse_7s_linear_infinite]">
-                                        <Icon name="Cog" size="100%" className="text-stone-700/80 drop-shadow-[0_0_20px_rgba(120,113,108,0.8)]" />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="relative z-10 flex flex-col items-center">
+                            <div className="relative z-50 flex flex-col items-center">
                                 {krakenFeedback ? (
                                     <div className={`bg-slate-950 border-2 border-white/20 p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] text-center shadow-[0_0_60px_rgba(255,255,255,0.2)] animate-in zoom-in-50 ${currentThemeId === 'neon' ? 'animate-glitch border-red-500/50' : ''}`}>
                                         <h2 className={`text-2xl sm:text-4xl font-black uppercase text-white mb-2 sm:mb-4 tracking-tighter ${currentThemeId === 'neon' ? 'text-cyan-400 drop-shadow-[2px_2px_0_#ef4444]' : ''}`}>{krakenFeedback}</h2>
@@ -2593,7 +2694,7 @@
                         </div>
                     )}
 
-                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/95 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-purple-500/30' : 'bg-slate-950/60 border-white/10'))} px-2 py-1 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
+                    <nav className={`${currentThemeId === 'olympian' ? 'bg-white/10 border-amber-500/30' : (currentThemeId === 'canopy' ? 'bg-green-950/80 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-purple-500/30' : 'bg-slate-950/60 border-white/10'))} px-2 py-1 backdrop-blur-xl border-b flex justify-between items-center z-50 shadow-md`}>
                         <div className="flex gap-1">
                             <div className={`${currentThemeId === 'olympian' ? 'bg-amber-50 border-amber-900/20' : (currentThemeId === 'canopy' ? 'bg-green-900/60 border-lime-500/30' : (currentThemeId === 'cosmos' ? 'bg-purple-900/60 border-fuchsia-500/30' : 'bg-slate-900/80 border-white/5'))} flex items-center px-1.5 py-0.5 rounded border max-w-[130px] shadow-inner`}>
                                 <Icon name={terms.primaryIcon} size={10} className={currentThemeId === 'canopy' ? 'text-lime-500 shrink-0' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400 shrink-0' : 'text-amber-500 shrink-0')} />
@@ -2613,8 +2714,8 @@
                         <div className="text-right flex flex-col justify-center">
                             <h1 className={`text-[7px] font-black uppercase opacity-60 leading-none mb-0.5 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200' : 'text-white'))}`}>{activeTheme.name}</h1>
                             {frenzyTimer > 0 ? (
-                                <div className={`text-[7px] font-black uppercase animate-pulse leading-none ${currentThemeId === 'olympian' ? 'text-amber-600' : (currentThemeId === 'canopy' ? 'text-lime-400' : 'text-fuchsia-400')}`}>
-                                    SURGE x{(5 * clubCpsBuff).toFixed(2)}
+                                <div className="text-[7px] font-black uppercase animate-pulse leading-none text-white drop-shadow-[0_0_5px_white]">
+                                    FREE LOOT FRENZY
                                 </div>
                             ) : activeClub && clubCpsBuff > 1 ? (
                                 <div className={`text-[7px] font-black uppercase leading-none ${currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-cyan-400')}`}>
@@ -2635,26 +2736,26 @@
 
                         {view === 'shop' && (
                             <div className="flex-1 flex flex-col gap-2 sm:gap-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0 hidden sm:block`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/10 border-amber-500/30 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0 hidden sm:block`}>
                                     <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-400'))}`}>Open caches to discover artifacts. Complete base sets to unlock higher tiers!</p>
                                 </div>
                                 <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
                                     {STANDARD_PACKS.map((p, idx) => {
                                         const isUnlocked = idx === 0 || highestClaimedRarityIdx >= (idx - 1);
                                         const cost = getPackCost(p, false);
-                                        const afford = isUnlocked && (p.currency === 'primary' ? currency1 : currency2) >= cost;
+                                        const afford = isUnlocked && (frenzyTimer > 0 || (p.currency === 'primary' ? currency1 : currency2) >= cost);
                                         return (
                                             <div key={p.id} className={`snap-center shrink-0 w-24 sm:w-28 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
                                                 onMouseDown={() => { if(isUnlocked) handleHoldStart(p); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(p); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => { if(isUnlocked) handleHoldStart(p); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(p); }}
                                             >
-                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${p.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : (currentThemeId === 'canopy' ? 'border-lime-950 shadow-lime-900/60' : 'border-white/20')}`}>
+                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${p.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden active:scale-95 transition-transform ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : (currentThemeId === 'canopy' ? 'border-lime-950 shadow-lime-900/60' : 'border-white/20')}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : (currentThemeId === 'canopy' ? 'bg-white opacity-10' : 'bg-transparent')} pointer-events-none`} />
                                                     {!isUnlocked && <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm"><Icon name="Lock" className="text-white/50 mb-1" size={14} /><span className="text-[6px] font-black uppercase text-white/50 tracking-widest leading-tight">Requires {RARITIES[idx-1]?.label} Base Set</span></div>}
                                                     <Icon name={p.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
                                                     <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{p.name}</span>
                                                     <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        {p.cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-amber-400')) : (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-300'))} /></> ) : <span className="text-green-400">FREE</span>}
+                                                        {cost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(cost)}</span><Icon name={p.currency === 'primary' ? terms.primaryIcon : terms.secondaryIcon} size={8} className={p.currency === 'primary' ? (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-amber-400')) : (currentThemeId === 'canopy' ? 'text-emerald-400' : (currentThemeId === 'cosmos' ? 'text-indigo-400' : 'text-cyan-300'))} /></> ) : <span className="text-green-400 animate-pulse drop-shadow-[0_0_5px_currentColor]">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -3002,7 +3103,7 @@
                         {view === 'realms' && (
                              <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4">
                                 <div className={`bg-slate-900/80 border ${currentThemeId === 'olympian' ? 'border-amber-900/40 shadow-[0_0_30px_rgba(0,0,0,0.2)]' : (currentThemeId === 'canopy' ? 'border-lime-500/30 shadow-[0_0_30px_rgba(132,204,22,0.15)]' : (currentThemeId === 'cosmos' ? 'border-fuchsia-500/30 shadow-[0_0_30px_rgba(217,70,239,0.15)]' : 'border-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.15)]'))} p-4 rounded-3xl text-center relative overflow-hidden mb-1`}>
-                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-100/60' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : (currentThemeId === 'cosmos' ? 'from-fuchsia-600/20' : 'from-cyan-600/10'))} to-transparent pointer-events-none`}></div>
+                                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-b ${currentThemeId === 'olympian' ? 'from-amber-500/20' : (currentThemeId === 'canopy' ? 'from-lime-600/10' : (currentThemeId === 'cosmos' ? 'from-fuchsia-600/20' : 'from-cyan-600/10'))} to-transparent pointer-events-none`}></div>
                                     <Icon name="Globe" size={28} className={`${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-lime-500' : (currentThemeId === 'cosmos' ? 'text-fuchsia-500' : 'text-cyan-500'))} mx-auto mb-2 relative z-10 sm:scale-110`} />
                                     <h2 className={`text-lg font-black uppercase tracking-tighter mb-1 relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}>Realms of Power</h2>
                                     <p className={`text-[8px] uppercase font-black opacity-80 leading-relaxed relative z-10 ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-200' : (currentThemeId === 'cosmos' ? 'text-fuchsia-200' : 'text-cyan-200'))}`}>
@@ -3011,7 +3112,7 @@
                                 </div>
                                 <div className="space-y-2 px-1">
                                     {Object.values(THEMES).map(th => (
-                                        <div key={th.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-white border-amber-950 shadow-xl' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950 border-fuchsia-500 shadow-xl' : 'bg-white/10 border-cyan-500 shadow-xl'))) : 'bg-white/5 border-white/10'}`}>
+                                        <div key={th.id} className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${currentThemeId === th.id ? (currentThemeId === 'olympian' ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]' : (currentThemeId === 'canopy' ? 'bg-green-950 border-lime-500 shadow-xl' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950 border-fuchsia-500 shadow-xl' : 'bg-white/10 border-cyan-500 shadow-xl'))) : 'bg-white/5 border-white/10'}`}>
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${currentThemeId === th.id ? (currentThemeId === 'canopy' ? 'bg-lime-900 text-lime-400' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-900 text-fuchsia-400' : 'bg-slate-900 text-white')) : 'bg-slate-800 text-white/50'}`}><Icon name={th.icon} size={16} /></div>
                                                 <div><div className={`text-xs font-black uppercase ${currentThemeId === th.id && currentThemeId === 'olympian' ? 'text-slate-950' : (currentThemeId === th.id && currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === th.id && currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-white'))}`}>{th.name}</div><div className={`text-[8px] font-black uppercase opacity-50 mt-0.5 ${currentThemeId === 'olympian' ? 'text-slate-900' : 'text-white'}`}>{currentThemeId === th.id ? 'Current Realm' : 'Dimension Ready'}</div></div>
@@ -3025,7 +3126,7 @@
 
                         {view === 'inventory' && (
                             <div className="flex-1 flex flex-col gap-3 animate-in fade-in">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white border-amber-900/40 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} p-4 rounded-3xl flex flex-col gap-2 border`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/10 border-amber-500/30 shadow-md' : (currentThemeId === 'canopy' ? 'bg-green-950/60 border-lime-500/20' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-950/60 border-fuchsia-500/20' : 'bg-white/5 border-white/10'))} p-4 rounded-3xl flex flex-col gap-2 border`}>
                                     <div className="flex justify-between items-start">
                                         <div><h3 className={`text-lg font-black uppercase tracking-tighter ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-400' : (currentThemeId === 'cosmos' ? 'text-fuchsia-400' : 'text-white'))}`}>{terms.log}</h3><p className={`text-[8px] opacity-60 uppercase tracking-widest ${currentThemeId === 'olympian' ? 'text-amber-700' : (currentThemeId === 'canopy' ? 'text-emerald-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-white'))}`}>{activeInventory.length} items in realm</p></div>
                                     </div>
@@ -3093,7 +3194,7 @@
                                                 const canAffordBuy = currency2 >= directCost;
                                                 
                                                 if (!owned.length) return (
-                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-100 border-amber-900/40 opacity-90' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 rounded-2xl border-2 border-dashed flex items-center justify-between transition-all group gap-2`}>
+                                                    <div key={dbItem.name} className={`${currentThemeId === 'olympian' ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-900/40 border-white/5 opacity-80'} p-3 rounded-2xl border-2 border-dashed flex items-center justify-between transition-all group gap-2`}>
                                                         <div className={`flex items-center gap-2 ${currentThemeId === 'olympian' ? 'text-amber-950' : 'text-white'}`}><Icon name="Lock" size={12} /><span className="text-[9px] font-black uppercase tracking-tight">{dbItem.name}</span></div>
                                                         <div className="flex items-center gap-2 justify-end w-auto">
                                                             <div className={`${currentThemeId === 'olympian' ? 'bg-amber-700/50 text-white' : (currentThemeId === 'canopy' ? 'bg-lime-500/10 text-lime-400' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-500/10 text-fuchsia-400' : 'bg-cyan-500/10 text-cyan-400'))} px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1`}>Undiscovered</div>
@@ -3150,7 +3251,7 @@
                                             const next = RARITIES[idx + 1];
                                             const canForge = dupes.length >= 5;
                                             return (
-                                                <div key={r.id} className={`${currentThemeId === 'olympian' ? 'bg-white/60' : 'bg-white/5'} border border-white/5 p-4 rounded-2xl flex items-center justify-between transition-all hover:bg-white/10 group`}>
+                                                <div key={r.id} className={`bg-white/10 border border-white/5 p-4 rounded-2xl flex items-center justify-between transition-all hover:bg-white/20 group`}>
                                                     <div><div className={`text-[10px] font-black uppercase ${r.color}`}>{r.label}</div><div className={`text-[8px] font-black uppercase ${currentThemeId === 'olympian' ? 'text-amber-900/40' : 'text-white/30'}`}>{dupes.length} Duplicates Available</div></div>
                                                     <button disabled={!canForge} onClick={() => {
                                                         const sacList = dupes.sort(sortItemsThemeAware).reverse().slice(0, 5);
@@ -3210,7 +3311,7 @@
 
                         {view === 'shrine' && (
                             <div className="flex-1 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
-                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/90 border-amber-950/10 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0`}>
+                                <div className={`${currentThemeId === 'olympian' ? 'bg-white/10 border-amber-500/30 shadow-md' : 'bg-slate-950/60 border-white/5'} backdrop-blur px-3 py-1.5 rounded-lg mx-auto w-fit border shadow-lg shrink-0`}>
                                     <p className={`text-[9px] text-center uppercase font-black opacity-90 leading-relaxed ${currentThemeId === 'olympian' ? 'text-amber-900' : (currentThemeId === 'canopy' ? 'text-lime-300' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300' : 'text-cyan-400'))}`}>Manifest pure arcane mutations. Open a shrine 10 times to unlock the next tier!</p>
                                 </div>
                                 <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
@@ -3232,13 +3333,13 @@
                                         
                                         // The player must own at least one item to use a shrine
                                         const ownedItemNames = [...new Set(activeInventory.map(i => i.name))];
-                                        const afford = isUnlocked && currency2 >= discountedCost && ownedItemNames.length > 0;
+                                        const afford = isUnlocked && (frenzyTimer > 0 || currency2 >= discountedCost) && ownedItemNames.length > 0;
                                         
                                         return (
                                             <div key={cat.id} className={`snap-center shrink-0 w-24 sm:w-28 flex flex-col items-center group cursor-pointer ${!afford ? 'opacity-40 grayscale-[50%]' : ''}`}
                                                 onMouseDown={() => { if(isUnlocked) handleHoldStart(pk); }} onMouseUp={() => { if(isUnlocked) handleHoldEnd(pk); }} onMouseLeave={() => clearTimeout(holdTimer.current)}
                                                 onTouchStart={() => { if(isUnlocked) handleHoldStart(pk); }} onTouchMove={handleHoldMove} onTouchEnd={() => { if(isUnlocked) handleHoldEnd(pk); }}>
-                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${cat.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
+                                                <div className={`w-full aspect-[4/5] rounded-2xl bg-gradient-to-br ${cat.color} border-2 flex flex-col items-center justify-center gap-1 p-2 shadow-2xl relative overflow-hidden active:scale-95 transition-transform ${cat.glow} ${currentThemeId === 'olympian' ? 'border-amber-950 shadow-amber-900/60' : 'border-white/20'}`}>
                                                     <div className={`absolute inset-0 ${currentThemeId === 'olympian' ? 'bg-white opacity-20' : 'bg-transparent'} pointer-events-none`} />
                                                     {!isUnlocked && (
                                                         <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm">
@@ -3252,8 +3353,7 @@
                                                     <Icon name={cat.icon} size={20} className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] z-10" />
                                                     <span className="text-[7px] font-black text-center uppercase text-white z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] px-1 leading-none mt-1">{cat.name}</span>
                                                     <div className="flex items-center gap-1 font-black text-[9px] z-10 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20 shadow-inner mt-1">
-                                                        <span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(discountedCost)}</span>
-                                                        <Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : (currentThemeId === 'cosmos' ? "text-indigo-400" : "text-cyan-300")} />
+                                                        {discountedCost > 0 ? ( <><span className={merchantSaleActive && isUnlocked ? (currentThemeId === 'canopy' ? 'text-emerald-300 animate-pulse' : (currentThemeId === 'cosmos' ? 'text-fuchsia-300 animate-pulse' : 'text-cyan-300 animate-pulse')) : 'text-white'}>{formatNum(discountedCost)}</span><Icon name={terms.secondaryIcon} size={8} className={currentThemeId === 'canopy' ? "text-emerald-400" : (currentThemeId === 'cosmos' ? "text-indigo-400" : "text-cyan-300")} /></> ) : <span className="text-green-400 animate-pulse drop-shadow-[0_0_5px_currentColor]">FREE</span>}
                                                     </div>
                                                 </div>
                                             </div>
