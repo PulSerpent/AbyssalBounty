@@ -394,6 +394,9 @@ const firebaseConfig = {
             );
         };
 
+        // NEW: Exponential progression caps (Starts gentle, scales higher, up to x2 for early/mid, higher for end-game)
+        const MAX_SET_MULTS = [1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0, 10.0, 25.0, 50.0];
+
         const THEMES = {
             abyssal: {
                 id: 'abyssal', name: 'Abyssal Depths', bgClass: 'bg-theme-abyssal', icon: 'Anchor',
@@ -1206,7 +1209,7 @@ const firebaseConfig = {
                     if (!krakenEvent && Math.random() < 0.015) { 
                         setKrakenEvent(true); setKrakenTaps(0); setKrakenTimer(10); setKrakenFeedback(null); 
                     }
-                    if (!anomalyVisible && frenzyTimer <= 0 && !krakenEvent && Math.random() < 0.02) {
+                    if (!anomalyVisible && frenzyTimer <= 0 && !krakenEvent && Math.random() < 0.006) {
                         setAnomalyVisible(true);
                         setTimeout(() => setAnomalyVisible(false), 12000);
                     }
@@ -1259,17 +1262,23 @@ const firebaseConfig = {
             }, [claimedSets, currentThemeId, RARITIES, MUTATION_ORDER]);
 
             const getPackCost = (p, isShrine = false) => { 
-                if (frenzyTimer > 0) return 0; // FREE PACKS DURING FRENZY
                 let discount = isShrine ? 0.75 : 1;
                 if (merchantSaleActive) discount *= 0.5;
+                if (frenzyTimer > 0) discount *= 0.25; 
+                
                 if (isShrine) {
                     const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
                     const safeIdx = Math.max(0, shrineIndex);
                     // CLOCKWORK UPDATE
                     const realmBase = currentThemeId === 'clockwork' ? 1e54 : (currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000))));
-                    return Math.floor(realmBase * Math.pow(12, safeIdx) * discount * clubDiscount);
+                    return Math.floor(realmBase * Math.pow(8, safeIdx) * discount * clubDiscount);
                 }
-                return Math.floor(p.cost * discount * clubDiscount); 
+                
+                // Top pack cost reduction
+                const pIdx = STANDARD_PACKS.findIndex(pk => pk.id === p.id);
+                const progressionEase = pIdx >= 6 ? Math.pow(0.5, pIdx - 5) : 1;
+                
+                return Math.floor(p.cost * discount * clubDiscount * progressionEase); 
             };
 
             const openPack = (p, isShrine = false) => {
@@ -1312,13 +1321,8 @@ const firebaseConfig = {
                     currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                 };
 
-                // INSTANT OPENING DURING FRENZY
-                if (isFrenzy) {
-                    setInventory(v => [finalLoot, ...v]);
-                    return true; 
-                }
-
                 // NORMAL OPENING SEQUENCE
+                const summonDelay = isFrenzy ? 50 : 800;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (cost > 0) {
                     if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
@@ -1326,7 +1330,7 @@ const firebaseConfig = {
                 setTimeout(() => {
                     setPendingLoot(finalLoot);
                     setIsOpening(false); setIsSealed(true);
-                }, 800);
+                }, summonDelay);
                 return true;
             };
 
@@ -2370,7 +2374,7 @@ const firebaseConfig = {
                         }
 
                         return (
-                            <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(8); }}>
+                            <div className="fixed top-1/3 right-0 z-[60] cursor-pointer animate-[orb-drift_12s_linear_forwards]" onClick={() => { setAnomalyVisible(false); setFrenzyTimer(5); }}>
                                 <div className="flex flex-col items-center">
                                     <div className={`${aTextBg} backdrop-blur-md px-3 py-1 rounded-full text-[8px] font-black uppercase mb-2 border animate-pulse`}>{aText}</div>
                                     <div className={`w-16 h-16 bg-gradient-to-tr ${aOrbStyle} ${aAnim} flex items-center justify-center border-2`}>
@@ -2734,7 +2738,7 @@ const firebaseConfig = {
                         </div>
                     </nav>
 
-                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-2">
+                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-32">
                         <div className="flex gap-1 sm:gap-2 mb-2 sm:mb-4 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1 rounded-xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
                             {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' }, { id: 'social', icon: 'Users', label: 'Hub' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 rounded-lg transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-[0_0_15px_rgba(101,163,13,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]')) : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={14} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
@@ -3189,7 +3193,8 @@ const firebaseConfig = {
                                                 const setId = `${currentThemeId}_${r.id}_${mut}`;
                                                 const isClaimed = claimedSets.includes(setId);
                                                 const reqItems = MASTER_ITEM_DB.filter(m => m.rarityId === r.id);
-                                                const ownedSet = new Set(activeInventory.filter(i => i.rarity?.id === r.id && i.mutation === mut).map(i => i.name));
+                                                const mutIdx = MUTATION_ORDER.indexOf(mut);
+                                                const ownedSet = new Set(activeInventory.filter(i => i.rarity?.id === r.id && MUTATION_ORDER.indexOf(i.mutation || 'none') >= mutIdx).map(i => i.name));
                                                 const progress = ownedSet.size;
                                                 const total = reqItems.length;
                                                 const canClaim = progress >= total && !isClaimed;
