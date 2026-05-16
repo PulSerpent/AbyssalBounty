@@ -394,8 +394,8 @@ const firebaseConfig = {
             );
         };
 
-        // NEW: Exponential progression caps (Starts gentle, scales higher, up to x2 for early/mid, higher for end-game)
-        const MAX_SET_MULTS = [1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0, 10.0, 25.0, 50.0];
+        // NEW: Safer exponential progression caps (Capped at 4x for the absolute rarest tier to protect the economy)
+        const MAX_SET_MULTS = [1.1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.5, 3.0, 4.0];
 
         const THEMES = {
             abyssal: {
@@ -759,6 +759,35 @@ const firebaseConfig = {
                 ]
             }
         };
+
+        // DYNAMIC BALANCING OVERRIDE: Applies pure, even exponential scaling across all realms.
+        const REALM_BASES = {
+            abyssal: 1,
+            olympian: 1e11,
+            canopy: 1e22,
+            cosmos: 1e33,
+            neon: 1e44,
+            clockwork: 1e55
+        };
+
+        Object.keys(THEMES).forEach(themeId => {
+            const base = REALM_BASES[themeId];
+            const theme = THEMES[themeId];
+            
+            // Rarity Income & Set Prizes
+            const incBases = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e4, 1e5, 1e6];
+            const przBases = [100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e6, 1e7, 1e8];
+            theme.RARITIES.forEach((r, idx) => {
+                r.incomeBase = incBases[idx] * base;
+                r.setPrize.amt = przBases[idx] * base;
+            });
+            
+            // Pack Costs (10x scaling)
+            const packCosts = [25, 250, 2500, 25000, 250000, 2.5e6, 2.5e7, 2.5e8, 2.5e9, 2.5e10];
+            theme.STANDARD_PACKS.forEach((p, idx) => {
+                p.cost = (themeId === 'abyssal' && idx === 0) ? 0 : packCosts[idx] * base;
+            });
+        });
 
         const CLUB_LEVEL_CAPS = [0, 1000, 5000, 15000, 50000, 100000];
         const getClubLevel = (xp = 0) => {
@@ -1266,19 +1295,15 @@ const firebaseConfig = {
                 if (merchantSaleActive) discount *= 0.5;
                 if (frenzyTimer > 0) discount *= 0.25; 
                 
+                const realmBase = REALM_BASES[currentThemeId] || 1;
+
                 if (isShrine) {
                     const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
                     const safeIdx = Math.max(0, shrineIndex);
-                    // CLOCKWORK UPDATE
-                    const realmBase = currentThemeId === 'clockwork' ? 1e54 : (currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 100000))));
-                    return Math.floor(realmBase * Math.pow(8, safeIdx) * discount * clubDiscount);
+                    return Math.floor(realmBase * 100 * Math.pow(10, safeIdx) * discount * clubDiscount);
                 }
                 
-                // Top pack cost reduction
-                const pIdx = STANDARD_PACKS.findIndex(pk => pk.id === p.id);
-                const progressionEase = pIdx >= 6 ? Math.pow(0.5, pIdx - 5) : 1;
-                
-                return Math.floor(p.cost * discount * clubDiscount * progressionEase); 
+                return Math.floor(p.cost * discount * clubDiscount); 
             };
 
             const openPack = (p, isShrine = false) => {
@@ -1321,8 +1346,22 @@ const firebaseConfig = {
                     currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
                 };
 
+                // INSTANT OPENING DURING FRENZY
+                if (isFrenzy) {
+                    if (cost > 0) {
+                        if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
+                    }
+                    setInventory(v => [finalLoot, ...v]);
+                    setLastPull(finalLoot); 
+                    setActivePack(p);
+                    setIsOpening(false);
+                    setIsSealed(false);
+                    setIsShaking(false);
+                    setIsRipping(false);
+                    return true;
+                }
+
                 // NORMAL OPENING SEQUENCE
-                const summonDelay = isFrenzy ? 50 : 800;
                 setIsOpening(true); setIsSealed(false); setLastPull(null); setActivePack(p);
                 if (cost > 0) {
                     if (p.currency === 'primary') setCurrency1(d => d - cost); else setCurrency2(v => v - cost);
@@ -1330,7 +1369,7 @@ const firebaseConfig = {
                 setTimeout(() => {
                     setPendingLoot(finalLoot);
                     setIsOpening(false); setIsSealed(true);
-                }, summonDelay);
+                }, 800);
                 return true;
             };
 
@@ -1369,9 +1408,8 @@ const firebaseConfig = {
             const getTransferCost = (sac, tgt) => {
                 if (!sac || !tgt) return 0;
                 const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
-                // CLOCKWORK UPDATE
-                const realmMultiplier = currentThemeId === 'clockwork' ? 1e50 : (currentThemeId === 'neon' ? 1e40 : (currentThemeId === 'cosmos' ? 1e30 : (currentThemeId === 'olympian' ? 1e12 : (currentThemeId === 'canopy' ? 1e20 : 1)))); 
-                const baseCost = Math.pow(5, tgtRarityIdx) * 50 * realmMultiplier; 
+                const realmBase = REALM_BASES[currentThemeId] || 1;
+                const baseCost = Math.pow(5, tgtRarityIdx) * 100 * realmBase; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
                 return Math.floor(baseCost * mutMult);
@@ -1381,8 +1419,8 @@ const firebaseConfig = {
                 const rIdx = RARITIES.findIndex(x => x.id === rarityId);
                 let basePackCost = STANDARD_PACKS[rIdx]?.cost;
                 if (!basePackCost || basePackCost === 0) {
-                    // CLOCKWORK UPDATE
-                    basePackCost = currentThemeId === 'clockwork' ? 1e54 : (currentThemeId === 'neon' ? 1e44 : (currentThemeId === 'cosmos' ? 1e34 : (currentThemeId === 'canopy' ? 1e24 : (currentThemeId === 'olympian' ? 1e14 : 50))));
+                    const realmBase = REALM_BASES[currentThemeId] || 1;
+                    basePackCost = 25 * realmBase;
                 }
                 return basePackCost * 5; 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
@@ -1695,8 +1733,8 @@ const firebaseConfig = {
                 if (!activeClub || !user) return;
                 const m = activeClub.monolith || generateMonolithDemand();
                 
-                // Massive secondary currency reward - CLOCKWORK UPDATE
-                const prize = currentThemeId === 'clockwork' ? 5e59 : (currentThemeId === 'neon' ? 5e49 : (currentThemeId === 'cosmos' ? 5e39 : (currentThemeId === 'olympian' ? 5e19 : (currentThemeId === 'canopy' ? 5e29 : 500000))));
+                const realmBase = REALM_BASES[currentThemeId] || 1;
+                const prize = 5e8 * realmBase;
                 setCurrency2(c => c + prize);
                 
                 // Local Update
@@ -1948,7 +1986,7 @@ const firebaseConfig = {
             }
 
             return (
-                <div className={`h-screen w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
+                <div className={`h-[100dvh] w-full flex flex-col ${activeTheme.bgClass} text-white relative overflow-hidden font-sans select-none touch-none transition-colors duration-[2000ms]`}>
                     
                     {/* Thematic Background Particles Layer */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
@@ -2738,7 +2776,7 @@ const firebaseConfig = {
                         </div>
                     </nav>
 
-                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-32">
+                    <main className="flex-1 overflow-y-auto max-w-lg mx-auto w-full p-2 flex flex-col z-10 scrollbar-hide pb-40">
                         <div className="flex gap-1 sm:gap-2 mb-2 sm:mb-4 sticky top-0 bg-slate-950/80 backdrop-blur px-1 py-1 rounded-xl z-40 shrink-0 w-full overflow-x-auto scrollbar-hide shadow-2xl">
                             {[ { id: 'shop', icon: 'Anchor', label: terms.packMenu }, { id: 'altar', icon: 'Flame', label: 'Forge' }, { id: 'shrine', icon: 'Sparkles', label: 'Shrine' }, { id: 'inventory', icon: 'ScrollText', label: terms.log }, { id: 'realms', icon: 'Globe', label: 'Realms' }, { id: 'social', icon: 'Users', label: 'Hub' } ].map(t => (
                                 <button key={t.id} onClick={() => setView(t.id)} className={`flex-1 min-w-[48px] sm:min-w-[50px] flex flex-col items-center justify-center py-1.5 rounded-lg transition-all ${view === t.id ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(251,191,36,0.5)]' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-[0_0_15px_rgba(101,163,13,0.5)]' : 'bg-fuchsia-600 text-white shadow-[0_0_15px_rgba(192,38,211,0.5)]')) : 'bg-slate-900/40 text-white/50 hover:bg-slate-900/60'}`}><Icon name={t.icon} size={14} /><span className="text-[7.5px] sm:text-[8px] font-black uppercase mt-1 tracking-tighter">{t.label}</span></button>
