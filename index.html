@@ -1300,10 +1300,18 @@ const firebaseConfig = {
                 if (isShrine) {
                     const shrineIndex = SHRINE_CATEGORIES.findIndex(c => c.id === p.mutation);
                     const safeIdx = Math.max(0, shrineIndex);
-                    return Math.floor(realmBase * 100 * Math.pow(10, safeIdx) * discount * clubDiscount);
+                    
+                    // Shrine cost easing for top tiers
+                    const progressionEase = safeIdx >= 4 ? Math.pow(0.5, safeIdx - 3) : 1;
+                    
+                    return Math.floor(realmBase * 100 * Math.pow(10, safeIdx) * discount * clubDiscount * progressionEase);
                 }
                 
-                return Math.floor(p.cost * discount * clubDiscount); 
+                // Top pack cost reduction
+                const pIdx = STANDARD_PACKS.findIndex(pk => pk.id === p.id);
+                const progressionEase = pIdx >= 6 ? Math.pow(0.5, pIdx - 5) : 1;
+                
+                return Math.floor(p.cost * discount * clubDiscount * progressionEase); 
             };
 
             const openPack = (p, isShrine = false) => {
@@ -1409,7 +1417,11 @@ const firebaseConfig = {
                 if (!sac || !tgt) return 0;
                 const tgtRarityIdx = Math.max(0, RARITIES.findIndex(r => r.id === tgt.rarity?.id));
                 const realmBase = REALM_BASES[currentThemeId] || 1;
-                const baseCost = Math.pow(5, tgtRarityIdx) * 100 * realmBase; 
+                
+                // Apply progression ease to transfer costs
+                const progressionEase = tgtRarityIdx >= 6 ? Math.pow(0.5, tgtRarityIdx - 5) : 1;
+                
+                const baseCost = Math.pow(5, tgtRarityIdx) * 100 * realmBase * progressionEase; 
                 const mutIdx = Math.max(0, MUTATION_ORDER.indexOf(sac.mutation));
                 const mutMult = Math.pow(4, mutIdx);
                 return Math.floor(baseCost * mutMult);
@@ -1422,7 +1434,10 @@ const firebaseConfig = {
                     const realmBase = REALM_BASES[currentThemeId] || 1;
                     basePackCost = 25 * realmBase;
                 }
-                return basePackCost * 5; 
+                
+                // Apply progression ease to direct buys
+                const progressionEase = rIdx >= 6 ? Math.pow(0.5, rIdx - 5) : 1;
+                return Math.floor(basePackCost * 5 * progressionEase); 
             }, [currentThemeId, RARITIES, STANDARD_PACKS]);
 
             const handleDirectBuy = (dbItem, rarity, cost) => {
@@ -3394,10 +3409,8 @@ const firebaseConfig = {
                                     {SHRINE_CATEGORIES.map((cat, idx) => {
                                         const equalWeights = {};
                                         RARITIES.forEach(r => equalWeights[r.id] = 10);
-                                        // NEON UPDATE
-                                        const baseCost = (currentThemeId === 'neon' ? 5e43 : (currentThemeId === 'cosmos' ? 5e33 : (currentThemeId === 'olympian' ? 5e15 : (currentThemeId === 'canopy' ? 5e23 : 50000)))) * Math.pow(50, idx); 
                                         
-                                        const pk = { id: `shrine_${currentThemeId}_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: baseCost, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
+                                        const pk = { id: `shrine_${currentThemeId}_${cat.id}`, name: `${cat.name} Shrine`, isShrine: true, targetRarity: null, mutation: cat.id, cost: 0, currency: 'secondary', weights: equalWeights, color: cat.color, glow: cat.glow, icon: cat.icon };
                                         const discountedCost = getPackCost(pk, true);
                                         
                                         const prevShrineId = idx > 0 ? `shrine_${currentThemeId}_${SHRINE_CATEGORIES[idx-1].id}` : null;
