@@ -20,8 +20,8 @@
         let isOffline = false;
 try {
        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD60m50RFeqTIXCNme0pHhJf7wtr64UbQo",
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  apiKey: "AIzaSyD6Om50RfeqTIXCNmeOphHJf7wtr64UbQo",
   authDomain: "abyssal-bounty.firebaseapp.com",
   projectId: "abyssal-bounty",
   storageBucket: "abyssal-bounty.firebasestorage.app",
@@ -42,10 +42,20 @@ const firebaseConfig = {
             isOffline = true;
         }
 
+        const dynamicAppId = typeof __app_id !== 'undefined' ? __app_id : 'abyssal-bounty-live';
+
         window.FirebaseAPI = { 
             db, auth, isOffline,
             signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
-            collection, doc, setDoc, getDoc, onSnapshot, query 
+            collection: (dbInst, ...paths) => {
+                const patchedPaths = paths.map(p => p === 'abyssal-bounty-live' ? dynamicAppId : p);
+                return collection(dbInst, ...patchedPaths);
+            },
+            doc: (dbInst, ...paths) => {
+                const patchedPaths = paths.map(p => p === 'abyssal-bounty-live' ? dynamicAppId : p);
+                return doc(dbInst, ...patchedPaths);
+            },
+            setDoc, getDoc, onSnapshot, query 
         };
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
@@ -873,7 +883,7 @@ const firebaseConfig = {
             const processedRef = useRef(processedTrades);
             
             // Generate standard active App ID for UI display (REPLACED FOR RELIABILITY)
-            const activeAppId = 'abyssal-bounty-live';
+            const activeAppId = typeof __app_id !== 'undefined' ? __app_id : 'abyssal-bounty-live';
 
             useEffect(() => { processedRef.current = processedTrades; }, [processedTrades]);
 
