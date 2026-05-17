@@ -775,8 +775,8 @@ const firebaseConfig = {
             const theme = THEMES[themeId];
             
             // Rarity Income & Set Prizes
-            const incBases = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e4, 1e5, 1e6];
-            const przBases = [100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e6, 1e7, 1e8];
+            const incBases = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 5e6, 2.5e7, 1e8];
+            const przBases = [100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 5e8, 2.5e9, 1e10];
             theme.RARITIES.forEach((r, idx) => {
                 r.incomeBase = incBases[idx] * base;
                 r.setPrize.amt = przBases[idx] * base;
@@ -1351,7 +1351,7 @@ const firebaseConfig = {
                 const finalLoot = { 
                     id: Math.random().toString(36).substr(2, 9), 
                     themeId: currentThemeId, name: item.name, rarity, mutation: p.mutation || 'none', 
-                    currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200) 
+                    currency: isSec ? 'secondary' : 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 50) 
                 };
 
                 // INSTANT OPENING DURING FRENZY
@@ -1446,7 +1446,7 @@ const firebaseConfig = {
                 const cpsBase = rarity.incomeBase;
                 const newItem = {
                     id: Math.random().toString(36).substr(2, 9), themeId: currentThemeId, name: dbItem.name,
-                    rarity: rarity, mutation: 'none', currency: 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 200)
+                    rarity: rarity, mutation: 'none', currency: 'primary', cps: cpsBase, value: Math.floor(rarity.incomeBase * 50)
                 };
                 setInventory(prev => [newItem, ...prev]);
             };
@@ -1547,7 +1547,7 @@ const firebaseConfig = {
                         themeId: p.currentRealm || 'abyssal',
                         rarity: r,
                         cps: r.incomeBase,
-                        value: Math.floor(r.incomeBase * 200)
+                        value: Math.floor(r.incomeBase * 50)
                     });
                 } else {
                     setTradeRequest(null);
@@ -1563,7 +1563,7 @@ const firebaseConfig = {
                     
                     let requestBaseValue = tradeRequest.value || 0;
                     if (!requestBaseValue && tradeRequest.rarity) {
-                        requestBaseValue = Math.floor(tradeRequest.rarity.incomeBase * 200);
+                        requestBaseValue = Math.floor(tradeRequest.rarity.incomeBase * 50);
                     }
                     const requestValue = requestBaseValue * (getMutData(tradeRequest.themeId, tradeRequest.mutation).mult || 1);
                     
@@ -1749,7 +1749,7 @@ const firebaseConfig = {
                 const m = activeClub.monolith || generateMonolithDemand();
                 
                 const realmBase = REALM_BASES[currentThemeId] || 1;
-                const prize = 5e8 * realmBase;
+                const prize = 1.5e7 * realmBase;
                 setCurrency2(c => c + prize);
                 
                 // Local Update
@@ -3357,7 +3357,7 @@ const firebaseConfig = {
                                                             ? unownedNextItems[Math.floor(Math.random() * unownedNextItems.length)] 
                                                             : nextItems[Math.floor(Math.random() * nextItems.length)];
 
-                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 200 };
+                                                        const nI = { id: Math.random().toString(36).substr(2,9), themeId: currentThemeId, name: randomItem.name, rarity: next, mutation: bM, currency: isSec ? 'secondary' : 'primary', cps: next.incomeBase * 1.5, value: next.incomeBase * 50 };
                                                         setInventory(prev => [nI, ...prev.filter(it => !sacList.some(s => s.id === it.id))]);
                                                         setLastPull(nI); setView('shop');
                                                     }} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase ${canForge ? (currentThemeId === 'olympian' ? 'bg-amber-500 text-white shadow-lg active:scale-95' : (currentThemeId === 'canopy' ? 'bg-lime-600 text-white shadow-lg active:scale-95' : (currentThemeId === 'cosmos' ? 'bg-fuchsia-600 text-white shadow-lg active:scale-95' : 'bg-cyan-600 text-white shadow-lg active:scale-95'))) : 'bg-slate-800 text-white/20'}`}>Forge {next.label}</button>
